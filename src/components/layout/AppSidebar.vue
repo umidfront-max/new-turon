@@ -24,75 +24,78 @@ function go() {
 
 <template>
   <aside class="sidebar" :class="{ compact, 'mobile-open': state.mobileNavOpen }">
-    <!-- modul almashtirgich -->
-    <div class="module" :class="{ compact }">
-      <template v-if="!compact">
-        <button type="button" class="mod-btn">{{ $t('modules.complaint') }}</button>
-        <button type="button" class="mod-btn on">{{ $t('modules.cardblock') }}</button>
+    <!-- skroll qismi: yig'ish tugmasi undan tashqarida turadi, aks holda kesiladi -->
+    <div class="nav-scroll thin-scroll">
+      <!-- modul almashtirgich -->
+      <div class="module" :class="{ compact }">
+        <template v-if="!compact">
+          <button type="button" class="mod-btn">{{ $t('modules.complaint') }}</button>
+          <button type="button" class="mod-btn on">{{ $t('modules.cardblock') }}</button>
+        </template>
+        <div v-else class="mod-mini">{{ $t('modules.short') }}</div>
+      </div>
+
+      <SidebarLink
+        v-if="isExec"
+        icon="chart"
+        :label="$t('nav.dashboard')"
+        to="/rahbar"
+        :active="isActive('/rahbar')"
+        :compact="compact"
+        @click="go"
+      />
+
+      <SidebarLink
+        icon="list"
+        :label="$t('nav.all')"
+        :count="128"
+        to="/"
+        :active="isActive('/')"
+        :compact="compact"
+        @click="go"
+      />
+
+      <template v-if="isStaff">
+        <SidebarLink
+          icon="docPlus"
+          :label="$t('nav.add')"
+          to="/yangi"
+          :active="isActive('/yangi')"
+          :compact="compact"
+          @click="go"
+        />
+        <SidebarLink
+          icon="docLines"
+          :label="$t('nav.drafts')"
+          :count="6"
+          to="/qoralamalar"
+          :active="isActive('/qoralamalar')"
+          :compact="compact"
+          @click="go"
+        />
       </template>
-      <div v-else class="mod-mini">{{ $t('modules.short') }}</div>
-    </div>
 
-    <SidebarLink
-      v-if="isExec"
-      icon="chart"
-      :label="$t('nav.dashboard')"
-      to="/rahbar"
-      :active="isActive('/rahbar')"
-      :compact="compact"
-      @click="go"
-    />
-
-    <SidebarLink
-      icon="list"
-      :label="$t('nav.all')"
-      :count="128"
-      to="/"
-      :active="isActive('/')"
-      :compact="compact"
-      @click="go"
-    />
-
-    <template v-if="isStaff">
-      <SidebarLink
-        icon="docPlus"
-        :label="$t('nav.add')"
-        to="/yangi"
-        :active="isActive('/yangi')"
-        :compact="compact"
-        @click="go"
-      />
-      <SidebarLink
-        icon="docLines"
-        :label="$t('nav.drafts')"
-        :count="6"
-        to="/qoralamalar"
-        :active="isActive('/qoralamalar')"
-        :compact="compact"
-        @click="go"
-      />
-    </template>
-
-    <div class="rule" :class="{ visible: compact }" />
-    <div v-if="!compact" class="group-label">
-      {{ isExec ? $t('nav.groupAttention') : $t('nav.groupTasks') }}
-    </div>
-
-    <SidebarLink icon="inbox" :label="$t('nav.newApps')" :count="14" count-tone="danger" :compact="compact" @click="go" />
-    <SidebarLink icon="back" :label="$t('nav.returned')" :count="9" count-tone="danger" :compact="compact" @click="go" />
-
-    <div class="rule" :class="{ visible: compact }" />
-    <div v-if="!compact" class="group-label">{{ $t('nav.groupStatus') }}</div>
-
-    <SidebarLink icon="bank" :label="$t('nav.inBank')" :count="23" :compact="compact" @click="go" />
-    <SidebarLink icon="lock" :label="$t('nav.blocked')" :count="46" count-tone="success" :compact="compact" @click="go" />
-    <SidebarLink icon="refresh" :label="$t('nav.autopayment')" :count="7" :compact="compact" @click="go" />
-
-    <template v-if="isStaff">
       <div class="rule" :class="{ visible: compact }" />
-      <div v-if="!compact" class="group-label">{{ $t('nav.groupReference') }}</div>
-      <SidebarLink icon="book" :label="$t('nav.reasons')" :count="12" :compact="compact" @click="go" />
-    </template>
+      <div v-if="!compact" class="group-label">
+        {{ isExec ? $t('nav.groupAttention') : $t('nav.groupTasks') }}
+      </div>
+
+      <SidebarLink icon="inbox" :label="$t('nav.newApps')" :count="14" count-tone="danger" :compact="compact" @click="go" />
+      <SidebarLink icon="back" :label="$t('nav.returned')" :count="9" count-tone="danger" :compact="compact" @click="go" />
+
+      <div class="rule" :class="{ visible: compact }" />
+      <div v-if="!compact" class="group-label">{{ $t('nav.groupStatus') }}</div>
+
+      <SidebarLink icon="bank" :label="$t('nav.inBank')" :count="23" :compact="compact" @click="go" />
+      <SidebarLink icon="lock" :label="$t('nav.blocked')" :count="46" count-tone="success" :compact="compact" @click="go" />
+      <SidebarLink icon="refresh" :label="$t('nav.autopayment')" :count="7" :compact="compact" @click="go" />
+
+      <template v-if="isStaff">
+        <div class="rule" :class="{ visible: compact }" />
+        <div v-if="!compact" class="group-label">{{ $t('nav.groupReference') }}</div>
+        <SidebarLink icon="book" :label="$t('nav.reasons')" :count="12" :compact="compact" @click="go" />
+      </template>
+    </div>
 
     <!-- yig'ish tugmasi (faqat desktopda) -->
     <button
@@ -116,11 +119,17 @@ function go() {
   width: var(--sidebar-w);
   flex: 0 0 var(--sidebar-w);
   background: var(--brand-a);
-  padding: 16px 0 28px;
   position: relative;
+  /* tugma chetga chiqib turadi — shu sababli aside kesmaydi */
+  overflow: visible;
+  transition: flex-basis .22s var(--ease), width .22s var(--ease);
+}
+
+.nav-scroll {
+  height: 100%;
+  padding: 16px 0 28px;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: flex-basis .22s var(--ease), width .22s var(--ease);
   scrollbar-width: thin;
 }
 
@@ -254,7 +263,6 @@ function go() {
     z-index: 120;
     width: 272px;
     flex-basis: 272px;
-    padding-top: 60px;
     transform: translateX(-100%);
     transition: transform .26s var(--ease);
     box-shadow: 0 0 40px rgba(5, 12, 28, .4);
@@ -262,6 +270,10 @@ function go() {
 
   .sidebar.mobile-open {
     transform: translateX(0);
+  }
+
+  .nav-scroll {
+    padding-top: 60px;
   }
 
   .collapse {

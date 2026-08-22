@@ -122,16 +122,27 @@ toast va modal. Barchasi `prefers-reduced-motion: reduce` da o'chadi.
 `/ariza?id=<ariza raqami>` — ro'yxatdagi qatorni bosganda ochiladi va
 umumiy layout ichida ishlaydi (topbar + sidebar joyida qoladi):
 
-* amal satri — muddat, XLSX eksport, «Bloklashga yuborish», yopish;
-* sarlavha kartasi — arizachi, status, zarar summasi, qadamlar treki;
-* 4 ta tab — Murojaat (to'liq), Sanksiyalar / Tranzaksiyalar / Ish jarayoni
-  (keyingi bosqich);
-* Murojaat tabi — asosiy maydonlar, arizachi ma'lumotlari, fabula va ovozli
-  fabula pleyeri, rekvizitlar (tranzaksiyalari ochiladi).
+* amal satri — muddat (rangi qolgan kunga qarab), XLSX eksport va statusga
+  bog'liq asosiy tugma: `Yuborilmagan` da «Bloklashga yuborish», `Xatolik` da
+  «Tahrirlash va qayta yuborish», qolgan holatlarda tugma ko'rsatilmaydi;
+* sarlavha kartasi — arizachi, status, zarar summasi va qadamlar treki
+  (2–3 qadam: qabul qilindi → bankka yuborildi → javob kutilmoqda / qaytardi /
+  bloklandi / qaytarildi);
+* 5 ta tab: **Murojaat**, **Bank amaliyotlari**, **Ish jarayoni** — to'liq;
+  Sanksiyalar va Tranzaksiyalar — keyingi bosqich.
 
-Rekvizit va tranzaksiya summalari `src/data/detail.js` da ariza summasidan
-barqaror taqsimlanadi, ovozli fabula pleyeri esa namuna — haqiqiy audio fayl
-ulanmagan.
+Tanlangan tab manzilda turadi (`/ariza?id=...&tab=bank`), shuning uchun havolani
+ulashish va brauzer «orqaga» tugmasi ishlaydi.
+
+| Tab | Nima ko'rsatiladi |
+| --- | --- |
+| Murojaat | asosiy maydonlar, arizachi, fabula + ovozli fabula pleyeri, rekvizitlar (tranzaksiyalari ochiladi) |
+| Bank amaliyotlari | Markaziy bank bilan almashinuv lentasi: yuborilgan so'rov (REQ raqami, E2202 kodi, urinish, rekvizitlar), bank javoblari, qaytarilganda — bank xodimi va «Avto to'lov izohi» |
+| Ish jarayoni | daraxt ko'rinishidagi tarix: vaqt, xodim/bank, bosqich yorlig'i |
+
+Lenta, qadamlar va daraxt bitta manbadan — `src/data/detail.js` dagi status
+bo'yicha yig'iladi, sanalar ariza vaqtidan siljitib hisoblanadi. Ovozli fabula
+pleyeri namuna — haqiqiy audio fayl ulanmagan.
 
 ## Ma'lumotlar
 

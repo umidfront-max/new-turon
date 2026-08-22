@@ -374,14 +374,62 @@ export default {
     sum: "so'm",
     notFound: 'Ariza topilmadi',
     notFoundText: "Bunday raqamli ariza ro'yxatda yo'q. Ro'yxatga qaytib qayta tanlang.",
+    fix: 'Tahrirlash va qayta yuborish',
+    fixToast: 'Tahrirlash ekrani keyingi bosqichda ulanadi',
     steps: {
       accepted: 'Murojaat qabul qilindi',
       sentToBank: 'Bankka yuborildi',
       notSent: 'Bankka yuborilmagan',
-      queued: 'navbatda'
+      queued: 'navbatda',
+      awaiting: 'Bank javobi kutilmoqda',
+      returned: 'Bank qaytardi',
+      blocked: 'Karta bloklandi',
+      autopayment: "Avto to'lov",
+      refunded: "Mablag' qaytarildi",
+      cancelled: 'Bekor qilindi',
+      daysLeft: '{n} kun qoldi'
+    },
+    bank: {
+      title: 'Markaziy bank bilan almashinuv',
+      emptyTitle: 'Hali bankka yuborilmagan',
+      emptyText: "«Bloklashga yuborish» tugmasidan keyin almashinuv tarixi shu yerda ko'rinadi.",
+      route: 'TURON → Markaziy bank',
+      attempt: '{n}-urinish',
+      sentAt: "So'rov yuborilgan vaqt",
+      requestId: "So'rov ID",
+      requisites: 'Rekvizitlar',
+      staff: 'Bank xodimi',
+      phone: 'Telefon raqami',
+      noteTitle: "Avto to'lov izohi",
+      note: "Arizada ko'rsatilgan {card} raqamli karta bo'yicha {date} sanasida (transaction_date) qidiruv berilganda, tizimimizda aynan siz ko'rsatgan {amount} so'm (amount) miqdoridagi yechilish qayd etilmagan.",
+      events: {
+        sent: 'Bloklash uchun bankka yuborildi',
+        returned: 'Bank arizani qaytardi',
+        blocked: 'Bank kartani blokladi',
+        autopayment: "Avto to'lov bosqichida ushlandi",
+        refunded: "Mablag' egasiga qaytarildi",
+        cancelled: "Almashinuv to'xtatildi"
+      }
+    },
+    workflow: {
+      title: 'Ish jarayoni',
+      officer: 'F.B.Suvonov',
+      staffRole: 'Xodim — Kiberxavfsizlik boshqarmasi',
+      bank: 'Markaziy bank',
+      badges: {
+        accepted: 'Murojaat qabul qilindi',
+        sent: 'Markaziy bankka yuborildi',
+        waiting: 'Javob kutilmoqda',
+        returned: 'Ariza qaytarildi',
+        blocked: 'Karta bloklandi',
+        autopayment: "Avto to'lov",
+        refunded: "Mablag' qaytarildi",
+        cancelled: 'Bekor qilindi'
+      }
     },
     tabs: {
       complaint: 'Murojaat',
+      bank: 'Bank amaliyotlari',
       sanctions: 'Sanksiyalar',
       transactions: 'Tranzaksiyalar',
       workflow: 'Ish jarayoni'
@@ -414,8 +462,7 @@ export default {
     },
     soon: {
       sanctions: 'Sanksiyalar bo‘limi keyingi bosqichda yig‘iladi.',
-      transactions: 'Tranzaksiyalar bo‘limi keyingi bosqichda yig‘iladi.',
-      workflow: 'Ish jarayoni (daraxt) keyingi bosqichda yig‘iladi.'
+      transactions: 'Tranzaksiyalar bo‘limi keyingi bosqichda yig‘iladi.'
     }
   },
 

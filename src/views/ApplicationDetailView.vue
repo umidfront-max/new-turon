@@ -14,12 +14,31 @@ const { toast } = useUi()
 
 const TABS = [
   { key: 'complaint', icon: 'doc' },
+  { key: 'bank', icon: 'bank' },
   { key: 'sanctions', icon: 'shield' },
   { key: 'transactions', icon: 'swap' },
   { key: 'workflow', icon: 'refresh' }
 ]
 
-const tab = ref('complaint')
+// hodisa turi -> rang
+const TONE = {
+  info: { fg: 'var(--c23568f)', bg: 'var(--ce8eef7)' },
+  ok: { fg: 'var(--c1a6e4b)', bg: 'var(--ce3f2e9)' },
+  bad: { fg: 'var(--ca52220)', bg: 'var(--cfceceb)' },
+  idle: { fg: 'var(--c66748c)', bg: 'var(--cf0f3f8)' }
+}
+
+// tab URL'da turadi — havolani ulashish va orqaga qaytish uchun
+const tab = ref(TABS.some((x) => x.key === route.query.tab) ? route.query.tab : 'complaint')
+
+function pickTab(key) {
+  tab.value = key
+  router.replace({ query: { ...route.query, tab: key } })
+}
+
+watch(() => route.query.tab, (next) => {
+  tab.value = TABS.some((x) => x.key === next) ? next : 'complaint'
+})
 const data = computed(() => detailFor(route.query.id))
 const row = computed(() => data.value.row)
 
@@ -81,9 +100,20 @@ function close() {
   router.push('/')
 }
 
-function send() {
-  toast(t('detail.sent'))
+function onAction() {
+  toast(data.value.action === 'fix' ? t('detail.fixToast') : t('detail.sent'))
 }
+
+// daraxtni tekis ro'yxatga yozamiz — chuqurlik chekinish uchun
+const workflowRows = computed(() => {
+  const out = []
+  const walk = (nodes, depth) => nodes.forEach((n) => {
+    out.push({ ...n, depth })
+    if (n.children && n.children.length) walk(n.children, depth + 1)
+  })
+  walk(data.value.workflow, 0)
+  return out
+})
 
 function exportXlsx() {
   toast(t('detail.exportToast'))
@@ -100,7 +130,7 @@ function exportXlsx() {
 
       <div class="spacer" />
 
-      <span class="deadline" :class="{ late: data.deadline.overdue }">
+      <span v-if="data.deadline" class="deadline" :class="data.deadline.tone">
         <span class="deadline-dot" />
         {{ data.deadline.overdue
           ? $t('detail.overdue', data.deadline.days)
@@ -112,8 +142,8 @@ function exportXlsx() {
         {{ $t('detail.export') }}
       </button>
 
-      <button type="button" class="btn-dark" @click="send">
-        {{ $t('detail.send') }}
+      <button v-if="data.action" type="button" class="btn-dark" @click="onAction">
+        {{ $t(`detail.${data.action}`) }}
         <AppIcon name="chevronRight" :size="15" :width="1.8" />
       </button>
 
@@ -146,27 +176,21 @@ function exportXlsx() {
       </div>
 
       <div class="steps">
-        <div class="step done">
-          <span class="step-icon"><AppIcon name="doc" :size="19" /></span>
-          <span class="step-text">
-            <span class="step-title">{{ $t('detail.steps.accepted') }}</span>
-            <span class="step-meta mono">{{ row.time }}</span>
-          </span>
-        </div>
-
-        <span class="step-line" />
-
-        <div class="step" :class="{ done: row.status !== 'new' }">
-          <span class="step-icon"><AppIcon name="send" :size="18" /></span>
-          <span class="step-text">
-            <span class="step-title">
-              {{ row.status === 'new' ? $t('detail.steps.notSent') : $t('detail.steps.sentToBank') }}
+        <template v-for="(st, i) in data.steps" :key="st.key">
+          <span v-if="i" class="step-line" />
+          <div class="step" :class="st.tone">
+            <span class="step-icon"><AppIcon :name="st.icon" :size="18" /></span>
+            <span class="step-text">
+              <span class="step-title">{{ $t(`detail.steps.${st.key}`) }}</span>
+              <span class="step-meta mono">
+                <template v-if="st.time">{{ st.time }}</template>
+                <template v-else-if="st.days">{{ $t('detail.steps.daysLeft', st.days) }}</template>
+                <template v-else-if="st.metaKey">{{ $t(`detail.steps.${st.metaKey}`) }}</template>
+                <template v-else>—</template>
+              </span>
             </span>
-            <span class="step-meta mono">
-              {{ row.status === 'new' ? $t('detail.steps.queued') : row.time }}
-            </span>
-          </span>
-        </div>
+          </div>
+        </template>
       </div>
     </section>
 
@@ -178,7 +202,7 @@ function exportXlsx() {
         type="button"
         class="tab"
         :class="{ on: tab === tb.key }"
-        @click="tab = tb.key"
+        @click="pickTab(tb.key)"
       >
         <AppIcon :name="tb.icon" :size="17" />
         {{ $t(`detail.tabs.${tb.key}`) }}
@@ -310,6 +334,122 @@ function exportXlsx() {
       </section>
     </template>
 
+    <!-- ---------- Bank amaliyotlari ---------- -->
+    <section v-else-if="tab === 'bank'" class="card-surface panel">
+      <header class="panel-head dark-bar">
+        <AppIcon name="bank" :size="18" />
+        <span class="panel-title">{{ $t('detail.bank.title') }}</span>
+      </header>
+
+      <div class="panel-body">
+        <article
+          v-for="(e, i) in data.exchange"
+          :key="e.id"
+          class="event"
+          :class="e.tone"
+          :style="{ animationDelay: `${i * 45}ms` }"
+        >
+          <div class="event-head">
+            <span class="event-icon" :style="{ background: TONE[e.tone].bg, color: TONE[e.tone].fg }">
+              <AppIcon :name="e.icon" :size="17" :width="1.8" />
+            </span>
+
+            <span v-if="e.route" class="event-time mono">
+              <AppIcon name="clock" :size="13" />
+              {{ e.time }}
+            </span>
+
+            <span class="event-title">{{ $t(`detail.bank.events.${e.kind}`) }}</span>
+            <span v-if="e.code" class="tag code mono">{{ e.code }}</span>
+            <span class="tag">{{ $t('detail.bank.attempt', e.attempt) }}</span>
+
+            <div class="spacer" />
+
+            <span v-if="e.route" class="event-route mono">{{ $t('detail.bank.route') }}</span>
+            <span v-else class="event-time mono">{{ e.time }}</span>
+          </div>
+
+          <div v-if="e.body === 'sent'" class="event-body">
+            <div class="event-field">
+              <div class="field-label">{{ $t('detail.bank.sentAt') }}</div>
+              <div class="field-value mono">{{ e.time }}</div>
+            </div>
+            <div class="event-field">
+              <div class="field-label">{{ $t('detail.bank.requestId') }}</div>
+              <div class="field-value mono">{{ e.requestId }}</div>
+            </div>
+            <div class="event-field grow">
+              <div class="field-label">{{ $t('detail.bank.requisites') }}</div>
+              <div class="req-chips">
+                <span v-for="r in e.requisites" :key="r.card" class="req-chip">
+                  <span class="mono">{{ r.card }}</span>
+                  <span class="req-chip-bank">{{ r.bank }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="e.body === 'returned'" class="event-body column">
+            <div class="event-row">
+              <div class="event-field">
+                <div class="field-label">{{ $t('detail.bank.staff') }}</div>
+                <div class="field-value">{{ e.staff.name }}</div>
+              </div>
+              <div class="event-field">
+                <div class="field-label">{{ $t('detail.bank.phone') }}</div>
+                <div class="field-value mono">{{ e.staff.phone }}</div>
+              </div>
+            </div>
+
+            <div class="note">
+              <div class="note-head">
+                <AppIcon name="warn" :size="15" :width="1.9" />
+                {{ $t('detail.bank.noteTitle') }}
+              </div>
+              <p class="note-text">{{ $t('detail.bank.note', e.note) }}</p>
+            </div>
+          </div>
+        </article>
+
+        <div v-if="!data.exchange.length" class="empty-box">
+          <span class="soon-icon"><AppIcon name="send" :size="24" /></span>
+          <div class="empty-title">{{ $t('detail.bank.emptyTitle') }}</div>
+          <div class="empty-text">{{ $t('detail.bank.emptyText') }}</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- Ish jarayoni ---------- -->
+    <section v-else-if="tab === 'workflow'" class="card-surface panel">
+      <header class="panel-head dark-bar">
+        <AppIcon name="refresh" :size="18" />
+        <span class="panel-title">{{ $t('detail.workflow.title') }}</span>
+      </header>
+
+      <div class="panel-body">
+        <div
+          v-for="(n, i) in workflowRows"
+          :key="`${n.badge}-${i}`"
+          class="wf-row"
+          :style="{ marginLeft: `${n.depth * 26}px`, animationDelay: `${i * 60}ms` }"
+        >
+          <span class="wf-caret">▾</span>
+          <span class="wf-time mono">
+            <AppIcon name="clock" :size="13" />
+            {{ n.time || '—' }}
+          </span>
+          <span class="wf-actor">
+            {{ n.actor === 'bank' ? $t('detail.workflow.bank') : $t('detail.workflow.officer') }}
+          </span>
+          <span v-if="n.actor === 'staff' && !n.depth" class="wf-role">
+            ({{ $t('detail.workflow.staffRole') }})
+          </span>
+          <span class="wf-badge" :class="n.actor">{{ $t(`detail.workflow.badges.${n.badge}`) }}</span>
+          <span v-if="n.code" class="tag code mono">{{ n.code }}</span>
+        </div>
+      </div>
+    </section>
+
     <!-- ---------- qolgan tablar ---------- -->
     <section v-else class="card-surface soon">
       <span class="soon-icon"><AppIcon :name="TABS.find((x) => x.key === tab).icon" :size="26" /></span>
@@ -368,25 +508,23 @@ function exportXlsx() {
   height: 38px;
   padding: 0 14px;
   border-radius: 8px;
-  border: 1px solid var(--cf0dcb4);
-  background: var(--cfdf3e3);
-  color: var(--c96620a);
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c3d4d66);
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-}
-
-.deadline.late {
-  border-color: var(--cf2cfcd);
-  background: var(--cfceceb);
-  color: var(--ca52220);
 }
 
 .deadline-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: currentColor;
+  background: var(--c96620a);
+}
+
+.deadline.bad .deadline-dot {
+  background: var(--ca52220);
 }
 
 .btn-light,
@@ -516,6 +654,28 @@ function exportXlsx() {
   align-items: center;
   gap: 11px;
   color: var(--c98a3b6);
+}
+
+/* qadam holati: done/ok — ko'k-yashil, wait — sariq, bad — qizil, idle — kulrang */
+.step.wait .step-icon {
+  background: var(--cfdf3e3);
+  color: var(--c96620a);
+}
+
+.step.ok .step-icon {
+  background: var(--ce3f2e9);
+  color: var(--c1a6e4b);
+}
+
+.step.bad .step-icon {
+  background: var(--cfceceb);
+  color: var(--ca52220);
+}
+
+.step.wait .step-title,
+.step.ok .step-title,
+.step.bad .step-title {
+  color: var(--c16233d);
 }
 
 .step-icon {
@@ -961,6 +1121,253 @@ function exportXlsx() {
   font-size: 17px;
   font-weight: 700;
   color: var(--c16233d);
+}
+
+/* ---------- panel (bank / ish jarayoni) ---------- */
+.panel {
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  color: #fff;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.panel-body {
+  padding: 14px 16px;
+}
+
+/* ---------- almashinuv hodisasi ---------- */
+.event {
+  border: 1px solid var(--ce2e8f1);
+  border-left: 3px solid var(--c23568f);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  animation: riseIn .28s var(--ease) backwards;
+}
+
+.event:last-child {
+  margin-bottom: 0;
+}
+
+.event.bad {
+  border-left-color: var(--ca52220);
+  background: var(--cfef7f6);
+}
+
+.event.ok {
+  border-left-color: var(--c1a6e4b);
+}
+
+.event.idle {
+  border-left-color: var(--c98a3b6);
+}
+
+.event-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  flex-wrap: wrap;
+}
+
+.event-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.event-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
+  font-size: 13.5px;
+  color: var(--c66748c);
+  white-space: nowrap;
+}
+
+.event-route {
+  font-size: 13.5px;
+  color: var(--c8b95a6);
+  white-space: nowrap;
+}
+
+.tag {
+  padding: 2px 9px;
+  border-radius: 20px;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
+  font-size: 12.5px;
+  color: var(--c66748c);
+  white-space: nowrap;
+}
+
+.tag.code {
+  background: var(--ce8eef7);
+  border-color: var(--kc9d9ec, var(--ce2e8f1));
+  color: var(--c23568f);
+  font-weight: 600;
+}
+
+.event-body {
+  display: flex;
+  gap: 26px;
+  padding: 13px 14px 14px;
+  border-top: 1px solid var(--ceef1f6);
+  flex-wrap: wrap;
+}
+
+.event-body.column {
+  flex-direction: column;
+  gap: 14px;
+}
+
+.event-row {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+
+.event-field.grow {
+  flex: 1;
+  min-width: 240px;
+}
+
+.req-chips {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.req-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--cf8fafc);
+  font-size: 15px;
+  color: var(--c16233d);
+}
+
+.req-chip-bank {
+  font-size: 13px;
+  color: var(--c8b95a6);
+}
+
+.note {
+  border-radius: 8px;
+  border: 1px solid var(--cf2cfcd);
+  background: var(--cfceceb);
+  padding: 11px 13px;
+}
+
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ca52220);
+}
+
+.note-text {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--c3d4d66);
+}
+
+/* ---------- ish jarayoni daraxti ---------- */
+.wf-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  margin-bottom: 8px;
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 9px;
+  background: var(--s-card);
+  flex-wrap: wrap;
+  animation: riseIn .28s var(--ease) backwards;
+}
+
+.wf-caret {
+  color: var(--c98a3b6);
+  font-size: 11px;
+}
+
+.wf-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 7px;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
+  font-size: 13.5px;
+  color: var(--c66748c);
+  white-space: nowrap;
+}
+
+.wf-actor {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.wf-role {
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--c8b95a6);
+}
+
+.wf-badge {
+  padding: 5px 11px;
+  border-radius: 7px;
+  background: var(--brand-a);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.wf-badge.bank {
+  background: var(--ce8eef7);
+  color: var(--c23568f);
+}
+
+.empty-box {
+  padding: 34px 20px;
+  text-align: center;
 }
 
 /* ---------- keyingi bosqich ---------- */
