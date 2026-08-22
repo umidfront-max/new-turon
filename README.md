@@ -39,9 +39,11 @@ src/
 │  ├─ detail.js           ariza tafsiloti: rekvizit, almashinuv, qadamlar, daraxt
 │  ├─ form.js             forma tanlovlari, maskalar va tekshiruvlar
 │  ├─ reasons.js          bloklash sabablari ma'lumotnomasi
+│  ├─ keys.js             E-imzo kalitlari (namuna)
 │  └─ notifications.js    bildirishnomalar lentasi
 ├─ stores/
-│  └─ useUi.js            mavzu, til, rol, sidebar, bildirishnoma, toast, tasdiqlash
+│  ├─ useUi.js            mavzu, til, rol, sidebar, bildirishnoma, toast, tasdiqlash
+│  └─ useAuth.js          sessiya: kirish, chiqish, saqlash
 ├─ router/
 │  └─ index.js            5 ta yo'nalish
 ├─ components/
@@ -51,6 +53,7 @@ src/
 │  └─ applications/       KpiCards · QueueTabs · FilterPanel
 │                         ApplicationsTable · TablePagination
 └─ views/
+   ├─ LoginView.vue              Tizimga kirish (to'liq)
    ├─ ApplicationsView.vue       Arizalar ro'yxati va navbatlar (to'liq)
    ├─ ApplicationDetailView.vue  Ariza tafsiloti (to'liq)
    ├─ NewApplicationView.vue     Yangi murojaat formasi (to'liq)
@@ -65,6 +68,7 @@ Manzillar inglizcha, interfeys matni esa i18n orqali tarjima qilinadi.
 
 | Yo'l | Ekran | Holati |
 | --- | --- | --- |
+| `/login` | Tizimga kirish | to'liq |
 | `/` | Barcha arizalar | to'liq |
 | `/queue/:queue` | Navbat bo'yicha ro'yxat | to'liq |
 | `/application?id=...&tab=...` | Ariza tafsiloti | to'liq (Murojaat, Bank amaliyotlari, Ish jarayoni) |
@@ -79,6 +83,33 @@ jadval ustidagi tablar shu manzillarga o'tadi, KPI kartalari ham shunday.
 
 `/dashboard` faqat "Rahbar" roli tanlanganda menyuda ko'rinadi — rolni yuqori
 o'ng burchakdagi profil menyusidan almashtiring.
+
+## Kirish va sessiya
+
+`/login` — asl dizayndagi ikki qismli ekran: chapda gerb, TURON nomi va uchta
+tezis, o'ngda til almashtirgichi (Uz / Ўз / Ru) va uchta kirish usuli:
+
+| Usul | Nima qiladi |
+| --- | --- |
+| **Login** | login + parol (parolni ko'rsatish, «Parolni eslab qolish», «Parolni unutdingizmi?») |
+| **E-imzo** | ulangan kalitlar ro'yxati (shaxsiy va tashkilot), PIN-kod maydoni |
+| **Face ID** | skaner animatsiyasi va kirish |
+
+Marshrut himoyasi `router.beforeEach` da: kirmagan foydalanuvchi istalgan
+sahifadan `/login?next=<yo'l>` ga yo'naltiriladi va kirgandan keyin o'sha
+sahifaga qaytariladi; kirgan foydalanuvchi `/login` ni ochsa `/` ga tushadi.
+Sessiya `turon-auth` kaliti bilan saqlanadi — «Parolni eslab qolish»
+belgilangan bo'lsa `localStorage` da, aks holda `sessionStorage` da (brauzer
+yopilganda o'chadi). Profil menyusidagi «Tizimdan chiqish» endi haqiqatan
+sessiyani tozalab, `/login` ga qaytaradi.
+
+Rol kirish usulidan olinadi: E-imzo'dagi shaxsiy kalit (Boybayev Umrbek) —
+**Rahbar**, tashkilot kaliti va login/parol — **Navbatchi**. Keyin rolni
+profil menyusidan ham almashtirish mumkin.
+
+**Diqqat:** backend yo'q — parol tekshirilmaydi, har qanday to'ldirilgan forma
+qabul qilinadi, Face ID esa kamerani so'ramaydi (animatsiya). Real tizimda bu
+qism API va token bilan almashtiriladi.
 
 ## Yangi murojaat formasi
 

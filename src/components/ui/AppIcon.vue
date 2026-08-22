@@ -49,7 +49,14 @@ const ICONS = {
   bookmark: '<path d="M7 4h10v16.2l-5-3.6-5 3.6z" stroke-linejoin="round"/>',
   phone: '<path d="M7.2 4h2.9l1.5 3.9-2 1.5a11.3 11.3 0 0 0 5 5l1.5-2 3.9 1.5v2.9a2 2 0 0 1-2.2 2A15.2 15.2 0 0 1 5.2 6.2 2 2 0 0 1 7.2 4z" stroke-linejoin="round"/>',
   pin: '<path d="M12 20.8s6.6-5.4 6.6-10.4a6.6 6.6 0 1 0-13.2 0c0 5 6.6 10.4 6.6 10.4z" stroke-linejoin="round"/><circle cx="12" cy="10.1" r="2.5"/>',
-  mic: '<rect x="9.2" y="3" width="5.6" height="10.6" rx="2.8"/><path d="M5.8 11.6a6.2 6.2 0 0 0 12.4 0" stroke-linecap="round"/><path d="M12 17.8V21" stroke-linecap="round"/>'
+  mic: '<rect x="9.2" y="3" width="5.6" height="10.6" rx="2.8"/><path d="M5.8 11.6a6.2 6.2 0 0 0 12.4 0" stroke-linecap="round"/><path d="M12 17.8V21" stroke-linecap="round"/>',
+  key: '<circle cx="8.2" cy="14" r="4.2"/><path d="M11.1 11.1 20 3.4" stroke-linecap="round"/><path d="M16.6 6.2l2.3 2.3M14.1 8.6l2.3 2.3" stroke-linecap="round"/>',
+  face: '<path d="M4 8.6V6.2A2.2 2.2 0 0 1 6.2 4h2.4M15.4 4h2.4A2.2 2.2 0 0 1 20 6.2v2.4M20 15.4v2.4a2.2 2.2 0 0 1-2.2 2.2h-2.4M8.6 20H6.2A2.2 2.2 0 0 1 4 17.8v-2.4" stroke-linecap="round"/><path d="M9.3 10.4v1.2M14.7 10.4v1.2" stroke-linecap="round"/><path d="M9.4 14.7a3.6 3.6 0 0 0 5.2 0" stroke-linecap="round"/>',
+  eyeOff: '<path d="M3.2 3.2 20.8 20.8" stroke-linecap="round"/><path d="M10.4 6A9.6 9.6 0 0 1 12 5.8c6 0 9.5 6.2 9.5 6.2a17.3 17.3 0 0 1-3.3 4M6.6 7.7A16.8 16.8 0 0 0 2.5 12s3.5 6.2 9.5 6.2a9.5 9.5 0 0 0 3.5-.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.9 10a3 3 0 0 0 4.1 4.2" stroke-linecap="round"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 3.4v2.3M12 18.3v2.3M20.6 12h-2.3M5.7 12H3.4M18.1 5.9l-1.6 1.6M7.5 16.5l-1.6 1.6M18.1 18.1l-1.6-1.6M7.5 7.5 5.9 5.9" stroke-linecap="round"/>',
+  radar: '<circle cx="10.8" cy="10.8" r="6.8"/><path d="M8.6 13V10.2M10.8 13V8.6M13 13v-2" stroke-linecap="round"/><path d="M15.8 15.8 20.6 20.6" stroke-linecap="round"/>',
+  arrowRight: '<path d="M4.5 12h15M13.8 6.2 19.6 12l-5.8 5.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  broadcast: '<circle cx="12" cy="12" r="2.1"/><path d="M8.5 8.5a4.9 4.9 0 0 0 0 7M15.5 15.5a4.9 4.9 0 0 0 0-7" stroke-linecap="round"/><path d="M5.9 5.9a8.6 8.6 0 0 0 0 12.2M18.1 18.1a8.6 8.6 0 0 0 0-12.2" stroke-linecap="round"/>'
 }
 
 const props = defineProps({

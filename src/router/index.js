@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { watch } from 'vue'
 import i18n, { t } from '@/i18n'
 import { queueFromSlug } from '@/data/queues'
+import { useAuth } from '@/stores/useAuth'
+import LoginView from '@/views/LoginView.vue'
 import ApplicationsView from '@/views/ApplicationsView.vue'
 import ApplicationDetailView from '@/views/ApplicationDetailView.vue'
 import NewApplicationView from '@/views/NewApplicationView.vue'
@@ -10,6 +12,13 @@ import ReasonsView from '@/views/ReasonsView.vue'
 import StubView from '@/views/StubView.vue'
 
 const routes = [
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    // blank: layoutsiz (topbar/sidebar yo'q), public: kirmagan holda ham ochiladi
+    meta: { titleKey: 'login.title', blank: true, public: true }
+  },
   {
     path: '/',
     name: 'applications',
@@ -75,6 +84,14 @@ function applyTitle(route) {
   const title = screenTitle(route)
   document.title = title ? `${title} · TURON CYBER` : t('app.defaultTitle')
 }
+
+// kirmagan foydalanuvchi faqat /login ni ko'radi
+router.beforeEach((to) => {
+  const { isAuthed } = useAuth()
+  if (to.meta.public) return isAuthed.value ? { path: '/' } : true
+  if (isAuthed.value) return true
+  return { path: '/login', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
+})
 
 router.afterEach(applyTitle)
 

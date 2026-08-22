@@ -1,8 +1,6 @@
 <script setup>
 import AppTopbar from './AppTopbar.vue'
 import AppSidebar from './AppSidebar.vue'
-import AppToast from '@/components/ui/AppToast.vue'
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useUi } from '@/stores/useUi'
 
 const { ui, setMobileNav } = useUi()
@@ -27,9 +25,6 @@ const { ui, setMobileNav } = useUi()
         </RouterView>
       </main>
     </div>
-
-    <AppToast />
-    <ConfirmDialog />
   </div>
 </template>
 

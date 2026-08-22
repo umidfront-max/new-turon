@@ -5,10 +5,12 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
 import { useUi } from '@/stores/useUi'
+import { useAuth } from '@/stores/useAuth'
 
 const router = useRouter()
 const { t } = useI18n()
 const { state, isExec, setRole, setTheme, setLanguage, toggleRoleMenu, toast } = useUi()
+const { signOut } = useAuth()
 
 const roles = computed(() => [
   { key: 'staff', label: t('role.staff.label'), note: t('role.staff.note'), on: !isExec.value },
@@ -57,7 +59,9 @@ function pickRole(key) {
 
 function exit() {
   toggleRoleMenu(false)
+  signOut()
   toast(t('role.loggedOut'), 'warn')
+  router.push('/login')
 }
 </script>
 

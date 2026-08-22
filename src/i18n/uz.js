@@ -466,6 +466,49 @@ export default {
     }
   },
 
+  login: {
+    brand: 'TURON',
+    org: 'IIV · Kiberjinoyatlarga qarshi kurashish departamenti',
+    title: 'Tizimga kirish',
+    subtitle: 'Xizmat hisobingiz bilan davom eting',
+    lang: { uz: 'Uz', uzk: "O'z", ru: 'Ru' },
+    features: {
+      one: 'Murojaatdan tergovgacha — barchasi bitta tizimda',
+      two: 'Hududiy va tematik statistika doimiy nazoratda',
+      three: "Hududiy bo'linmalar barchasi yagona platformada"
+    },
+    tabs: { password: 'Login', eimzo: 'E-imzo', faceId: 'Face ID' },
+    loginLabel: 'Login',
+    loginPh: "umrbek{'@'}cyber102.com",
+    password: 'Parol',
+    passwordPh: 'Parolingiz',
+    show: "Parolni ko'rsatish",
+    hide: 'Parolni yashirish',
+    remember: 'Parolni eslab qolish',
+    forgot: 'Parolni unutdingizmi?',
+    forgotToast: 'Parolni tiklash uchun tizim administratoriga murojaat qiling',
+    signingIn: 'Kirilmoqda...',
+    submit: 'Kirish',
+    welcome: 'Xush kelibsiz, {name}',
+    note: 'Faqat vakolatli xodimlar uchun. Barcha kirishlar qayd etiladi.',
+    eimzo: {
+      connected: 'E-imzo dasturi ulandi',
+      expires: 'amal qiladi {date}',
+      pin: 'Kalit PIN-kodi',
+      pinPh: 'PIN-kodni kiriting'
+    },
+    face: {
+      title: 'Face ID orqali kirish',
+      text: 'Kamera orqali yuzingizni skanerlab, tizimga soniyalar ichida kiring.',
+      start: 'Skanerlashni boshlash',
+      scanning: 'Skanerlanmoqda...'
+    },
+    errors: {
+      credentials: "Login va parolni to'g'ri kiriting",
+      pin: "PIN-kod kamida 4 ta raqamdan iborat bo'lishi kerak"
+    }
+  },
+
   form: {
     title: 'Yangi murojaat',
     draftSaved: 'Qoralama saqlandi · {time}',
