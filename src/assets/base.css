@@ -1,0 +1,193 @@
+@import './tokens.css';
+
+/* ---------- reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ceceff5);
+  color: var(--c1c2b45);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition: background .2s ease, color .2s ease;
+}
+
+a {
+  color: var(--c23568f);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--c1b4272);
+  text-decoration: underline;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+  color: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--ca3adbd);
+}
+
+/* klaviatura bilan yurganda fokus ko'rinib tursin */
+:focus-visible {
+  outline: 2px solid var(--c23568f);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- yordamchi klasslar ---------- */
+.mono {
+  font-family: var(--font-mono);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.truncate {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-surface {
+  background: var(--s-card);
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.dark-bar {
+  background: linear-gradient(90deg, var(--brand-a) 0%, var(--brand-b) 100%);
+}
+
+/* ---------- skrollbar ---------- */
+.thin-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--cc8cdd6);
+  border-radius: 20px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- animatsiyalar ---------- */
+@keyframes slideIn {
+  from { transform: translateX(24px); opacity: 0 }
+  to { transform: translateX(0); opacity: 1 }
+}
+
+@keyframes toastUp {
+  from { transform: translate(-50%, 14px); opacity: 0 }
+  to { transform: translate(-50%, 0); opacity: 1 }
+}
+
+@keyframes askPop {
+  from { transform: translate(-50%, -48%) scale(.97); opacity: 0 }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1 }
+}
+
+@keyframes riseIn {
+  from { transform: translateY(10px); opacity: 0 }
+  to { transform: translateY(0); opacity: 1 }
+}
+
+@keyframes popIn {
+  from { transform: translateY(-6px) scale(.98); opacity: 0 }
+  to { transform: translateY(0) scale(1); opacity: 1 }
+}
+
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 157, 107, .55) }
+  70% { box-shadow: 0 0 0 7px rgba(74, 157, 107, 0) }
+}
+
+@keyframes shimmer {
+  from { background-position: -420px 0 }
+  to { background-position: 420px 0 }
+}
+
+/* route almashinuvi */
+.screen-enter-active {
+  transition: opacity .28s var(--ease), transform .28s var(--ease);
+}
+
+.screen-leave-active {
+  transition: opacity .14s ease;
+  position: absolute;
+  inset: 16px 20px auto;
+}
+
+.screen-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.screen-leave-to {
+  opacity: 0;
+}
+
+/* ochiluvchi panellar */
+.expand-enter-active,
+.expand-leave-active {
+  transition: grid-template-rows .26s var(--ease), opacity .2s ease;
+}
+
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+}
+
+/* fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity .18s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ---------- harakatni kamaytirish ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
