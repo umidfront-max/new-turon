@@ -51,8 +51,8 @@ function pickLang(v) {
 
 function pickRole(key) {
   setRole(key)
-  if (key === 'exec') router.push('/rahbar')
-  else if (router.currentRoute.value.path === '/rahbar') router.push('/')
+  if (key === 'exec') router.push('/dashboard')
+  else if (router.currentRoute.value.path === '/dashboard') router.push('/')
 }
 
 function exit() {

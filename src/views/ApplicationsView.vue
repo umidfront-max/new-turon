@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import KpiCards from '@/components/applications/KpiCards.vue'
@@ -9,39 +9,33 @@ import FilterPanel from '@/components/applications/FilterPanel.vue'
 import ApplicationsTable from '@/components/applications/ApplicationsTable.vue'
 import TablePagination from '@/components/applications/TablePagination.vue'
 import { APPLICATIONS } from '@/data/applications'
+import { QUEUE_STATUS, queueFromSlug, queuePath } from '@/data/queues'
 import { useUi } from '@/stores/useUi'
 
 const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
 const { toast } = useUi()
 
-const queue = ref('all')
 const filterOpen = ref(false)
 const page = ref(1)
 
-// Navbat kaliti -> ro'yxatdagi statuslar
-const QUEUE_MAP = {
-  new: ['new'],
-  pending: ['pending'],
-  error: ['error'],
-  blocked: ['blocked'],
-  autopayment: ['autopayment'],
-  cancelled: ['cancelled'],
-  done: ['done']
-}
+// Navbat manzildan olinadi: / -> barchasi, /queue/<slug> -> filtrlangan
+const queue = computed(() => queueFromSlug(route.params.queue))
 
 const rows = computed(() => {
-  const allowed = QUEUE_MAP[queue.value]
+  const allowed = QUEUE_STATUS[queue.value]
   const list = allowed ? APPLICATIONS.filter((a) => allowed.includes(a.status)) : APPLICATIONS
   return list.map((a, i) => ({ ...a, n: i + 1 }))
 })
 
 function openApplication(row) {
-  router.push({ path: '/ariza', query: { id: row.id } })
+  router.push({ path: '/application', query: { id: row.id } })
 }
 
-function pickKpi(key) {
-  queue.value = QUEUE_MAP[key] ? key : 'all'
+function pickQueue(key) {
+  page.value = 1
+  router.push(queuePath(key))
 }
 
 function exportXlsx() {
@@ -56,9 +50,9 @@ function onFilters(picked) {
 
 <template>
   <div class="screen">
-    <KpiCards @pick="pickKpi" />
+    <KpiCards @pick="pickQueue" />
 
-    <QueueTabs v-model="queue" />
+    <QueueTabs :model-value="queue" @update:model-value="pickQueue" />
 
     <section class="table-card card-surface">
       <header class="card-head dark-bar">

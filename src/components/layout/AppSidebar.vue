@@ -39,8 +39,8 @@ function go() {
         v-if="isExec"
         icon="chart"
         :label="$t('nav.dashboard')"
-        to="/rahbar"
-        :active="isActive('/rahbar')"
+        to="/dashboard"
+        :active="isActive('/dashboard')"
         :compact="compact"
         @click="go"
       />
@@ -59,8 +59,8 @@ function go() {
         <SidebarLink
           icon="docPlus"
           :label="$t('nav.add')"
-          to="/yangi"
-          :active="isActive('/yangi')"
+          to="/application/new"
+          :active="isActive('/application/new')"
           :compact="compact"
           @click="go"
         />
@@ -68,8 +68,8 @@ function go() {
           icon="docLines"
           :label="$t('nav.drafts')"
           :count="6"
-          to="/qoralamalar"
-          :active="isActive('/qoralamalar')"
+          to="/drafts"
+          :active="isActive('/drafts')"
           :compact="compact"
           @click="go"
         />
@@ -80,20 +80,71 @@ function go() {
         {{ isExec ? $t('nav.groupAttention') : $t('nav.groupTasks') }}
       </div>
 
-      <SidebarLink icon="inbox" :label="$t('nav.newApps')" :count="14" count-tone="danger" :compact="compact" @click="go" />
-      <SidebarLink icon="back" :label="$t('nav.returned')" :count="9" count-tone="danger" :compact="compact" @click="go" />
+      <SidebarLink
+        icon="inbox"
+        :label="$t('nav.newApps')"
+        :count="14"
+        count-tone="danger"
+        to="/queue/new"
+        :active="isActive('/queue/new')"
+        :compact="compact"
+        @click="go"
+      />
+      <SidebarLink
+        icon="back"
+        :label="$t('nav.returned')"
+        :count="9"
+        count-tone="danger"
+        to="/queue/returned"
+        :active="isActive('/queue/returned')"
+        :compact="compact"
+        @click="go"
+      />
 
       <div class="rule" :class="{ visible: compact }" />
       <div v-if="!compact" class="group-label">{{ $t('nav.groupStatus') }}</div>
 
-      <SidebarLink icon="bank" :label="$t('nav.inBank')" :count="23" :compact="compact" @click="go" />
-      <SidebarLink icon="lock" :label="$t('nav.blocked')" :count="46" count-tone="success" :compact="compact" @click="go" />
-      <SidebarLink icon="refresh" :label="$t('nav.autopayment')" :count="7" :compact="compact" @click="go" />
+      <SidebarLink
+        icon="bank"
+        :label="$t('nav.inBank')"
+        :count="23"
+        to="/queue/in-bank"
+        :active="isActive('/queue/in-bank')"
+        :compact="compact"
+        @click="go"
+      />
+      <SidebarLink
+        icon="lock"
+        :label="$t('nav.blocked')"
+        :count="46"
+        count-tone="success"
+        to="/queue/blocked"
+        :active="isActive('/queue/blocked')"
+        :compact="compact"
+        @click="go"
+      />
+      <SidebarLink
+        icon="refresh"
+        :label="$t('nav.autopayment')"
+        :count="7"
+        to="/queue/autopayment"
+        :active="isActive('/queue/autopayment')"
+        :compact="compact"
+        @click="go"
+      />
 
       <template v-if="isStaff">
         <div class="rule" :class="{ visible: compact }" />
         <div v-if="!compact" class="group-label">{{ $t('nav.groupReference') }}</div>
-        <SidebarLink icon="book" :label="$t('nav.reasons')" :count="12" :compact="compact" @click="go" />
+        <SidebarLink
+          icon="book"
+          :label="$t('nav.reasons')"
+          :count="12"
+          to="/reasons"
+          :active="isActive('/reasons')"
+          :compact="compact"
+          @click="go"
+        />
       </template>
     </div>
 

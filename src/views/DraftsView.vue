@@ -54,7 +54,7 @@ function remove(index) {
         </div>
       </div>
       <div class="spacer" />
-      <button type="button" class="btn-dark" @click="router.push('/yangi')">
+      <button type="button" class="btn-dark" @click="router.push('/application/new')">
         <AppIcon name="plus" :size="16" :width="1.8" />
         {{ $t('drafts.newApplication') }}
       </button>
@@ -112,7 +112,7 @@ function remove(index) {
               </td>
               <td>
                 <div class="actions">
-                  <button type="button" class="btn-dark sm" @click="router.push('/yangi')">
+                  <button type="button" class="btn-dark sm" @click="router.push('/application/new')">
                     {{ $t('common.continue') }}
                     <AppIcon name="chevronRight" :size="15" :width="1.7" />
                   </button>

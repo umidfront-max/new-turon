@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { watch } from 'vue'
 import i18n, { t } from '@/i18n'
+import { queueFromSlug } from '@/data/queues'
 import ApplicationsView from '@/views/ApplicationsView.vue'
-import DraftsView from '@/views/DraftsView.vue'
 import ApplicationDetailView from '@/views/ApplicationDetailView.vue'
+import NewApplicationView from '@/views/NewApplicationView.vue'
+import DraftsView from '@/views/DraftsView.vue'
+import ReasonsView from '@/views/ReasonsView.vue'
 import StubView from '@/views/StubView.vue'
 
 const routes = [
@@ -14,30 +17,37 @@ const routes = [
     meta: { titleKey: 'nav.all' }
   },
   {
-    path: '/qoralamalar',
-    name: 'drafts',
-    component: DraftsView,
-    meta: { titleKey: 'drafts.title' }
+    // navbatlar: /queue/new, /queue/in-bank, /queue/blocked ...
+    path: '/queue/:queue',
+    name: 'queue',
+    component: ApplicationsView
   },
   {
-    path: '/ariza',
+    path: '/application',
     name: 'application-detail',
     component: ApplicationDetailView,
     meta: { titleKey: 'stub.detail.title' }
   },
   {
-    path: '/yangi',
+    path: '/application/new',
     name: 'application-new',
-    component: StubView,
-    props: {
-      screen: 'new',
-      icon: 'docPlus',
-      blocks: ['info', 'applicant', 'requisite']
-    },
-    meta: { titleKey: 'stub.new.title' }
+    component: NewApplicationView,
+    meta: { titleKey: 'form.title' }
   },
   {
-    path: '/rahbar',
+    path: '/drafts',
+    name: 'drafts',
+    component: DraftsView,
+    meta: { titleKey: 'drafts.title' }
+  },
+  {
+    path: '/reasons',
+    name: 'reasons',
+    component: ReasonsView,
+    meta: { titleKey: 'reasons.title' }
+  },
+  {
+    path: '/dashboard',
     name: 'dashboard',
     component: StubView,
     props: {
@@ -56,10 +66,14 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
+function screenTitle(route) {
+  if (route?.name === 'queue') return t(`queues.${queueFromSlug(route.params.queue)}`)
+  return route?.meta?.titleKey ? t(route.meta.titleKey) : null
+}
+
 function applyTitle(route) {
-  document.title = route?.meta?.titleKey
-    ? `${t(route.meta.titleKey)} · TURON CYBER`
-    : t('app.defaultTitle')
+  const title = screenTitle(route)
+  document.title = title ? `${title} · TURON CYBER` : t('app.defaultTitle')
 }
 
 router.afterEach(applyTitle)

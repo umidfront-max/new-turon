@@ -466,6 +466,134 @@ export default {
     }
   },
 
+  form: {
+    title: 'Yangi murojaat',
+    draftSaved: 'Qoralama saqlandi · {time}',
+    submit: 'Bloklashga yuborish',
+    check: 'Tekshirish',
+    checked: "Ma'lumotlar tekshirildi",
+    invalid: "Majburiy maydonlarni to'g'ri to'ldiring",
+    optional: 'ixtiyoriy',
+    sent: 'Ariza bloklashga yuborildi',
+    askTitle: 'Arizani bloklashga yuborasizmi?',
+    askText: "{n} ta rekvizit va {amount} so'm zarar bilan Markaziy bankka yuboriladi.",
+    cancelTitle: 'Arizani bekor qilasizmi?',
+    cancelText: "Kiritilgan barcha ma'lumotlar o'chiriladi va tiklab bo'lmaydi.",
+    cancelled: 'Ariza bekor qilindi',
+    app: {
+      title: "Ariza ma'lumotlari",
+      id: 'Ariza raqami',
+      idPh: 'KJ-2026-000000',
+      material: 'Material raqami',
+      materialPh: 'M0438715/2026-0000',
+      method: 'Sodir etish usuli',
+      source: 'Sodir etish manbasi',
+      select: 'Tanlang',
+      fabula: 'Fabula — voqeaning batafsil mazmuni',
+      fabulaPh: "Murojaatdagi barcha holat shu yerga kiritiladi. Voqea qanday sodir bo'lganini erkin matnda yozing...",
+      voice: 'Ovozli yozib olish',
+      voiceToast: 'Ovozli yozib olish keyingi bosqichda ulanadi',
+      hints: {
+        asked: "Nima so'rashdi?",
+        transfer: "Pul qanday o'tkazildi?",
+        noticed: 'Qachon sezdingiz?',
+        contact: 'Qanday aloqa qilishdi?'
+      }
+    },
+    applicant: {
+      title: 'Arizachi',
+      fio: 'F.I.Sh. (lotin harflarida)',
+      fioPh: "ABDULLAYEV ULUG'BEK SAYDAMATOVICH",
+      phone: 'Telefon raqami',
+      region: 'Hudud',
+      address: 'Yashash manzili',
+      addressPh: "Tuman, mahalla, ko'cha, uy"
+    },
+    requisite: {
+      title: "Karta, hisob raqam qo'shish",
+      card: 'Karta raqam',
+      account: 'Hisob raqam',
+      cardNumber: 'Karta raqami',
+      accountNumber: 'Hisob raqami',
+      digits: '{n} raqam',
+      bank: 'Bank',
+      amount: 'Yechilgan summa miqdori',
+      sum: "So'm",
+      time: 'Tranzaksiya vaqti',
+      timePh: 'KK.OO.YYYY SS:DD',
+      add: "Qo'shish",
+      addedToast: "Rekvizit qo'shildi",
+      added: "Qo'shilgan rekvizitlar",
+      empty: "Hali rekvizit qo'shilmagan",
+      needOne: "Kamida bitta rekvizit qo'shing",
+      total: 'Jami'
+    }
+  },
+
+  reasons: {
+    title: 'Bloklash sabablari',
+    chip: '{n} ta sabab',
+    listTitle: "Ma'lumotnoma",
+    note: 'Muddat — bank javobi uchun belgilangan reglament',
+    colCode: 'Kod',
+    colName: 'Sabab',
+    colTerm: 'Muddat',
+    colCount: 'Arizalar',
+    term: '{n} kun',
+    emptyTitle: 'Hech narsa topilmadi',
+    emptyText: "Qidiruv so'zini o'zgartirib ko'ring.",
+    items: {
+      vishing: {
+        name: "Soxta qo'ng'iroq (vishing)",
+        text: "«Bank xodimi» nomidan qo'ng'iroq qilib SMS-kod yoki karta ma'lumotlari so'ralgan."
+      },
+      phishing: {
+        name: 'Fishing havolasi',
+        text: "Soxta havola orqali karta ma'lumotlari kiritiladigan sahifaga o'tkazilgan."
+      },
+      fakeShop: {
+        name: "Soxta internet-do'kon",
+        text: "Mavjud bo'lmagan tovar uchun oldindan to'lov olingan soxta savdo sayti."
+      },
+      fakeInvest: {
+        name: 'Soxta investitsiya',
+        text: "Yuqori foyda va'da qilib investitsiya nomi bilan mablag' olingan."
+      },
+      simSwap: {
+        name: 'SIM-swap',
+        text: "SIM-karta qayta tiklanib, tasdiqlash SMS-kodlari firibgar qo'liga o'tgan."
+      },
+      apk: {
+        name: 'Zararli ilova (APK)',
+        text: "Telefonga zararli ilova o'rnatilib, bank ilovasi nazoratga olingan."
+      },
+      fakeSupport: {
+        name: 'Soxta texnik yordam',
+        text: "Texnik yordam nomidan masofaviy kirish dasturi o'rnattirilgan."
+      },
+      socialEng: {
+        name: 'Ijtimoiy injeneriya',
+        text: "Tanish yoki qarindosh nomidan yozib, ishonchga kirib pul so'ralgan."
+      },
+      cardTheft: {
+        name: "Karta o'g'irlanishi",
+        text: "Karta jismonan o'g'irlangan yoki yo'qolgan va egasisiz ishlatilgan."
+      },
+      mule: {
+        name: 'Drop-karta (vositachi)',
+        text: "Karta boshqa jinoyat mablag'ini o'tkazish uchun vositachi sifatida ishlatilgan."
+      },
+      courtOrder: {
+        name: 'Sud/tergov qarori',
+        text: 'Sud yoki tergov organi qarori asosida hisob bo\'yicha cheklov qo\'yilgan.'
+      },
+      other: {
+        name: 'Boshqa',
+        text: 'Yuqoridagilarga kirmagan holat — tafsiloti fabulada batafsil yoziladi.'
+      }
+    }
+  },
+
   stub: {
     heading: "Bu ekran keyingi bosqichda yig'iladi",
     detail: {

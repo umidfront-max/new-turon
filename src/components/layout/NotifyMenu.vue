@@ -31,7 +31,7 @@ const items = computed(() => state.notifications.map((n) => ({
 function open(item) {
   markRead(item.id)
   toggleNotify(false)
-  if (item.appId) router.push({ path: '/ariza', query: { id: item.appId } })
+  if (item.appId) router.push({ path: '/application', query: { id: item.appId } })
 }
 
 function readAll() {

@@ -48,7 +48,8 @@ const ICONS = {
   volume: '<path d="M5 9.6h3L12 6.2v11.6L8 14.4H5z" stroke-linejoin="round"/><path d="M15.4 9.6a3.6 3.6 0 0 1 0 4.8" stroke-linecap="round"/>',
   bookmark: '<path d="M7 4h10v16.2l-5-3.6-5 3.6z" stroke-linejoin="round"/>',
   phone: '<path d="M7.2 4h2.9l1.5 3.9-2 1.5a11.3 11.3 0 0 0 5 5l1.5-2 3.9 1.5v2.9a2 2 0 0 1-2.2 2A15.2 15.2 0 0 1 5.2 6.2 2 2 0 0 1 7.2 4z" stroke-linejoin="round"/>',
-  pin: '<path d="M12 20.8s6.6-5.4 6.6-10.4a6.6 6.6 0 1 0-13.2 0c0 5 6.6 10.4 6.6 10.4z" stroke-linejoin="round"/><circle cx="12" cy="10.1" r="2.5"/>'
+  pin: '<path d="M12 20.8s6.6-5.4 6.6-10.4a6.6 6.6 0 1 0-13.2 0c0 5 6.6 10.4 6.6 10.4z" stroke-linejoin="round"/><circle cx="12" cy="10.1" r="2.5"/>',
+  mic: '<rect x="9.2" y="3" width="5.6" height="10.6" rx="2.8"/><path d="M5.8 11.6a6.2 6.2 0 0 0 12.4 0" stroke-linecap="round"/><path d="M12 17.8V21" stroke-linecap="round"/>'
 }
 
 const props = defineProps({

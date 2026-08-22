@@ -35,7 +35,10 @@ src/
 │  └─ ru.js               Русский
 ├─ data/
 │  ├─ applications.js     statuslar, arizalar, KPI, filtrlar, qoralamalar (i18n kalitlari)
-│  ├─ detail.js           ariza tafsiloti: rekvizit/tranzaksiya hisobi
+│  ├─ queues.js           navbat: manzil bo'lagi <-> kalit <-> status
+│  ├─ detail.js           ariza tafsiloti: rekvizit, almashinuv, qadamlar, daraxt
+│  ├─ form.js             forma tanlovlari, maskalar va tekshiruvlar
+│  ├─ reasons.js          bloklash sabablari ma'lumotnomasi
 │  └─ notifications.js    bildirishnomalar lentasi
 ├─ stores/
 │  └─ useUi.js            mavzu, til, rol, sidebar, bildirishnoma, toast, tasdiqlash
@@ -48,24 +51,54 @@ src/
 │  └─ applications/       KpiCards · QueueTabs · FilterPanel
 │                         ApplicationsTable · TablePagination
 └─ views/
-   ├─ ApplicationsView.vue       Arizalar ro'yxati (to'liq)
+   ├─ ApplicationsView.vue       Arizalar ro'yxati va navbatlar (to'liq)
    ├─ ApplicationDetailView.vue  Ariza tafsiloti (to'liq)
+   ├─ NewApplicationView.vue     Yangi murojaat formasi (to'liq)
    ├─ DraftsView.vue             Qoralamalar (to'liq)
+   ├─ ReasonsView.vue            Bloklash sabablari (to'liq)
    └─ StubView.vue               hali yig'ilmagan ekranlar uchun
 ```
 
 ## Yo'nalishlar
 
+Manzillar inglizcha, interfeys matni esa i18n orqali tarjima qilinadi.
+
 | Yo'l | Ekran | Holati |
 | --- | --- | --- |
 | `/` | Barcha arizalar | to'liq |
-| `/qoralamalar` | Qoralamalar | to'liq |
-| `/ariza?id=...` | Ariza tafsiloti | to'liq (Murojaat tabi) |
-| `/yangi` | Yangi murojaat | keyingi bosqich |
-| `/rahbar` | Rahbar paneli | keyingi bosqich |
+| `/queue/:queue` | Navbat bo'yicha ro'yxat | to'liq |
+| `/application?id=...&tab=...` | Ariza tafsiloti | to'liq (Murojaat, Bank amaliyotlari, Ish jarayoni) |
+| `/application/new` | Yangi murojaat formasi | to'liq |
+| `/drafts` | Qoralamalar | to'liq |
+| `/reasons` | Bloklash sabablari | to'liq |
+| `/dashboard` | Rahbar paneli | keyingi bosqich |
 
-`/rahbar` faqat "Rahbar" roli tanlanganda menyuda ko'rinadi — rolni yuqori
+Navbat bo'lagi (`:queue`): `new`, `in-bank`, `returned`, `blocked`,
+`autopayment`, `cancelled`, `completed` — yon menyudagi har bir band va
+jadval ustidagi tablar shu manzillarga o'tadi, KPI kartalari ham shunday.
+
+`/dashboard` faqat "Rahbar" roli tanlanganda menyuda ko'rinadi — rolni yuqori
 o'ng burchakdagi profil menyusidan almashtiring.
+
+## Yangi murojaat formasi
+
+`/application/new` — ikki ustunli forma, asl dizayndagidek:
+
+* **Ariza ma'lumotlari** — ariza/material raqami, sodir etish usuli va manbasi
+  (i18n ro'yxatlaridan), fabula maydoni + to'rtta savol yorlig'i (bosilganda
+  matnga qo'shiladi) va «Ovozli yozib olish» tugmasi;
+* **Arizachi** — F.I.Sh. (avtomatik lotin katta harflar), telefon
+  (`+998 90 123 45 67` maskasi), hudud, manzil;
+* **Karta / hisob raqam** — 16 yoki 20 raqamli maska, raqam bo'yicha to'lov
+  tizimi aniqlanadi (Humo / UzCard / Visa / Mastercard), summa va tranzaksiya
+  vaqti maskalari, qo'shilgan rekvizitlar ro'yxati va jami summa.
+
+Har bir blokning «Tekshirish» tugmasi majburiy maydonlarni tekshiradi va
+sarlavhaga yashil belgi qo'yadi. «Bloklashga yuborish» barcha majburiy maydon
+to'lgunicha va kamida bitta rekvizit qo'shilgunicha o'chiq turadi; bosilganda
+tasdiqlash oynasi chiqadi. Qoralama taymeri sarlavhada ko'rinadi.
+Forma ma'lumoti hozircha backendga yuborilmaydi — tasdiqdan keyin ro'yxatga
+qaytariladi.
 
 ## Tillar (i18n)
 
@@ -143,6 +176,13 @@ ulashish va brauzer «orqaga» tugmasi ishlaydi.
 Lenta, qadamlar va daraxt bitta manbadan — `src/data/detail.js` dagi status
 bo'yicha yig'iladi, sanalar ariza vaqtidan siljitib hisoblanadi. Ovozli fabula
 pleyeri namuna — haqiqiy audio fayl ulanmagan.
+
+## Bloklash sabablari
+
+`/reasons` — 12 ta sabab: kod (`CB-01`…), nomi va izohi, bank javobi uchun
+reglament muddati va shu sabab bo'yicha arizalar soni. Sarlavhadagi qidiruv
+kod, nom va izoh bo'yicha filtrlaydi. Ma'lumot manbai —
+`src/data/reasons.js`, matnlar `reasons.items.*` da.
 
 ## Ma'lumotlar
 
