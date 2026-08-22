@@ -5,12 +5,17 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
 import { detailFor } from '@/data/detail'
+import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { toast } = useUi()
+const { byId } = useApplications()
+
+// manzilda id bo'lmasa yoki topilmasa — alohida holat ko'rsatamiz
+const found = computed(() => byId(route.query.id))
 
 const TABS = [
   { key: 'complaint', icon: 'doc' },
@@ -39,7 +44,7 @@ function pickTab(key) {
 watch(() => route.query.tab, (next) => {
   tab.value = TABS.some((x) => x.key === next) ? next : 'complaint'
 })
-const data = computed(() => detailFor(route.query.id))
+const data = computed(() => detailFor(found.value || route.query.id))
 const row = computed(() => data.value.row)
 
 /* ---------- rekvizitlar ochilishi ---------- */
@@ -121,7 +126,19 @@ function exportXlsx() {
 </script>
 
 <template>
-  <div class="screen">
+  <div v-if="!found" class="screen">
+    <section class="card-surface soon">
+      <span class="soon-icon"><AppIcon name="search" :size="26" /></span>
+      <div class="not-found-title">{{ $t('detail.notFound') }}</div>
+      <p class="soon-text">{{ $t('detail.notFoundText') }}</p>
+      <button type="button" class="btn-light back-btn" @click="close">
+        <AppIcon name="back" :size="16" />
+        {{ $t('common.backToList') }}
+      </button>
+    </section>
+  </div>
+
+  <div v-else class="screen">
     <!-- ---------- amal satri ---------- -->
     <div class="bar card-surface">
       <span class="bar-label">{{ $t('detail.label') }}</span>
@@ -1392,6 +1409,17 @@ function exportXlsx() {
   margin: 0;
   font-size: 15px;
   color: var(--c66748c);
+}
+
+.not-found-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--c16233d);
+  margin-bottom: 6px;
+}
+
+.back-btn {
+  margin-top: 16px;
 }
 
 /* ---------- responsive ---------- */

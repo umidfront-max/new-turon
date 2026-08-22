@@ -1,4 +1,4 @@
-// Navbatlar: manzil bo'lagi <-> navbat kaliti <-> status ro'yxati
+// Navbatlar: manzil bo'lagi <-> navbat kaliti <-> filtr
 export const QUEUE_STATUS = {
   new: ['new'],
   pending: ['pending'],
@@ -17,7 +17,8 @@ export const QUEUE_SLUG = {
   blocked: 'blocked',
   autopayment: 'autopayment',
   cancelled: 'cancelled',
-  completed: 'done'
+  completed: 'done',
+  overdue: 'overdue'
 }
 
 const KEY_SLUG = Object.fromEntries(Object.entries(QUEUE_SLUG).map(([slug, key]) => [key, slug]))
@@ -28,4 +29,11 @@ export function queueFromSlug(slug) {
 
 export function queuePath(key) {
   return KEY_SLUG[key] ? `/queue/${KEY_SLUG[key]}` : '/'
+}
+
+/** Navbat bo'yicha tekshiruv: barchasi, status yoki muddati o'tganlar */
+export function queueFilter(key) {
+  if (key === 'overdue') return (a) => !!a.overdue
+  const allowed = QUEUE_STATUS[key]
+  return allowed ? (a) => allowed.includes(a.status) : () => true
 }

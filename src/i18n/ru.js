@@ -19,7 +19,12 @@ export default {
     continue: 'Продолжить'
   },
 
-  modules: { complaint: 'Обращение', cardblock: 'CardBlock', short: 'CB' },
+  modules: {
+    complaint: 'Обращение',
+    cardblock: 'CardBlock',
+    short: 'CB',
+    soon: 'Модуль «Обращение» подключается на следующем этапе'
+  },
 
   nav: {
     dashboard: 'Панель руководителя',
@@ -121,6 +126,10 @@ export default {
     emptyTitle: 'Новых уведомлений нет',
     emptyText: 'Здесь появятся изменения статуса заявок.',
     viewAll: 'Показать все',
+    pageTitle: 'Уведомления',
+    pageNote: 'Последние события — свежие сверху',
+    unreadOnly: 'Только непрочитанные',
+    open: 'Открыть заявку',
     items: {
       bankRejected: {
         title: 'Банк вернул заявку',
@@ -157,6 +166,8 @@ export default {
     filters: 'Фильтры',
     export: 'Экспорт · XLSX',
     exportToast: 'Готовится экспорт · XLSX',
+    exportDone: 'Скачано: {file}',
+    exportEmpty: 'Нет заявок для экспорта',
     filtersCleared: 'Фильтры очищены',
     filtersApplied: 'Применено фильтров: {n}',
     emptyTitle: 'В этой очереди нет заявок',
@@ -178,6 +189,8 @@ export default {
     phCard: 'Карта или банк',
     phAmount: 'от – до',
     phStatus: 'Статус:',
+    from: 'от',
+    to: 'до',
     phDate: 'Выберите',
     noMaterial: 'номер материала отсутствует'
   },
@@ -185,6 +198,7 @@ export default {
   pager: {
     perPage: 'по {n} на странице',
     jump: 'Перейти на страницу',
+    range: '{from}–{to}',
     total: 'Всего: {n}'
   },
 
@@ -198,7 +212,8 @@ export default {
     blocked: 'Заблокированные',
     autopayment: 'Автоплатёж',
     cancelled: 'Отменённые',
-    done: 'Завершённые'
+    done: 'Завершённые',
+    overdue: 'Просроченные'
   },
 
   kpi: {
@@ -466,6 +481,12 @@ export default {
     }
   },
 
+  notFound: {
+    title: 'Страница не найдена',
+    text: 'Запрошенный адрес не существует или был перемещён.',
+    back: 'На главную'
+  },
+
   login: {
     brand: 'TURON',
     org: 'МВД · Департамент по борьбе с киберпреступностью',
@@ -523,6 +544,8 @@ export default {
     cancelTitle: 'Отменить заявку?',
     cancelText: 'Все введённые данные будут удалены без возможности восстановления.',
     cancelled: 'Заявка отменена',
+    draftLoaded: 'Черновик загружен — продолжайте',
+    addedToList: 'Заявка добавлена в список',
     app: {
       title: 'Данные заявки',
       id: 'Номер заявки',

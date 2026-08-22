@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -8,43 +8,80 @@ import QueueTabs from '@/components/applications/QueueTabs.vue'
 import FilterPanel from '@/components/applications/FilterPanel.vue'
 import ApplicationsTable from '@/components/applications/ApplicationsTable.vue'
 import TablePagination from '@/components/applications/TablePagination.vue'
-import { APPLICATIONS } from '@/data/applications'
-import { QUEUE_STATUS, queueFromSlug, queuePath } from '@/data/queues'
+import { queueFromSlug, queuePath } from '@/data/queues'
+import { useApplications } from '@/stores/useApplications'
+import { filterApplications, pageSlice, EMPTY_COLS } from '@/utils/table'
+import { exportApplications } from '@/utils/export'
 import { useUi } from '@/stores/useUi'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
 const { toast } = useUi()
+const { items, counts, duplicateCards } = useApplications()
 
 const filterOpen = ref(false)
 const page = ref(1)
+const perPage = ref(10)
 
-// Navbat manzildan olinadi: / -> barchasi, /queue/<slug> -> filtrlangan
+// ustun qidiruvlari (jadval sarlavhasidagi qator)
+const cols = ref({ ...EMPTY_COLS })
+
+// filtr panelidan qo'llangan tanlovlar: { guruh: [qiymat, ...] }
+const picked = ref({})
+
 const queue = computed(() => queueFromSlug(route.params.queue))
 
-const rows = computed(() => {
-  const allowed = QUEUE_STATUS[queue.value]
-  const list = allowed ? APPLICATIONS.filter((a) => allowed.includes(a.status)) : APPLICATIONS
-  return list.map((a, i) => ({ ...a, n: i + 1 }))
-})
+// navbat yoki filtr o'zgarsa — birinchi sahifaga
+watch([queue, cols, picked, perPage], () => { page.value = 1 }, { deep: true })
+
+const filtered = computed(() => filterApplications(items.value, {
+  queue: queue.value,
+  picked: picked.value,
+  cols: cols.value,
+  dups: duplicateCards.value,
+  labels: {
+    flow: (a) => (a.flow === '102' ? '102' : t('flow.duty')),
+    method: (a) => t(`methods.${a.method}`)
+  }
+}))
+
+const total = computed(() => filtered.value.length)
+
+const rows = computed(() => pageSlice(filtered.value, page.value, perPage.value))
+
+const activeFilters = computed(() =>
+  Object.values(picked.value).reduce((n, list) => n + list.length, 0)
+  + Object.values(cols.value).filter((v) => String(v).trim()).length)
 
 function openApplication(row) {
   router.push({ path: '/application', query: { id: row.id } })
 }
 
 function pickQueue(key) {
-  page.value = 1
   router.push(queuePath(key))
 }
 
-function exportXlsx() {
-  toast(t('applications.exportToast'))
+function onFilters(groups) {
+  picked.value = Object.fromEntries(groups.map((g) => [g.key, g.values]))
+  filterOpen.value = false
+  toast(groups.length ? t('applications.filtersApplied', { n: activeFilters.value }) : t('applications.filtersCleared'))
 }
 
-function onFilters(picked) {
-  filterOpen.value = false
-  toast(t('applications.filtersApplied', { n: picked.length }))
+function clearFilters() {
+  picked.value = {}
+  cols.value = { ...EMPTY_COLS }
+  toast(t('applications.filtersCleared'))
+}
+
+async function exportXlsx() {
+  if (!filtered.value.length) {
+    toast(t('applications.exportEmpty'), 'warn')
+    return
+  }
+  toast(t('applications.exportToast'))
+  const name = await exportApplications(filtered.value, t)
+  toast(t('applications.exportDone', { file: name }))
 }
 </script>
 
@@ -58,10 +95,21 @@ function onFilters(picked) {
       <header class="card-head dark-bar">
         <AppIcon name="list" :size="19" />
         <span class="card-title">{{ $t('applications.title') }}</span>
+        <span class="card-count mono">{{ total }}</span>
         <div class="spacer" />
+        <button
+          v-if="activeFilters"
+          type="button"
+          class="head-btn"
+          @click="clearFilters"
+        >
+          <AppIcon name="close" :size="15" />
+          <span>{{ $t('common.clear') }}</span>
+        </button>
         <button type="button" class="head-btn" :class="{ on: filterOpen }" @click="filterOpen = !filterOpen">
           <AppIcon name="filter" :size="16" />
           <span>{{ $t('applications.filters') }}</span>
+          <span v-if="activeFilters" class="head-badge mono">{{ activeFilters }}</span>
         </button>
         <button type="button" class="head-btn" @click="exportXlsx">
           <AppIcon name="download" :size="16" />
@@ -72,12 +120,13 @@ function onFilters(picked) {
       <Transition name="collapse">
         <FilterPanel
           v-if="filterOpen"
-          @clear="toast($t('applications.filtersCleared'))"
+          :selected="picked"
+          @clear="clearFilters"
           @apply="onFilters"
         />
       </Transition>
 
-      <ApplicationsTable :rows="rows" @open="openApplication" />
+      <ApplicationsTable v-model:filters="cols" :rows="rows" @open="openApplication" />
 
       <div v-if="!rows.length" class="empty">
         <span class="empty-icon"><AppIcon name="doc" :size="27" /></span>
@@ -85,7 +134,12 @@ function onFilters(picked) {
         <div class="empty-text">{{ $t('applications.emptyText') }}</div>
       </div>
 
-      <TablePagination v-model="page" :total="128" />
+      <TablePagination
+        v-if="total"
+        v-model="page"
+        v-model:per-page="perPage"
+        :total="total"
+      />
     </section>
   </div>
 </template>

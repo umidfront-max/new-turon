@@ -4,6 +4,8 @@ import i18n, { t } from '@/i18n'
 import { queueFromSlug } from '@/data/queues'
 import { useAuth } from '@/stores/useAuth'
 import LoginView from '@/views/LoginView.vue'
+import NotificationsView from '@/views/NotificationsView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 import ApplicationsView from '@/views/ApplicationsView.vue'
 import ApplicationDetailView from '@/views/ApplicationDetailView.vue'
 import NewApplicationView from '@/views/NewApplicationView.vue'
@@ -50,6 +52,12 @@ const routes = [
     meta: { titleKey: 'drafts.title' }
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    component: NotificationsView,
+    meta: { titleKey: 'notify.pageTitle' }
+  },
+  {
     path: '/reasons',
     name: 'reasons',
     component: ReasonsView,
@@ -66,7 +74,12 @@ const routes = [
     },
     meta: { titleKey: 'stub.dashboard.title' }
   },
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: NotFoundView,
+    meta: { titleKey: 'notFound.title' }
+  }
 ]
 
 const router = createRouter({

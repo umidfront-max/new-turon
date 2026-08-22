@@ -1,5 +1,8 @@
 <script setup>
 import { QUEUES } from '@/data/applications'
+import { useApplications } from '@/stores/useApplications'
+
+const { counts } = useApplications()
 
 defineProps({
   modelValue: { type: String, default: 'all' }
@@ -12,15 +15,15 @@ defineEmits(['update:modelValue'])
   <div class="queues thin-scroll">
     <button
       v-for="(q, i) in QUEUES"
-      :key="q.key"
+      :key="q"
       type="button"
       class="queue"
-      :class="{ on: q.key === modelValue }"
+      :class="{ on: q === modelValue }"
       :style="{ animationDelay: `${i * 35}ms` }"
-      @click="$emit('update:modelValue', q.key)"
+      @click="$emit('update:modelValue', q)"
     >
-      <span>{{ $t(`queues.${q.key}`) }}</span>
-      <span class="q-count mono">{{ q.count }}</span>
+      <span>{{ $t(`queues.${q}`) }}</span>
+      <span class="q-count mono">{{ counts[q] || 0 }}</span>
     </button>
   </div>
 </template>

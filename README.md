@@ -17,7 +17,13 @@ Boshqa buyruqlar:
 ```bash
 npm run build    # dist/ ga yig'ish
 npm run preview  # yig'ilgan versiyani ko'rish
+npm test         # jadval mantiqi + barcha sahifalarni chizib tekshirish
 ```
+
+`npm test` ikki bosqichdan iborat: `scripts/table-test.mjs` filtr, sahifalash va
+sanoqlarni tekshiradi, `scripts/render-check.mjs` esa barcha sahifani uch tilda,
+ikki rolda SSR orqali chizib, yo'qolgan tarjima kaliti va render xatolarini
+qidiradi.
 
 Node.js 18+ talab qilinadi.
 
@@ -43,7 +49,11 @@ src/
 │  └─ notifications.js    bildirishnomalar lentasi
 ├─ stores/
 │  ├─ useUi.js            mavzu, til, rol, sidebar, bildirishnoma, toast, tasdiqlash
-│  └─ useAuth.js          sessiya: kirish, chiqish, saqlash
+│  ├─ useAuth.js          sessiya: kirish, chiqish, saqlash
+│  └─ useApplications.js  arizalar va qoralamalar ro'yxati, sanoqlar, qo'shish
+├─ utils/
+│  ├─ table.js            filtrlash, sahifalash (alohida tekshiriladi)
+│  └─ export.js           XLSX eksport (kutubxona lazy yuklanadi)
 ├─ router/
 │  └─ index.js            5 ta yo'nalish
 ├─ components/
@@ -54,6 +64,8 @@ src/
 │                         ApplicationsTable · TablePagination
 └─ views/
    ├─ LoginView.vue              Tizimga kirish (to'liq)
+   ├─ NotificationsView.vue      Bildirishnomalar (to'liq)
+   ├─ NotFoundView.vue           404
    ├─ ApplicationsView.vue       Arizalar ro'yxati va navbatlar (to'liq)
    ├─ ApplicationDetailView.vue  Ariza tafsiloti (to'liq)
    ├─ NewApplicationView.vue     Yangi murojaat formasi (to'liq)
@@ -75,6 +87,7 @@ Manzillar inglizcha, interfeys matni esa i18n orqali tarjima qilinadi.
 | `/application/new` | Yangi murojaat formasi | to'liq |
 | `/drafts` | Qoralamalar | to'liq |
 | `/reasons` | Bloklash sabablari | to'liq |
+| `/notifications` | Bildirishnomalar | to'liq |
 | `/dashboard` | Rahbar paneli | keyingi bosqich |
 
 Navbat bo'lagi (`:queue`): `new`, `in-bank`, `returned`, `blocked`,
@@ -214,6 +227,36 @@ pleyeri namuna — haqiqiy audio fayl ulanmagan.
 reglament muddati va shu sabab bo'yicha arizalar soni. Sarlavhadagi qidiruv
 kod, nom va izoh bo'yicha filtrlaydi. Ma'lumot manbai —
 `src/data/reasons.js`, matnlar `reasons.items.*` da.
+
+## Jadval: filtr, qidiruv va sahifalash
+
+Ro'yxat endi haqiqiy ishlaydi — hammasi `src/utils/table.js` dagi sof
+funksiyalarda, komponentlar faqat ularni chaqiradi:
+
+* **navbat** — manzildan (`/queue/blocked`), `overdue` ham navbat sifatida;
+* **filtr paneli** — 8 guruh (status, bank, usul, manba, hudud, summa oralig'i,
+  takroriylik, SLA); har bir qiymat yonidagi son ro'yxatdan hisoblanadi,
+  0 ta bo'lgan qiymat xiralashadi;
+* **ustun qidiruvi** — jadval sarlavhasidagi qator: ariza/material raqami,
+  oqim, F.I.Sh. yoki usul, karta yoki bank, summa `dan–gacha`, status tanlovi
+  va sana (native date input); o'ngdagi ✕ hammasini tozalaydi;
+* **sahifalash** — haqiqiy kesish, 10/20/50 tanlovi, `1 … 4 5 6 … 7` ko'rinishi,
+  `1–10` oralig'i va jami; filtr natijasi kamayganda sahifa avtomatik
+  to'g'rilanadi.
+
+Takroriylik va SLA maydonlari ma'lumotda saqlanmaydi — bir xil karta bir necha
+arizada uchrashi va `overdue` bayrog'idan hisoblanadi.
+
+Namuna ro'yxat 64 ta arizadan iborat: 9 tasi asl dizayndan, qolgani
+`src/data/applications.js` dagi generator orqali indeksdan hosil qilinadi
+(tasodifiy son yo'q — har safar bir xil). Shu sababli yon menyu, KPI va
+navbat tablaridagi sonlar jadvaldagi haqiqiy holat bilan mos.
+
+## Eksport
+
+«Eksport · XLSX» filtrlangan ro'yxatni haqiqiy `.xlsx` fayl qilib yuklab beradi
+(`cardblock-YYYYMMDD-HHMM.xlsx`). SheetJS faqat shu tugma bosilganda yuklanadi,
+shuning uchun asosiy paketga qo'shilmaydi.
 
 ## Ma'lumotlar
 

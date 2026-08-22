@@ -13,75 +13,123 @@ export const STATUS = {
   done: { fg: 'var(--c0e6a6e)', bg: 'var(--ce5f2f2)', bd: 'var(--cc3e0e0)' }
 }
 
-export const APPLICATIONS = [
-  { n: 1, id: 'M0126290/2026-10011', material: 'KJ-2026-004217', flow: '102', name: "ABDULLAYEV ULUG'BEK SAYDAMATOVICH", method: 'vishing', card: '9860 2703 6925 4910', bank: 'Kapitalbank', amount: '12 500 000', cur: 'UZS', status: 'pending', time: '04.08.2026 09:12' },
-  { n: 2, id: 'M0126291/2026-10012', material: null, flow: 'duty', name: 'MALABOEV DILSHOD SOKINOVICH', method: 'phishing', card: '8600 3329 8653 5924', bank: 'Ipoteka bank', amount: '4 780 000', cur: 'UZS', status: 'new', time: '04.08.2026 08:41' },
-  { n: 3, id: 'M0126284/2026-10008', material: 'KJ-2026-004201', flow: '102', name: 'TUROBIDINOVA MALOHAT LEODINOVNA', method: 'apk', card: '5614 6818 8572 6806', bank: 'Hamkorbank', amount: '51 300 000', cur: 'UZS', status: 'error', time: '03.08.2026 19:26', overdue: true },
-  { n: 4, id: 'M0126279/2026-10004', material: 'KJ-2026-004188', flow: '102', name: 'MAMATOV AVZXON BAXODIROVICH', method: 'fakeShop', card: '9860 0120 1189 7377', bank: 'SQB', amount: '2 150 000', cur: 'UZS', status: 'blocked', time: '03.08.2026 15:03' },
-  { n: 5, id: 'M0126275/2026-10001', material: 'KJ-2026-004180', flow: 'duty', name: 'IBRAGIMOVA ROHATOY SOBIROVNA', method: 'simSwap', card: '5614 6814 2703 6342', bank: 'Trastbank', amount: '19 400 000', cur: 'UZS', status: 'pending', time: '03.08.2026 12:47' },
-  { n: 6, id: 'M0126270/2026-09996', material: 'KJ-2026-004171', flow: '102', name: 'NISHANOV TIMUR RUSTAMOVICH', method: 'fakeInvest', card: '9860 0103 0720 2941', bank: 'Anorbank', amount: '87 900 000', cur: 'UZS', status: 'blocked', time: '02.08.2026 18:20', overdue: true },
-  { n: 7, id: 'M0126266/2026-09991', material: 'KJ-2026-004166', flow: '102', name: 'XUSNIYOXON XOJIYEVA ANVAROVNA', method: 'fakeSupport', card: '9860 1201 1897 3771', bank: 'Aloqabank', amount: '6 340 000', cur: 'UZS', status: 'autopayment', time: '02.08.2026 14:55' },
-  { n: 8, id: 'M0126261/2026-09985', material: 'KJ-2026-004159', flow: 'duty', name: 'MIRZASHARIPOV SARVARBEK BAXODIR', method: 'phishing', card: '5614 6814 2703 6342', bank: 'Uzum Bank', amount: '14 720 000', cur: 'RUB', status: 'done', time: '01.08.2026 11:38' },
-  { n: 9, id: 'M0126257/2026-09980', material: 'KJ-2026-004150', flow: '102', name: 'BEKNAZAROVA ZUHRA ALISHEROVNA', method: 'other', card: '9860 6067 5458 0490', bank: 'TBC Bank', amount: '1 090 000', cur: 'CRYPTO', status: 'cancelled', time: '01.08.2026 09:04' }
+const BASE_APPLICATIONS = [
+  { n: 1, id: 'M0126290/2026-10011', material: 'KJ-2026-004217', flow: '102', name: "ABDULLAYEV ULUG'BEK SAYDAMATOVICH", method: 'vishing', card: '9860 2703 6925 4910', bank: 'Kapitalbank', amount: '12 500 000', cur: 'UZS', region: 'tashkentCity', status: 'pending', time: '04.08.2026 09:12' },
+  { n: 2, id: 'M0126291/2026-10012', material: null, flow: 'duty', name: 'MALABOEV DILSHOD SOKINOVICH', method: 'phishing', card: '8600 3329 8653 5924', bank: 'Ipoteka bank', amount: '4 780 000', cur: 'UZS', region: 'tashkentRegion', status: 'new', time: '04.08.2026 08:41' },
+  { n: 3, id: 'M0126284/2026-10008', material: 'KJ-2026-004201', flow: '102', name: 'TUROBIDINOVA MALOHAT LEODINOVNA', method: 'apk', card: '5614 6818 8572 6806', bank: 'Hamkorbank', amount: '51 300 000', cur: 'UZS', region: 'andijan', status: 'error', time: '03.08.2026 19:26', overdue: true },
+  { n: 4, id: 'M0126279/2026-10004', material: 'KJ-2026-004188', flow: '102', name: 'MAMATOV AVZXON BAXODIROVICH', method: 'fakeShop', card: '9860 0120 1189 7377', bank: 'SQB', amount: '2 150 000', cur: 'UZS', region: 'samarkand', status: 'blocked', time: '03.08.2026 15:03' },
+  { n: 5, id: 'M0126275/2026-10001', material: 'KJ-2026-004180', flow: 'duty', name: 'IBRAGIMOVA ROHATOY SOBIROVNA', method: 'simSwap', card: '5614 6814 2703 6342', bank: 'Trastbank', amount: '19 400 000', cur: 'UZS', region: 'fergana', status: 'pending', time: '03.08.2026 12:47' },
+  { n: 6, id: 'M0126270/2026-09996', material: 'KJ-2026-004171', flow: '102', name: 'NISHANOV TIMUR RUSTAMOVICH', method: 'fakeInvest', card: '9860 0103 0720 2941', bank: 'Anorbank', amount: '87 900 000', cur: 'UZS', region: 'tashkentCity', status: 'blocked', time: '02.08.2026 18:20', overdue: true },
+  { n: 7, id: 'M0126266/2026-09991', material: 'KJ-2026-004166', flow: '102', name: 'XUSNIYOXON XOJIYEVA ANVAROVNA', method: 'fakeSupport', card: '9860 1201 1897 3771', bank: 'Aloqabank', amount: '6 340 000', cur: 'UZS', region: 'bukhara', status: 'autopayment', time: '02.08.2026 14:55' },
+  { n: 8, id: 'M0126261/2026-09985', material: 'KJ-2026-004159', flow: 'duty', name: 'MIRZASHARIPOV SARVARBEK BAXODIR', method: 'phishing', card: '5614 6814 2703 6342', bank: 'Uzum Bank', amount: '14 720 000', cur: 'RUB', region: 'namangan', status: 'done', time: '01.08.2026 11:38' },
+  { n: 9, id: 'M0126257/2026-09980', material: 'KJ-2026-004150', flow: '102', name: 'BEKNAZAROVA ZUHRA ALISHEROVNA', method: 'other', card: '9860 6067 5458 0490', bank: 'TBC Bank', amount: '1 090 000', cur: 'CRYPTO', region: 'tashkentCity', status: 'cancelled', time: '01.08.2026 09:04' }
 ]
 
+/* ---------------------------------------------------------------
+   Namunani kengaytirish: jadval, filtr va sahifalash haqiqiy
+   ko'rinishda ishlashi uchun ro'yxat qo'shimcha yozuvlar bilan
+   to'ldiriladi. Barcha qiymatlar indeksdan hisoblanadi — har safar
+   bir xil (tasodifiy son ishlatilmaydi).
+---------------------------------------------------------------- */
+const BANKS = ['Kapitalbank', 'Xalq banki', 'Ipoteka bank', 'Trastbank', 'SQB',
+  'Aloqabank', 'Anorbank', 'TBC Bank', 'Uzum Bank', 'Hamkorbank']
+
+const METHODS = ['vishing', 'phishing', 'fakeShop', 'fakeInvest', 'simSwap', 'apk', 'fakeSupport', 'other']
+
+const REGIONS = ['tashkentCity', 'tashkentRegion', 'andijan', 'bukhara', 'fergana', 'jizzakh',
+  'namangan', 'navoi', 'kashkadarya', 'samarkand', 'syrdarya', 'surkhandarya', 'khorezm', 'karakalpakstan']
+
+// statuslar taqsimoti — hayotiy nisbatda
+const STATUS_MIX = ['pending', 'blocked', 'blocked', 'new', 'pending', 'done', 'blocked',
+  'error', 'autopayment', 'cancelled', 'pending', 'blocked', 'new', 'done', 'blocked']
+
+const SURNAMES = ['ABDULLAYEV', 'KARIMOVA', 'TOSHPULATOV', 'YUSUPOVA', 'RAHMONOV', 'ISMOILOVA',
+  'NAZAROV', 'SOBIROVA', 'ERGASHEV', 'MUXAMEDOVA', 'QODIROV', 'SAIDOVA']
+const NAMES = ['AZIZ', 'DILNOZA', 'SARVAR', 'NARGIZA', 'TOHIR', 'MALIKA',
+  'BEHRUZ', 'ZUHRA', 'JAMSHID', 'GULNORA', 'RUSTAM', 'SEVARA']
+const PATRONYMS = ['ANVAROVICH', 'SHUHRAT QIZI', 'BAXODIROVICH', 'OLIMJON QIZI',
+  'RUSTAMOVICH', 'ALISHEROVNA', 'TIMUROVICH', 'SOBIROVNA']
+
+const CARD_PREFIX = ['8600', '9860', '5614', '9860', '8600']
+
+function pad(n, len) {
+  return String(n).padStart(len, '0')
+}
+
+function makeApplication(i) {
+  const seq = 9979 - i * 3               // ariza raqami kamayib boradi
+  const status = STATUS_MIX[i % STATUS_MIX.length]
+  const day = 30 - (i % 28)              // 30.07.2026 dan orqaga
+  const month = day > 0 ? '07' : '06'
+  const date = `${pad(day > 0 ? day : 30 + day, 2)}.${month}.2026`
+  const hour = pad(8 + (i % 11), 2)
+  const minute = pad((i * 7) % 60, 2)
+  const amount = (1 + (i * 37) % 95) * 1000000 + ((i * 13) % 9) * 100000
+
+  return {
+    id: `M0126${pad(240 - i, 3)}/2026-${pad(seq, 5)}`,
+    material: i % 9 === 4 ? null : `KJ-2026-00${pad(4140 - i * 2, 4)}`,
+    flow: i % 3 === 1 ? 'duty' : '102',
+    name: `${SURNAMES[i % SURNAMES.length]} ${NAMES[(i * 3) % NAMES.length]} ${PATRONYMS[i % PATRONYMS.length]}`,
+    method: METHODS[i % METHODS.length],
+    card: `${CARD_PREFIX[i % CARD_PREFIX.length]} ${pad((1200 + i * 7) % 10000, 4)} ${pad((4400 + i * 13) % 10000, 4)} ${pad((3100 + i * 29) % 10000, 4)}`,
+    bank: BANKS[i % BANKS.length],
+    amount: String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ' '),
+    cur: 'UZS',
+    region: REGIONS[i % REGIONS.length],
+    status,
+    time: `${date} ${hour}:${minute}`,
+    ...(status === 'error' || i % 17 === 3 ? { overdue: true } : {})
+  }
+}
+
+const GENERATED = Array.from({ length: 55 }, (_, i) => makeApplication(i))
+
+export const APPLICATIONS = [...BASE_APPLICATIONS, ...GENERATED]
+
 // label/note: t(`kpi.<key>.label`) / t(`kpi.<key>.note`)
+// qiymat useApplications do'konida hisoblanadi
 export const KPI = [
-  { key: 'new', value: '14', tone: 'var(--c23568f)', iconBg: 'var(--ce8eef7)', icon: 'inbox' },
-  { key: 'pending', value: '23', tone: 'var(--c96620a)', iconBg: 'var(--cfdf3e3)', icon: 'clock' },
-  { key: 'blocked', value: '46', tone: 'var(--c1a6e4b)', iconBg: 'var(--ce3f2e9)', icon: 'lock' },
-  { key: 'autopayment', value: '7', tone: 'var(--c5b3fa8)', iconBg: 'var(--cefeafa)', icon: 'refresh' },
-  { key: 'overdue', value: '5', tone: 'var(--ca52220)', iconBg: 'var(--cfceceb)', icon: 'alarm' }
+  { key: 'new', tone: 'var(--c23568f)', iconBg: 'var(--ce8eef7)', icon: 'inbox' },
+  { key: 'pending', tone: 'var(--c96620a)', iconBg: 'var(--cfdf3e3)', icon: 'clock' },
+  { key: 'blocked', tone: 'var(--c1a6e4b)', iconBg: 'var(--ce3f2e9)', icon: 'lock' },
+  { key: 'autopayment', tone: 'var(--c5b3fa8)', iconBg: 'var(--cefeafa)', icon: 'refresh' },
+  { key: 'overdue', tone: 'var(--ca52220)', iconBg: 'var(--cfceceb)', icon: 'alarm' }
 ]
 
 // label: t(`queues.<key>`)
-export const QUEUES = [
-  ['all', 128], ['new', 14], ['pending', 23], ['error', 9],
-  ['blocked', 46], ['autopayment', 7], ['cancelled', 12], ['done', 17]
-].map(([key, count]) => ({ key, count }))
+export const QUEUES = ['all', 'new', 'pending', 'error', 'blocked', 'autopayment', 'cancelled', 'done']
 
-// guruh sarlavhasi: t(`filters.groups.<key>`)
-// qiymat matni: FilterPanel'dagi resolver orqali (i18n prefiksi yoki xom qiymat)
+// guruh sarlavhasi: t(`filters.groups.<key>`), qiymat matni FilterPanel'dagi resolver orqali.
+// Sanoqlar ro'yxatdan hisoblanadi (useApplications.filterCounts).
 export const FILTER_GROUPS = [
   {
-    key: 'status', i18n: 'status', suffix: 'label', checked: ['pending'], values: [
-      ['new', 14], ['pending', 23], ['autopayment', 7], ['blocked', 46],
-      ['error', 9], ['cancelled', 12], ['done', 17]]
+    key: 'status', i18n: 'status', suffix: 'label', checked: [],
+    values: ['new', 'pending', 'autopayment', 'blocked', 'error', 'cancelled', 'done']
   },
   {
-    key: 'bank', raw: true, checked: ['Kapitalbank'], values: [
-      ['Kapitalbank', 21], ['Xalq banki', 13], ['Ipoteka bank', 18], ['Trastbank', 7], ['SQB', 11],
-      ['Aloqabank', 9], ['Anorbank', 14], ['TBC Bank', 8], ['Uzum Bank', 16], ['Hamkorbank', 11]]
+    key: 'bank', raw: true, checked: [],
+    values: ['Kapitalbank', 'Xalq banki', 'Ipoteka bank', 'Trastbank', 'SQB',
+      'Aloqabank', 'Anorbank', 'TBC Bank', 'Uzum Bank', 'Hamkorbank']
   },
   {
-    key: 'method', i18n: 'methods', checked: [], values: [
-      ['vishing', 38], ['phishing', 29], ['fakeShop', 17],
-      ['fakeInvest', 12], ['simSwap', 8], ['apk', 14],
-      ['fakeSupport', 6], ['other', 4]]
+    key: 'method', i18n: 'methods', checked: [],
+    values: ['vishing', 'phishing', 'fakeShop', 'fakeInvest', 'simSwap', 'apk', 'fakeSupport', 'other']
   },
   {
-    key: 'source', i18n: 'sources', checked: ['102'], values: [
-      ['102', 71], ['duty', 24], ['telegram', 12], ['instagram', 6], ['facebook', 3],
-      ['whatsapp', 4], ['call', 2], ['sms', 2], ['web', 2], ['bankApp', 1], ['other', 1]]
+    key: 'source', i18n: 'sources', checked: [],
+    values: ['102', 'duty', 'telegram', 'instagram', 'facebook', 'whatsapp',
+      'call', 'sms', 'web', 'bankApp', 'other']
   },
   {
-    key: 'region', i18n: 'regions', checked: [], values: [
-      ['tashkentCity', 34], ['tashkentRegion', 14], ['andijan', 12], ['bukhara', 7],
-      ['fergana', 11], ['jizzakh', 5], ['namangan', 9], ['navoi', 4], ['kashkadarya', 6],
-      ['samarkand', 10], ['syrdarya', 3], ['surkhandarya', 4], ['khorezm', 5], ['karakalpakstan', 4]]
+    key: 'region', i18n: 'regions', checked: [],
+    values: ['tashkentCity', 'tashkentRegion', 'andijan', 'bukhara', 'fergana', 'jizzakh',
+      'namangan', 'navoi', 'kashkadarya', 'samarkand', 'syrdarya', 'surkhandarya',
+      'khorezm', 'karakalpakstan']
   },
-  {
-    key: 'amount', i18n: 'amounts', checked: [], values: [
-      ['lt5', 41], ['m5_20', 52], ['m20_50', 24], ['gt50', 11]]
-  },
-  {
-    key: 'repeat', i18n: 'repeat', checked: [], values: [
-      ['duplicate', 19], ['clean', 109]]
-  },
-  {
-    key: 'sla', i18n: 'sla', checked: [], values: [
-      ['inTime', 123], ['breached', 5]]
-  }
+  { key: 'amount', i18n: 'amounts', checked: [], values: ['lt5', 'm5_20', 'm20_50', 'gt50'] },
+  { key: 'repeat', i18n: 'repeat', checked: [], values: ['duplicate', 'clean'] },
+  { key: 'sla', i18n: 'sla', checked: [], values: ['inTime', 'breached'] }
 ]
 
 export const DRAFTS = [

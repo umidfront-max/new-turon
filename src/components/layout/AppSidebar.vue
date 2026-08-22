@@ -5,10 +5,17 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import SidebarLink from './SidebarLink.vue'
 import { useUi } from '@/stores/useUi'
+import { useApplications } from '@/stores/useApplications'
+import { BLOCK_REASONS } from '@/data/reasons'
 
 const route = useRoute()
 const { t } = useI18n()
-const { state, isExec, isStaff, toggleSidebar, setMobileNav } = useUi()
+const { state, isExec, isStaff, toggleSidebar, setMobileNav, toast } = useUi()
+const { counts, drafts } = useApplications()
+
+function otherModule() {
+  toast(t('modules.soon'), 'warn')
+}
 
 // mobil rejimda menyu doim to'liq ko'rinadi
 const compact = computed(() => !state.sidebarOpen && !state.mobileNavOpen)
@@ -29,7 +36,7 @@ function go() {
       <!-- modul almashtirgich -->
       <div class="module" :class="{ compact }">
         <template v-if="!compact">
-          <button type="button" class="mod-btn">{{ $t('modules.complaint') }}</button>
+          <button type="button" class="mod-btn" @click="otherModule">{{ $t('modules.complaint') }}</button>
           <button type="button" class="mod-btn on">{{ $t('modules.cardblock') }}</button>
         </template>
         <div v-else class="mod-mini">{{ $t('modules.short') }}</div>
@@ -48,7 +55,7 @@ function go() {
       <SidebarLink
         icon="list"
         :label="$t('nav.all')"
-        :count="128"
+        :count="counts.all"
         to="/"
         :active="isActive('/')"
         :compact="compact"
@@ -67,7 +74,7 @@ function go() {
         <SidebarLink
           icon="docLines"
           :label="$t('nav.drafts')"
-          :count="6"
+          :count="drafts.length"
           to="/drafts"
           :active="isActive('/drafts')"
           :compact="compact"
@@ -83,7 +90,7 @@ function go() {
       <SidebarLink
         icon="inbox"
         :label="$t('nav.newApps')"
-        :count="14"
+        :count="counts.new || 0"
         count-tone="danger"
         to="/queue/new"
         :active="isActive('/queue/new')"
@@ -93,7 +100,7 @@ function go() {
       <SidebarLink
         icon="back"
         :label="$t('nav.returned')"
-        :count="9"
+        :count="counts.error || 0"
         count-tone="danger"
         to="/queue/returned"
         :active="isActive('/queue/returned')"
@@ -107,7 +114,7 @@ function go() {
       <SidebarLink
         icon="bank"
         :label="$t('nav.inBank')"
-        :count="23"
+        :count="counts.pending || 0"
         to="/queue/in-bank"
         :active="isActive('/queue/in-bank')"
         :compact="compact"
@@ -116,7 +123,7 @@ function go() {
       <SidebarLink
         icon="lock"
         :label="$t('nav.blocked')"
-        :count="46"
+        :count="counts.blocked || 0"
         count-tone="success"
         to="/queue/blocked"
         :active="isActive('/queue/blocked')"
@@ -126,7 +133,7 @@ function go() {
       <SidebarLink
         icon="refresh"
         :label="$t('nav.autopayment')"
-        :count="7"
+        :count="counts.autopayment || 0"
         to="/queue/autopayment"
         :active="isActive('/queue/autopayment')"
         :compact="compact"
@@ -139,7 +146,7 @@ function go() {
         <SidebarLink
           icon="book"
           :label="$t('nav.reasons')"
-          :count="12"
+          :count="BLOCK_REASONS.length"
           to="/reasons"
           :active="isActive('/reasons')"
           :compact="compact"

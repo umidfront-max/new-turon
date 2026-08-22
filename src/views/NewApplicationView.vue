@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import {
@@ -9,10 +9,13 @@ import {
   digitsOnly, cardSystem, isValidDateTime
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
+import { useApplications } from '@/stores/useApplications'
 
+const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { ask, toast } = useUi()
+const { draftById, removeDraft, addApplication } = useApplications()
 
 /* ---------- forma holati ---------- */
 const form = reactive({
@@ -46,7 +49,27 @@ const draftTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-onMounted(() => { timer = setInterval(() => { elapsed.value += 1 }, 1000) })
+// qoralamadan davom etish: /application/new?draft=<id>
+const draftId = typeof route.query.draft === 'string' ? route.query.draft : null
+
+function loadDraft() {
+  const d = draftId && draftById(draftId)
+  if (!d) return
+  form.id = d.id && d.id !== '—' ? d.id : ''
+  form.material = d.material && d.material !== '—' ? d.material : ''
+  form.method = ['vishing', 'phishing', 'fakeShop', 'fakeInvest', 'simSwap', 'apk', 'fakeSupport', 'other']
+    .includes(d.method) ? d.method : ''
+  form.fio = d.name && d.name !== '—' ? d.name : ''
+  if (d.card && d.card !== '—') {
+    draft.number = d.card.replace(/\*/g, '0')
+  }
+  toast(t('form.draftLoaded'))
+}
+
+onMounted(() => {
+  timer = setInterval(() => { elapsed.value += 1 }, 1000)
+  loadDraft()
+})
 onBeforeUnmount(() => clearInterval(timer))
 
 /* ---------- maskalar ---------- */
@@ -197,8 +220,20 @@ function submit() {
     text: t('form.askText', { n: requisites.value.length, amount: total.value }),
     ok: t('form.submit'),
     run: () => {
-      toast(t('form.sent'))
-      router.push('/')
+      const first = requisites.value[0]
+      const item = addApplication({
+        material: form.id.trim() || null,          // KJ-raqami jadvalda material ustunida
+        source: form.source,
+        name: form.fio.trim(),
+        method: form.method,
+        card: first.number,
+        bank: first.system,
+        amount: total.value,
+        region: form.region
+      })
+      if (draftId) removeDraft(draftId)
+      toast(t('form.addedToList'))
+      router.push({ path: '/application', query: { id: item.id } })
     }
   })
 }

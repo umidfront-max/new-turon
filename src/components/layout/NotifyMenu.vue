@@ -34,6 +34,11 @@ function open(item) {
   if (item.appId) router.push({ path: '/application', query: { id: item.appId } })
 }
 
+function openAll() {
+  toggleNotify(false)
+  router.push('/notifications')
+}
+
 function readAll() {
   if (!unread.value) return
   markAllRead()
@@ -80,7 +85,7 @@ function readAll() {
       </div>
     </div>
 
-    <button type="button" class="notify-foot" @click="toggleNotify(false)">
+    <button type="button" class="notify-foot" @click="openAll">
       {{ $t('notify.viewAll') }}
       <AppIcon name="chevronRight" :size="15" :width="1.8" />
     </button>

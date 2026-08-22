@@ -19,7 +19,12 @@ export default {
     continue: 'Davom etish'
   },
 
-  modules: { complaint: 'Murojaat', cardblock: 'CardBlock', short: 'CB' },
+  modules: {
+    complaint: 'Murojaat',
+    cardblock: 'CardBlock',
+    short: 'CB',
+    soon: "Murojaat moduli keyingi bosqichda ulanadi"
+  },
 
   nav: {
     dashboard: 'Rahbar paneli',
@@ -121,6 +126,10 @@ export default {
     emptyTitle: "Yangi bildirishnoma yo'q",
     emptyText: "Ariza holati o'zgarganda shu yerda ko'rinadi.",
     viewAll: "Barchasini ko'rish",
+    pageTitle: 'Bildirishnomalar',
+    pageNote: "Oxirgi hodisalar — eng yangisi tepada",
+    unreadOnly: "Faqat o'qilmagan",
+    open: 'Arizani ochish',
     items: {
       bankRejected: {
         title: 'Bank arizani qaytardi',
@@ -157,6 +166,8 @@ export default {
     filters: 'Filtrlar',
     export: 'Eksport · XLSX',
     exportToast: 'Eksport tayyorlanmoqda · XLSX',
+    exportDone: 'Yuklab olindi: {file}',
+    exportEmpty: "Eksport uchun ariza yo'q",
     filtersCleared: 'Filtrlar tozalandi',
     filtersApplied: '{n} ta filtr qo‘llandi',
     emptyTitle: "Bu navbatda ariza yo'q",
@@ -178,6 +189,8 @@ export default {
     phCard: 'Karta yoki bank',
     phAmount: 'dan – gacha',
     phStatus: 'Holati:',
+    from: 'dan',
+    to: 'gacha',
     phDate: 'Tanlang',
     noMaterial: "material raqami yo'q"
   },
@@ -185,6 +198,7 @@ export default {
   pager: {
     perPage: '{n} ta/sahifa',
     jump: "Sahifaga o'tish",
+    range: '{from}–{to}',
     total: 'Jami: {n} ta'
   },
 
@@ -198,7 +212,8 @@ export default {
     blocked: 'Bloklangan',
     autopayment: "Avto to'lov",
     cancelled: 'Bekor qilingan',
-    done: 'Yakunlangan'
+    done: 'Yakunlangan',
+    overdue: "Muddati o'tgan"
   },
 
   kpi: {
@@ -466,6 +481,12 @@ export default {
     }
   },
 
+  notFound: {
+    title: 'Sahifa topilmadi',
+    text: "So'ralgan manzil mavjud emas yoki ko'chirilgan.",
+    back: 'Bosh sahifaga qaytish'
+  },
+
   login: {
     brand: 'TURON',
     org: 'IIV · Kiberjinoyatlarga qarshi kurashish departamenti',
@@ -523,6 +544,8 @@ export default {
     cancelTitle: 'Arizani bekor qilasizmi?',
     cancelText: "Kiritilgan barcha ma'lumotlar o'chiriladi va tiklab bo'lmaydi.",
     cancelled: 'Ariza bekor qilindi',
+    draftLoaded: "Qoralama yuklandi — davom eting",
+    addedToList: "Ariza ro'yxatga qo'shildi",
     app: {
       title: "Ariza ma'lumotlari",
       id: 'Ariza raqami',

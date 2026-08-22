@@ -1,15 +1,28 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { FILTER_GROUPS } from '@/data/applications'
+import { useApplications } from '@/stores/useApplications'
+
+const props = defineProps({
+  // ota-komponentda qo'llangan tanlovlar: { guruh: [qiymat, ...] }
+  selected: { type: Object, default: () => ({}) }
+})
 
 const { t } = useI18n()
+const { filterCounts } = useApplications()
 const emit = defineEmits(['apply', 'clear'])
 
-// tanlangan qiymatlar: { [guruh kaliti]: Set(qiymat kaliti) }
-const selected = ref(
-  Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, new Set(g.checked)]))
-)
+function fromProps() {
+  return Object.fromEntries(
+    FILTER_GROUPS.map((g) => [g.key, new Set(props.selected[g.key] || g.checked || [])])
+  )
+}
+
+const chosen = ref(fromProps())
+
+// panel qayta ochilganda tashqi holat bilan moslashadi
+watch(() => props.selected, () => { chosen.value = fromProps() }, { deep: true })
 
 // qiymat matni: xom (bank nomlari) yoki i18n kaliti orqali
 function valueLabel(group, value) {
@@ -18,27 +31,26 @@ function valueLabel(group, value) {
   return t(`${group.i18n}.${value}${suffix}`)
 }
 
-function toggle(group, value) {
-  const set = new Set(selected.value[group])
+function count(group, value) {
+  return filterCounts.value[group.key]?.[value] ?? 0
+}
+
+function toggle(groupKey, value) {
+  const set = new Set(chosen.value[groupKey])
   if (set.has(value)) set.delete(value)
   else set.add(value)
-  selected.value = { ...selected.value, [group]: set }
+  chosen.value = { ...chosen.value, [groupKey]: set }
 }
 
 function clearAll() {
-  selected.value = Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, new Set()]))
+  chosen.value = Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, new Set()]))
   emit('clear')
 }
 
 function apply() {
-  const picked = FILTER_GROUPS
-    .filter((g) => selected.value[g.key].size)
-    .map((g) => ({
-      key: g.key,
-      title: t(`filters.groups.${g.key}`),
-      values: [...selected.value[g.key]].map((v) => valueLabel(g, v))
-    }))
-  emit('apply', picked)
+  emit('apply', FILTER_GROUPS
+    .filter((g) => chosen.value[g.key].size)
+    .map((g) => ({ key: g.key, values: [...chosen.value[g.key]] })))
 }
 </script>
 
@@ -48,16 +60,21 @@ function apply() {
       <div v-for="(g, i) in FILTER_GROUPS" :key="g.key" class="fgroup" :style="{ animationDelay: `${i * 30}ms` }">
         <div class="fgroup-head">{{ $t(`filters.groups.${g.key}`) }}</div>
         <div class="fgroup-body thin-scroll">
-          <label v-for="[value, count] in g.values" :key="value" class="fitem">
+          <label
+            v-for="value in g.values"
+            :key="value"
+            class="fitem"
+            :class="{ zero: !count(g, value) }"
+          >
             <input
               type="checkbox"
               class="sr-only"
-              :checked="selected[g.key].has(value)"
+              :checked="chosen[g.key].has(value)"
               @change="toggle(g.key, value)"
             />
-            <span class="box" :class="{ on: selected[g.key].has(value) }" />
+            <span class="box" :class="{ on: chosen[g.key].has(value) }" />
             <span class="truncate">{{ valueLabel(g, value) }}</span>
-            <span class="fcount mono">{{ count }}</span>
+            <span class="fcount mono">{{ count(g, value) }}</span>
           </label>
         </div>
       </div>
@@ -202,5 +219,9 @@ function apply() {
 
 .btn-dark:hover {
   filter: brightness(1.15);
+}
+
+.fitem.zero {
+  opacity: .45;
 }
 </style>

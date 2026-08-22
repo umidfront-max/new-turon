@@ -1,13 +1,26 @@
 <script setup>
+import { computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
-import { flowStyle } from '@/data/applications'
+import { flowStyle, STATUS } from '@/data/applications'
+import { EMPTY_COLS } from '@/utils/table'
 
-defineProps({
-  rows: { type: Array, required: true }
+const props = defineProps({
+  rows: { type: Array, required: true },
+  // ustun qidiruvlari: { id, flow, name, card, min, max, status, date }
+  filters: { type: Object, required: true }
 })
 
-defineEmits(['open'])
+const emit = defineEmits(['open', 'update:filters'])
+
+const STATUS_KEYS = Object.keys(STATUS)
+
+// har bir maydonni alohida yangilaymiz — ota-komponentdagi obyekt almashadi
+function set(field, value) {
+  emit('update:filters', { ...props.filters, [field]: value })
+}
+
+const hasQuery = computed(() => Object.values(props.filters).some((v) => String(v).trim()))
 
 // label/ph — i18n kalitlari (table.*)
 const COLS = [
@@ -38,21 +51,98 @@ const COLS = [
           </th>
         </tr>
         <tr class="filters">
-          <td v-for="c in COLS" :key="c.key">
+          <td />
+
+          <td>
             <input
-              v-if="c.ph"
               class="cell-input"
-              :class="{ right: c.align === 'right' }"
-              :placeholder="$t(`table.${c.ph}`)"
+              :value="filters.id"
+              :placeholder="$t('table.phId')"
+              @input="set('id', $event.target.value)"
             />
-            <div v-else-if="c.control === 'select'" class="cell-fake">
-              <span>{{ $t('table.phStatus') }}</span>
-              <AppIcon name="chevronDown" :size="12" />
-            </div>
-            <div v-else-if="c.control === 'date'" class="cell-fake">
-              <AppIcon name="calendar" :size="15" />
-              <span>{{ $t('table.phDate') }}</span>
-            </div>
+          </td>
+
+          <td>
+            <input
+              class="cell-input"
+              :value="filters.flow"
+              :placeholder="$t('table.phFlow')"
+              @input="set('flow', $event.target.value)"
+            />
+          </td>
+
+          <td>
+            <input
+              class="cell-input"
+              :value="filters.name"
+              :placeholder="$t('table.phApplicant')"
+              @input="set('name', $event.target.value)"
+            />
+          </td>
+
+          <td>
+            <input
+              class="cell-input"
+              :value="filters.card"
+              :placeholder="$t('table.phCard')"
+              @input="set('card', $event.target.value)"
+            />
+          </td>
+
+          <td>
+            <span class="range">
+              <input
+                class="cell-input right"
+                inputmode="numeric"
+                :value="filters.min"
+                :placeholder="$t('table.from')"
+                @input="set('min', $event.target.value)"
+              />
+              <span class="range-dash">–</span>
+              <input
+                class="cell-input right"
+                inputmode="numeric"
+                :value="filters.max"
+                :placeholder="$t('table.to')"
+                @input="set('max', $event.target.value)"
+              />
+            </span>
+          </td>
+
+          <td>
+            <span class="cell-select">
+              <select
+                class="cell-input select"
+                :value="filters.status"
+                @change="set('status', $event.target.value)"
+              >
+                <option value="">{{ $t('table.phStatus') }}</option>
+                <option v-for="k in STATUS_KEYS" :key="k" :value="k">{{ $t(`status.${k}.short`) }}</option>
+              </select>
+              <AppIcon name="chevronDown" :size="12" class="cell-caret" />
+            </span>
+          </td>
+
+          <td>
+            <input
+              type="date"
+              class="cell-input date"
+              :value="filters.date"
+              :title="$t('table.phDate')"
+              @input="set('date', $event.target.value)"
+            />
+          </td>
+
+          <td>
+            <button
+              v-if="hasQuery"
+              type="button"
+              class="cell-clear"
+              :title="$t('common.clear')"
+              @click="emit('update:filters', { ...EMPTY_COLS })"
+            >
+              <AppIcon name="close" :size="14" :width="2" />
+            </button>
           </td>
         </tr>
       </thead>
@@ -123,7 +213,7 @@ const COLS = [
     >
       <div class="mcard-top">
         <span class="app-id mono">{{ r.id }}</span>
-        <StatusPill :status="r.status" size="sm" />
+        <StatusPill :status="r.status" size="sm" short />
       </div>
       <div class="name truncate">{{ r.name }}</div>
       <div class="sub">{{ $t(`methods.${r.method}`) }}</div>
@@ -170,6 +260,59 @@ th {
 
 .filters td {
   padding: 0 13px 12px;
+}
+
+.range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.range-dash {
+  color: var(--ca3adbd);
+  font-size: 12px;
+}
+
+.cell-select {
+  position: relative;
+  display: block;
+}
+
+.cell-input.select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 20px;
+}
+
+.cell-caret {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c8b95a6);
+  pointer-events: none;
+}
+
+.cell-input.date {
+  cursor: pointer;
+}
+
+.cell-clear {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c66748c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.cell-clear:hover {
+  background: var(--cfceceb);
+  color: var(--ca52220);
 }
 
 .cell-input {

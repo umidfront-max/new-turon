@@ -1,9 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
-import { DRAFTS } from '@/data/applications'
+import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
 
 const router = useRouter()
@@ -17,7 +17,13 @@ function ago(a) {
   return t(AGO_KEY[a.unit] || AGO_KEY.day, a.n)
 }
 
-const rows = ref(DRAFTS.map((d, i) => ({ ...d, n: i + 1 })))
+const { drafts, removeDraft } = useApplications()
+
+const rows = computed(() => drafts.value.map((d, i) => ({ ...d, n: i + 1 })))
+
+function resume(draft) {
+  router.push({ path: '/application/new', query: { draft: draft.id } })
+}
 
 function barColor(done) {
   if (done >= 80) return 'var(--c1a6e4b)'
@@ -25,14 +31,14 @@ function barColor(done) {
   return 'var(--ca52220)'
 }
 
-function remove(index) {
+function remove(id) {
   ask({
     title: t('drafts.askTitle'),
     text: t('drafts.askText'),
     ok: t('common.remove'),
     danger: true,
     run: () => {
-      rows.value = rows.value.filter((_, i) => i !== index).map((d, i) => ({ ...d, n: i + 1 }))
+      removeDraft(id)
       toast(t('drafts.removed'))
     }
   })
@@ -112,11 +118,11 @@ function remove(index) {
               </td>
               <td>
                 <div class="actions">
-                  <button type="button" class="btn-dark sm" @click="router.push('/application/new')">
+                  <button type="button" class="btn-dark sm" @click="resume(d)">
                     {{ $t('common.continue') }}
                     <AppIcon name="chevronRight" :size="15" :width="1.7" />
                   </button>
-                  <button type="button" class="icon-btn" :title="$t('common.remove')" @click="remove(i)">
+                  <button type="button" class="icon-btn" :title="$t('common.remove')" @click="remove(d.id)">
                     <AppIcon name="trash" :size="16" />
                   </button>
                 </div>

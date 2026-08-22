@@ -19,7 +19,12 @@ export default {
     continue: 'Давом этиш'
   },
 
-  modules: { complaint: 'Мурожаат', cardblock: 'CardBlock', short: 'CB' },
+  modules: {
+    complaint: 'Мурожаат',
+    cardblock: 'CardBlock',
+    short: 'CB',
+    soon: 'Мурожаат модули кейинги босқичда уланади'
+  },
 
   nav: {
     dashboard: 'Раҳбар панели',
@@ -121,6 +126,10 @@ export default {
     emptyTitle: 'Янги билдиришнома йўқ',
     emptyText: 'Ариза ҳолати ўзгарганда шу ерда кўринади.',
     viewAll: 'Барчасини кўриш',
+    pageTitle: 'Билдиришномалар',
+    pageNote: 'Охирги ҳодисалар — энг янгиси тепада',
+    unreadOnly: 'Фақат ўқилмаган',
+    open: 'Аризани очиш',
     items: {
       bankRejected: {
         title: 'Банк аризани қайтарди',
@@ -157,6 +166,8 @@ export default {
     filters: 'Филтрлар',
     export: 'Экспорт · XLSX',
     exportToast: 'Экспорт тайёрланмоқда · XLSX',
+    exportDone: 'Юклаб олинди: {file}',
+    exportEmpty: 'Экспорт учун ариза йўқ',
     filtersCleared: 'Филтрлар тозаланди',
     filtersApplied: '{n} та филтр қўлланди',
     emptyTitle: 'Бу навбатда ариза йўқ',
@@ -178,6 +189,8 @@ export default {
     phCard: 'Карта ёки банк',
     phAmount: 'дан – гача',
     phStatus: 'Ҳолати:',
+    from: 'дан',
+    to: 'гача',
     phDate: 'Танланг',
     noMaterial: 'материал рақами йўқ'
   },
@@ -185,6 +198,7 @@ export default {
   pager: {
     perPage: '{n} та/саҳифа',
     jump: 'Саҳифага ўтиш',
+    range: '{from}–{to}',
     total: 'Жами: {n} та'
   },
 
@@ -198,7 +212,8 @@ export default {
     blocked: 'Блокланган',
     autopayment: 'Авто тўлов',
     cancelled: 'Бекор қилинган',
-    done: 'Якунланган'
+    done: 'Якунланган',
+    overdue: 'Муддати ўтган'
   },
 
   kpi: {
@@ -466,6 +481,12 @@ export default {
     }
   },
 
+  notFound: {
+    title: 'Саҳифа топилмади',
+    text: 'Сўралган манзил мавжуд эмас ёки кўчирилган.',
+    back: 'Бош саҳифага қайтиш'
+  },
+
   login: {
     brand: 'TURON',
     org: 'ИИВ · Кибержиноятларга қарши курашиш департаменти',
@@ -523,6 +544,8 @@ export default {
     cancelTitle: 'Аризани бекор қиласизми?',
     cancelText: 'Киритилган барча маълумотлар ўчирилади ва тиклаб бўлмайди.',
     cancelled: 'Ариза бекор қилинди',
+    draftLoaded: 'Қоралама юкланди — давом этинг',
+    addedToList: 'Ариза рўйхатга қўшилди',
     app: {
       title: 'Ариза маълумотлари',
       id: 'Ариза рақами',

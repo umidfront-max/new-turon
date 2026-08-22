@@ -1,6 +1,9 @@
 <script setup>
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { KPI } from '@/data/applications'
+import { useApplications } from '@/stores/useApplications'
+
+const { counts } = useApplications()
 
 defineEmits(['pick'])
 </script>
@@ -21,7 +24,7 @@ defineEmits(['pick'])
       <span class="kpi-body">
         <span class="kpi-label">{{ $t(`kpi.${k.key}.label`) }}</span>
         <span class="kpi-row">
-          <span class="kpi-value mono" :style="{ color: k.tone }">{{ k.value }}</span>
+          <span class="kpi-value mono" :style="{ color: k.tone }">{{ counts[k.key] || 0 }}</span>
           <span class="kpi-note">{{ $t(`kpi.${k.key}.note`) }}</span>
         </span>
       </span>

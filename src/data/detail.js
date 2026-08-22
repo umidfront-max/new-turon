@@ -202,8 +202,11 @@ function buildWorkflow(row, exchange) {
   return chain.reduceRight((child, node) => [{ ...node, children: child }], [])
 }
 
-export function detailFor(id) {
-  const row = APPLICATIONS.find((a) => a.id === id) || APPLICATIONS[0]
+/** @param {object|string} source ariza obyekti yoki uning raqami */
+export function detailFor(source) {
+  const row = (source && typeof source === 'object')
+    ? source
+    : (APPLICATIONS.find((a) => a.id === source) || APPLICATIONS[0])
   const total = parseAmount(row.amount)
 
   // katta summa — ikki rekvizitga, kichigi — bittasiga
