@@ -933,6 +933,28 @@ export default {
     submit: 'Kirish',
     welcome: 'Xush kelibsiz, {name}',
     note: 'Faqat vakolatli xodimlar uchun. Barcha kirishlar qayd etiladi.',
+    eri: {
+      lead: "Kalit faylini tanlang va parolini kiriting. JSHSHIR kiritish shart emas — u kalit ichidagi sertifikatdan olinadi.",
+      pick: 'Kalit faylini tanlang',
+      pickNote: '.pfx yoki .p12 — bosing yoki bu yerga tashlang',
+      password: 'Kalit paroli',
+      passwordPh: 'Kalit parolini kiriting',
+      checking: 'Kalit tekshirilmoqda...',
+      unknownOwner: 'Kalit egasi',
+      errors: {
+        noFile: 'Avval kalit faylini tanlang',
+        noPassword: 'Kalit parolini kiriting',
+        badType: "Faqat .pfx yoki .p12 fayl qabul qilinadi",
+        tooBig: "Fayl juda katta — kalit fayli 512 KB dan oshmasligi kerak",
+        read: "Faylni o'qib bo'lmadi",
+        rejected: "Kalit yoki parol noto'g'ri",
+        expired: 'Sertifikat muddati tugagan',
+        validation: "So'rov ma'lumotlari to'liq emas",
+        network: "Kirish xizmatiga ulanib bo'lmadi. Tarmoqni tekshiring.",
+        timeout: 'Xizmat javob bermadi — qaytadan urinib ko\'ring',
+        server: 'Kirish xizmatida xatolik'
+      }
+    },
     eimzo: {
       connected: 'E-imzo dasturi ulandi',
       expires: 'amal qiladi {date}',

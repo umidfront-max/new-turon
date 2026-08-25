@@ -5,3 +5,4 @@ dist
 
 # dizayn namunasi (2 MB, faqat mahalliy ma'lumot uchun)
 cardBlock*.html
+.env

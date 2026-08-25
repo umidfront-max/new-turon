@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
-import { EIMZO_KEYS } from '@/data/keys'
+import { loginPfx, maskId, EriError } from '@/services/eriLogin'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
 
@@ -34,12 +34,47 @@ const form = reactive({ login: '', password: '', remember: true })
 const showPassword = ref(false)
 const errors = reactive({})
 
-/* ---------- e-imzo ---------- */
-const selectedKey = ref(EIMZO_KEYS[1].id)
-const pin = ref('')
+/* ---------- e-imzo (.pfx + parol) ---------- */
+// Foydalanuvchi JSHSHIR kiritmaydi — u kalit ichidagi sertifikatdan olinadi.
+const pfxFile = ref(null)
+const pfxPass = ref('')
 const showPin = ref(false)
+const dragOver = ref(false)
+const eriError = ref('')
+const fileInput = ref(null)
 
-const activeKey = computed(() => EIMZO_KEYS.find((k) => k.id === selectedKey.value))
+const fileName = computed(() => (pfxFile.value ? pfxFile.value.name : ''))
+const fileSize = computed(() => (pfxFile.value ? `${(pfxFile.value.size / 1024).toFixed(1)} KB` : ''))
+
+function pickFile() {
+  fileInput.value?.click()
+}
+
+function acceptFile(file) {
+  if (!file) return
+  if (!/\.(pfx|p12)$/i.test(file.name)) {
+    eriError.value = t('login.eri.errors.badType')
+    return
+  }
+  pfxFile.value = file
+  eriError.value = ''
+  delete errors.pfx
+}
+
+function onFile(e) {
+  acceptFile(e.target.files?.[0])
+  e.target.value = '' // bir xil faylni qayta tanlash mumkin bo'lsin
+}
+
+function onDrop(e) {
+  dragOver.value = false
+  acceptFile(e.dataTransfer?.files?.[0])
+}
+
+function clearFile() {
+  pfxFile.value = null
+  eriError.value = ''
+}
 
 /* ---------- Face ID ---------- */
 const scanning = ref(false)
@@ -84,20 +119,45 @@ function submitPassword() {
   })
 }
 
-function submitEimzo() {
+async function submitEimzo() {
   if (loading.value) return
-  errors.pin = pin.value.replace(/\D/g, '').length < 4
-  if (errors.pin) {
-    toast(t('login.errors.pin'), 'bad')
+
+  errors.pfx = !pfxFile.value
+  errors.pfxPass = !pfxPass.value
+  if (errors.pfx || errors.pfxPass) {
+    eriError.value = t(errors.pfx ? 'login.eri.errors.noFile' : 'login.eri.errors.noPassword')
     return
   }
-  go({
-    name: activeKey.value.name,
-    role: activeKey.value.role,
-    method: 'eimzo',
-    login: activeKey.value.idMasked,
-    remember: true
-  })
+
+  loading.value = true
+  eriError.value = ''
+
+  try {
+    const result = await loginPfx(pfxFile.value, pfxPass.value)
+    const cert = result.user
+
+    // rol: tashkilot kaliti (STIR) -> navbatchi, shaxsiy kalit -> rahbar
+    const role = cert.tin ? 'staff' : 'exec'
+    const shown = cert.pinfl || cert.tin
+
+    signIn({
+      name: cert.name || t('login.eri.unknownOwner'),
+      role,
+      method: 'eimzo',
+      login: shown ? maskId(shown) : '',
+      remember: true
+    })
+
+    toast(t('login.welcome', { name: cert.name || t('login.eri.unknownOwner') }))
+    router.push(typeof route.query.next === 'string' ? route.query.next : '/')
+  } catch (e) {
+    const key = e instanceof EriError ? e.key : 'server'
+    // serverning o'z xabari bo'lsa — o'shani ko'rsatamiz
+    eriError.value = e instanceof EriError && e.detail ? e.detail : t(`login.eri.errors.${key}`)
+    errors.pfxPass = key === 'rejected'
+  } finally {
+    loading.value = false
+  }
 }
 
 function startScan() {
@@ -106,7 +166,7 @@ function startScan() {
   scanTimer = setTimeout(() => {
     scanning.value = false
     go({
-      name: EIMZO_KEYS[0].name,
+      name: t('profile.staff.name'),
       role: 'staff',
       method: 'faceId',
       login: '',
@@ -119,9 +179,10 @@ function forgot() {
   toast(t('login.forgotToast'), 'warn')
 }
 
-function onPin(e) {
-  pin.value = e.target.value.replace(/\D/g, '').slice(0, 6)
-  delete errors.pin
+function onPass(e) {
+  pfxPass.value = e.target.value
+  eriError.value = ''
+  delete errors.pfxPass
 }
 </script>
 
@@ -240,39 +301,56 @@ function onPin(e) {
 
           <!-- ---------- e-imzo ---------- -->
           <form class="form" :class="{ hidden: tab !== 'eimzo' }" :inert="tab !== 'eimzo'" @submit.prevent="submitEimzo">
-            <div class="status">
-              <span class="status-dot" />
-              {{ $t('login.eimzo.connected') }}
-            </div>
+            <p class="eri-lead">{{ $t('login.eri.lead') }}</p>
 
+            <input
+              ref="fileInput"
+              type="file"
+              accept=".pfx,.p12"
+              class="file-input"
+              @change="onFile"
+            />
+
+            <!-- kalit fayli tanlanmagan -->
             <button
-              v-for="k in EIMZO_KEYS"
-              :key="k.id"
+              v-if="!pfxFile"
               type="button"
-              class="key"
-              :class="{ on: selectedKey === k.id }"
-              @click="selectedKey = k.id"
+              class="drop"
+              :class="{ over: dragOver, bad: errors.pfx }"
+              @click="pickFile"
+              @dragover.prevent="dragOver = true"
+              @dragleave="dragOver = false"
+              @drop.prevent="onDrop"
             >
-              <span class="key-ico"><AppIcon :name="k.icon" :size="18" /></span>
-              <span class="key-text">
-                <span class="key-name">{{ k.name }}</span>
-                <span class="key-meta mono">
-                  {{ k.idLabel }} {{ k.idMasked }} · {{ $t('login.eimzo.expires', { date: k.expires }) }}
-                </span>
+              <span class="drop-ico"><AppIcon name="key" :size="24" /></span>
+              <span class="drop-text">
+                <span class="drop-title">{{ $t('login.eri.pick') }}</span>
+                <span class="drop-note">{{ $t('login.eri.pickNote') }}</span>
               </span>
-              <span class="radio"><span class="radio-dot" /></span>
             </button>
 
+            <!-- tanlangan kalit -->
+            <div v-else class="key on">
+              <span class="key-ico"><AppIcon name="key" :size="18" /></span>
+              <span class="key-text">
+                <span class="key-name truncate">{{ fileName }}</span>
+                <span class="key-meta mono">{{ fileSize }}</span>
+              </span>
+              <button type="button" class="key-clear" :title="$t('common.remove')" @click="clearFile">
+                <AppIcon name="close" :size="17" />
+              </button>
+            </div>
+
             <label class="field">
-              <span class="label">{{ $t('login.eimzo.pin') }}</span>
-              <span class="input-wrap" :class="{ bad: errors.pin }">
+              <span class="label">{{ $t('login.eri.password') }}</span>
+              <span class="input-wrap" :class="{ bad: errors.pfxPass }">
                 <input
-                  :value="pin"
-                  class="input bare mono"
+                  :value="pfxPass"
+                  class="input bare"
                   :type="showPin ? 'text' : 'password'"
-                  inputmode="numeric"
-                  :placeholder="$t('login.eimzo.pinPh')"
-                  @input="onPin"
+                  autocomplete="off"
+                  :placeholder="$t('login.eri.passwordPh')"
+                  @input="onPass"
                 />
                 <button
                   type="button"
@@ -285,9 +363,14 @@ function onPin(e) {
               </span>
             </label>
 
+            <p v-if="eriError" class="eri-error">
+              <AppIcon name="warn" :size="16" />
+              {{ eriError }}
+            </p>
+
             <button type="submit" class="submit" :disabled="loading">
               <span v-if="loading" class="spinner" />
-              {{ loading ? $t('login.signingIn') : $t('login.submit') }}
+              {{ loading ? $t('login.eri.checking') : $t('login.submit') }}
               <AppIcon v-if="!loading" name="arrowRight" :size="16" />
             </button>
           </form>
@@ -757,6 +840,98 @@ function onPin(e) {
   border-radius: 50%;
   background: #1fc24a;
   animation: pulseDot 2.6s infinite;
+}
+
+.eri-lead {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #66748c;
+}
+
+.file-input {
+  display: none;
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 14px;
+  border: 1.6px dashed #c8cdd6;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .18s ease, background .18s ease;
+}
+
+.drop:hover,
+.drop.over {
+  border-color: #16233d;
+  background: #f1f4f9;
+}
+
+.drop.bad {
+  border-color: #d9483f;
+}
+
+.drop-ico {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8eef7;
+  color: #23568f;
+}
+
+.drop-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.drop-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #16233d;
+}
+
+.drop-note {
+  font-size: 12.5px;
+  color: #8b95a6;
+}
+
+.key-clear {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #98a3b6;
+  cursor: pointer;
+  display: flex;
+}
+
+.key-clear:hover {
+  color: #d9483f;
+}
+
+.eri-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #f2cfcd;
+  background: #fceceb;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #a52220;
 }
 
 .key {
