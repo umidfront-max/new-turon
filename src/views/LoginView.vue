@@ -6,6 +6,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
 import { loginPfx, maskId, EriError } from '@/services/eriLogin'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
+import { canRemember, restoreFolder, regrantFolder, chooseFolder } from '@/services/keyStore'
 import { listKeys as isignerKeys } from '@/services/isigner'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
@@ -104,9 +105,11 @@ async function loadSignerKeys() {
   }
 }
 
-// tab ochilganda ro'yxat yuklanadi
+// tab ochilganda ro'yxat va saqlangan papka yuklanadi
 watch(tab, (next) => {
-  if (next === 'eimzo' && signerState.value !== 'ready') loadSignerKeys()
+  if (next !== 'eimzo') return
+  if (signerState.value !== 'ready') loadSignerKeys()
+  if (!files.value.length) restoreKeys()
 }, { immediate: true })
 
 function onSignerPick() {
@@ -117,7 +120,17 @@ function onSignerPick() {
 
 /* ---------- kalit fayllari ---------- */
 
+// papka ruxsati eslab qolinadimi (https yoki localhost kerak)
+const rememberSupported = canRemember()
+
 let awaitingFiles = null
+
+// sahifa ochilganda saqlangan papkani jimgina o'qishga urinamiz
+async function restoreKeys() {
+  if (!rememberSupported) return
+  const found = await restoreFolder()
+  if (found?.length) addFiles(found)
+}
 
 function pickFile() {
   fileInput.value?.click()
@@ -127,8 +140,22 @@ function pickFolder() {
   folderInput.value?.click()
 }
 
-// papkani so'rab, foydalanuvchi tanlashini kutamiz
-function requestFolder() {
+/**
+ * Kalit fayllariga ruxsat oladi. Eng yengil yo'ldan boshlanadi:
+ * saqlangan papkaga qayta ruxsat -> papka tanlash -> eski uslubdagi input.
+ */
+async function requestFolder() {
+  if (rememberSupported) {
+    // avval saqlangan papka: brauzer faqat «Ruxsat berish» so'raydi
+    const again = await regrantFolder()
+    if (again?.length) return addFiles(again)
+
+    const picked = await chooseFolder()
+    if (picked?.length) return addFiles(picked)
+    if (picked) return false
+  }
+
+  // zaxira: <input webkitdirectory>
   return new Promise((resolve) => {
     awaitingFiles = resolve
     if (folderSupported) pickFolder()
