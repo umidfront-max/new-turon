@@ -101,7 +101,7 @@ function onDutyClick() {
       :aria-label="$t('nav.openMenu')"
       @click="setMobileNav(true)"
     >
-      <AppIcon name="menu" :size="22" :width="1.7" />
+      <AppIcon name="menu" :size="22" />
     </button>
 
     <div class="brand">
@@ -125,7 +125,7 @@ function onDutyClick() {
         :style="{ background: dutyButton.bg, borderColor: dutyButton.ring }"
         @click="onDutyClick"
       >
-        <AppIcon :name="dutyButton.icon" :size="15" :width="1.7" />
+        <AppIcon :name="dutyButton.icon" :size="15" />
         <span>{{ $t(`duty.btn.${dutyButton.key}`) }}</span>
       </button>
     </div>

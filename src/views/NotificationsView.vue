@@ -64,13 +64,13 @@ function readAll() {
       <label class="switch">
         <input v-model="onlyUnread" type="checkbox" class="sr-only" />
         <span class="box" :class="{ on: onlyUnread }">
-          <AppIcon v-if="onlyUnread" name="check" :size="13" :width="2.6" />
+          <AppIcon v-if="onlyUnread" name="check" :size="13" />
         </span>
         {{ $t('notify.unreadOnly') }}
       </label>
 
       <button type="button" class="btn-light" :disabled="!unread" @click="readAll">
-        <AppIcon name="check" :size="16" :width="2" />
+        <AppIcon name="check" :size="16" />
         {{ $t('notify.markAll') }}
       </button>
     </div>
@@ -93,7 +93,7 @@ function readAll() {
         @click="open(n)"
       >
         <span class="n-icon" :style="{ background: n.tone.bg, color: n.tone.fg }">
-          <AppIcon :name="n.icon" :size="18" :width="1.8" />
+          <AppIcon :name="n.icon" :size="18" />
         </span>
         <span class="n-body">
           <span class="n-title">{{ n.title }}</span>
@@ -102,7 +102,7 @@ function readAll() {
         <span class="n-when mono">{{ n.when }}</span>
         <span v-if="n.appId" class="n-open">
           {{ $t('notify.open') }}
-          <AppIcon name="chevronRight" :size="14" :width="1.9" />
+          <AppIcon name="chevronRight" :size="14" />
         </span>
         <span v-if="!n.read" class="n-dot" />
       </button>

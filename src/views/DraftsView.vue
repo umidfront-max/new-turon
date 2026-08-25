@@ -61,7 +61,7 @@ function remove(id) {
       </div>
       <div class="spacer" />
       <button type="button" class="btn-dark" @click="router.push('/application/new')">
-        <AppIcon name="plus" :size="16" :width="1.8" />
+        <AppIcon name="plus" :size="16" />
         {{ $t('drafts.newApplication') }}
       </button>
     </div>
@@ -120,7 +120,7 @@ function remove(id) {
                 <div class="actions">
                   <button type="button" class="btn-dark sm" @click="resume(d)">
                     {{ $t('common.continue') }}
-                    <AppIcon name="chevronRight" :size="15" :width="1.7" />
+                    <AppIcon name="chevronRight" :size="15" />
                   </button>
                   <button type="button" class="icon-btn" :title="$t('common.remove')" @click="remove(d.id)">
                     <AppIcon name="trash" :size="16" />

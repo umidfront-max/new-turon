@@ -22,7 +22,7 @@ const icon = computed(() => ({
   <Transition name="fade">
     <div v-if="ui.toast" class="toast" role="status">
       <span class="toast-dot" :style="{ background: dot }">
-        <AppIcon :name="icon" :size="16" :width="2.4" />
+        <AppIcon :name="icon" :size="16" />
       </span>
       <span class="toast-msg">{{ ui.toast.msg }}</span>
       <button type="button" class="toast-close" @click="closeToast">{{ $t('common.close') }}</button>

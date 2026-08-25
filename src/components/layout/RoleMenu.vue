@@ -98,14 +98,14 @@ function exit() {
           :title="o.tip || o.label"
           @click="g.pick(o.v)"
         >
-          <AppIcon v-if="o.icon" :name="o.icon" :size="14" :width="1.6" />
+          <AppIcon v-if="o.icon" :name="o.icon" :size="14" />
           {{ o.label }}
         </button>
       </div>
     </div>
 
     <button type="button" class="exit" @click="exit">
-      <AppIcon name="logout" :size="17" :width="1.6" />
+      <AppIcon name="logout" :size="17" />
       {{ $t('role.logout') }}
     </button>
   </div>

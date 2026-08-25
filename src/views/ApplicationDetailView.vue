@@ -161,7 +161,7 @@ function exportXlsx() {
 
       <button v-if="data.action" type="button" class="btn-dark" @click="onAction">
         {{ $t(`detail.${data.action}`) }}
-        <AppIcon name="chevronRight" :size="15" :width="1.8" />
+        <AppIcon name="chevronRight" :size="15" />
       </button>
 
       <button type="button" class="icon-btn" :title="$t('detail.close')" @click="close">
@@ -308,7 +308,7 @@ function exportXlsx() {
         <div class="block-body">
           <div v-for="(r, i) in data.requisites" :key="r.card" class="req">
             <div class="req-head">
-              <span class="req-icon"><AppIcon name="cardFilled" :size="24" /></span>
+              <span class="req-icon"><AppIcon name="card" :size="26" /></span>
               <div class="req-main">
                 <div class="req-card mono">{{ r.card }}</div>
                 <div class="req-meta">
@@ -326,7 +326,6 @@ function exportXlsx() {
                 <AppIcon
                   name="chevronUp"
                   :size="18"
-                  :width="1.7"
                   class="req-caret"
                   :class="{ down: !opened.has(i) }"
                 />
@@ -374,7 +373,7 @@ function exportXlsx() {
         >
           <div class="event-head">
             <span class="event-icon" :style="{ background: TONE[e.tone].bg, color: TONE[e.tone].fg }">
-              <AppIcon :name="e.icon" :size="17" :width="1.8" />
+              <AppIcon :name="e.icon" :size="17" />
             </span>
 
             <span v-if="e.route" class="event-time mono">
@@ -426,7 +425,7 @@ function exportXlsx() {
 
             <div class="note">
               <div class="note-head">
-                <AppIcon name="warn" :size="15" :width="1.9" />
+                <AppIcon name="warn" :size="15" />
                 {{ $t('detail.bank.noteTitle') }}
               </div>
               <p class="note-text">{{ $t('detail.bank.note', e.note) }}</p>
@@ -1001,8 +1000,8 @@ function exportXlsx() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
+  background: var(--ce8eef7);
+  color: var(--c23568f);
 }
 
 .req-main {

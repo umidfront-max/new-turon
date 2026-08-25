@@ -133,7 +133,7 @@ const goList = () => router.push('/')
         <div style="display:flex; align-items:center; gap:12px; margin-top:6px; flex-wrap:wrap">
           <span style="font-size:20px; font-weight:600; color:var(--c16233d)">{{ $t('stub.dashboard.title') }}</span>
           <span style="display:inline-flex; align-items:center; gap:8px; padding:4px 11px; border-radius:20px; background:var(--ce8eef7); border:1px solid var(--kc9d9ec); font-size:13.5px; font-weight:600; color:var(--c23568f)">
-            <AppIcon name="pin" :size="14" :width="1.6" />
+            <AppIcon name="pin" :size="14" />
             {{ $t('regions.tashkentCity') }}
           </span>
           <span style="font-size:13.5px; color:var(--c8b95a6)">{{ stamp }}</span>
@@ -146,7 +146,7 @@ const goList = () => router.push('/')
         v-if="exported"
         style="display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 13px; border-radius:9px; background:var(--cf2f9f5); border:1px solid var(--cc8e2d4); font-size:13.5px; color:var(--c1a6e4b)"
       >
-        <AppIcon name="check" :size="15" :width="1.7" />
+        <AppIcon name="check" :size="15" />
         {{ $t('dashboard.exportReady', { file: `hisobot_${period}.xlsx` }) }}
       </span>
 
@@ -221,14 +221,14 @@ const goList = () => router.push('/')
               :disabled="!rows.length"
               @click="autoOpen = true"
             >
-              <AppIcon name="bolt" :size="16" :width="1.7" />
+              <AppIcon name="bolt" :size="16" />
               {{ $t('dashboard.unassigned.auto') }}
             </button>
           </div>
 
           <div v-if="!rows.length" style="padding:46px 18px 52px; display:flex; flex-direction:column; align-items:center; gap:11px">
             <span style="width:52px; height:52px; border-radius:13px; background:var(--ce6f2ec); border:1px solid var(--cc8e2d4); display:flex; align-items:center; justify-content:center">
-              <AppIcon name="check" :size="24" :width="1.6" style="color:var(--c1a6e4b)" />
+              <AppIcon name="check" :size="24" style="color:var(--c1a6e4b)" />
             </span>
             <div style="font-size:15px; font-weight:600; color:var(--c3d4d66)">{{ $t('dashboard.unassigned.empty') }}</div>
           </div>
@@ -267,7 +267,7 @@ const goList = () => router.push('/')
             <div style="display:flex; align-items:center; justify-content:flex-end; padding:12px 16px; flex:0 0 auto; border-top:1px solid var(--cf2f5f9)">
               <span style="display:inline-flex; align-items:center; gap:7px; font-size:14px; font-weight:600; color:var(--c23568f); cursor:pointer" @click="goList">
                 {{ $t('dashboard.unassigned.viewAll') }}
-                <AppIcon name="chevronRight" :size="15" :width="1.8" />
+                <AppIcon name="chevronRight" :size="15" />
               </span>
             </div>
           </div>
@@ -322,7 +322,7 @@ const goList = () => router.push('/')
             <div style="flex:1" />
             <span style="display:inline-flex; align-items:center; gap:7px; font-size:14px; font-weight:600; color:var(--c23568f); cursor:pointer" @click="goList">
               {{ $t('dashboard.team.link') }}
-              <AppIcon name="chevronRight" :size="15" :width="1.8" />
+              <AppIcon name="chevronRight" :size="15" />
             </span>
           </div>
           <div style="flex:1; padding:6px 18px 14px; display:flex; flex-direction:column; justify-content:space-between">
@@ -386,7 +386,7 @@ const goList = () => router.push('/')
         <div style="width:640px; max-width:100%; max-height:88vh; display:flex; flex-direction:column; background:var(--s-card); border-radius:14px; box-shadow:0 14px 34px rgba(5,12,28,.16); overflow:hidden">
           <div style="flex:0 0 auto; display:flex; gap:14px; padding:20px 22px 18px; border-bottom:1px solid var(--ce5e7eb)">
             <span style="width:44px; height:44px; flex:0 0 44px; border-radius:12px; background:var(--ceef2ff); display:flex; align-items:center; justify-content:center">
-              <AppIcon name="users" :size="22" :width="1.7" style="color:var(--c2d5be3)" />
+              <AppIcon name="users" :size="22" style="color:var(--c2d5be3)" />
             </span>
             <div style="min-width:0">
               <div style="font-size:19px; font-weight:700; color:var(--t-ink)">{{ $t('dashboard.auto.title') }}</div>

@@ -162,12 +162,12 @@ function go() {
       :title="collapseTip"
       @click="toggleSidebar"
     >
-      <AppIcon :name="state.sidebarOpen ? 'collapseLeft' : 'collapseRight'" :size="18" :width="1.9" />
+      <AppIcon :name="state.sidebarOpen ? 'collapseLeft' : 'collapseRight'" :size="18" />
     </button>
 
     <!-- mobil yopish -->
     <button type="button" class="close-mobile" :aria-label="$t('nav.closeMenu')" @click="setMobileNav(false)">
-      <AppIcon name="close" :size="20" :width="1.8" />
+      <AppIcon name="close" :size="20" />
     </button>
   </aside>
 </template>

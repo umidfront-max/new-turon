@@ -223,7 +223,7 @@ function onPin(e) {
               <label class="check">
                 <input v-model="form.remember" type="checkbox" class="sr-only" />
                 <span class="box" :class="{ on: form.remember }">
-                  <AppIcon v-if="form.remember" name="check" :size="13" :width="2.6" />
+                  <AppIcon v-if="form.remember" name="check" :size="13" />
                 </span>
                 {{ $t('login.remember') }}
               </label>
@@ -234,7 +234,7 @@ function onPin(e) {
             <button type="submit" class="submit" :disabled="loading">
               <span v-if="loading" class="spinner" />
               {{ loading ? $t('login.signingIn') : $t('login.submit') }}
-              <AppIcon v-if="!loading" name="arrowRight" :size="16" :width="1.9" />
+              <AppIcon v-if="!loading" name="arrowRight" :size="16" />
             </button>
           </form>
 
@@ -288,14 +288,14 @@ function onPin(e) {
             <button type="submit" class="submit" :disabled="loading">
               <span v-if="loading" class="spinner" />
               {{ loading ? $t('login.signingIn') : $t('login.submit') }}
-              <AppIcon v-if="!loading" name="arrowRight" :size="16" :width="1.9" />
+              <AppIcon v-if="!loading" name="arrowRight" :size="16" />
             </button>
           </form>
 
           <!-- ---------- Face ID ---------- -->
           <div class="form face" :class="{ hidden: tab !== 'faceId' }" :inert="tab !== 'faceId'">
             <div class="face-circle" :class="{ scanning }">
-              <AppIcon name="face" :size="52" :width="1.3" />
+              <AppIcon name="face" :size="52" />
               <span v-if="scanning" class="scan-line" />
             </div>
 

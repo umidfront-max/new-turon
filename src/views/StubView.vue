@@ -36,7 +36,7 @@ const router = useRouter()
 
       <ul v-if="blocks.length" class="blocks">
         <li v-for="b in blocks" :key="b">
-          <AppIcon name="check" :size="15" :width="2" />
+          <AppIcon name="check" :size="15" />
           {{ $t(`stub.${screen}.blocks.${b}`) }}
         </li>
       </ul>

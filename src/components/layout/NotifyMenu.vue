@@ -68,7 +68,7 @@ function readAll() {
         @click="open(n)"
       >
         <span class="n-icon" :style="{ background: n.tone.bg, color: n.tone.fg }">
-          <AppIcon :name="n.icon" :size="17" :width="1.8" />
+          <AppIcon :name="n.icon" :size="17" />
         </span>
         <span class="n-body">
           <span class="n-title">{{ n.title }}</span>
@@ -87,7 +87,7 @@ function readAll() {
 
     <button type="button" class="notify-foot" @click="openAll">
       {{ $t('notify.viewAll') }}
-      <AppIcon name="chevronRight" :size="15" :width="1.8" />
+      <AppIcon name="chevronRight" :size="15" />
     </button>
   </div>
 </template>

@@ -141,7 +141,7 @@ const COLS = [
               :title="$t('common.clear')"
               @click="emit('update:filters', { ...EMPTY_COLS })"
             >
-              <AppIcon name="close" :size="14" :width="2" />
+              <AppIcon name="close" :size="14" />
             </button>
           </td>
         </tr>

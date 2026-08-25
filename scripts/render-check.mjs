@@ -63,8 +63,8 @@ for (const lang of ['uz', 'uzk', 'ru']) {
       n += 1
       const body = html.slice(html.indexOf('class="content'))
       if (/\{\{|undefined|NaN|\[object/.test(body)) problems.push(`${lang}/${role} ${path}: shubhali matn`)
-      // bo'sh ikonka = topilmagan svg fayl
-      const emptyIcons = (body.match(/<svg[^>]*><\/svg>/g) || []).length
+      // bo'sh ikonka = jadvalda topilmagan glif
+      const emptyIcons = (body.match(/material-symbols-rounded[^>]*><\/span>/g) || []).length
       if (emptyIcons) problems.push(`${lang}/${role} ${path}: ${emptyIcons} ta bo'sh ikonka`)
       const small = path.includes('yoq') || path.includes('sahifa-yoq')
       if (body.length < (small ? 600 : 1200)) problems.push(`${lang}/${role} ${path}: juda qisqa (${body.length})`)

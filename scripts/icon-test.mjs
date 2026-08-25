@@ -1,38 +1,37 @@
-// play/pause markazda ekanini tekshiramiz: chizmaning o'rta nuqtasi 12 bo'lishi kerak
-import { readFileSync, readdirSync } from 'node:fs'
+// Ikonkalar: har bir ishlatilgan nom Material Symbols glifiga bog'langanmi?
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 
-const dir = 'src/assets/icons'
-const bad = []
+const files = []
+;(function walk(dir) {
+  for (const f of readdirSync(dir)) {
+    const p = join(dir, f)
+    if (statSync(p).isDirectory()) walk(p)
+    else if (/\.(vue|js)$/.test(f)) files.push(p)
+  }
+})('src')
 
-function centroidX(path) {
-  const nums = path.match(/-?\d+(\.\d+)?/g).map(Number)
-  const xs = nums.filter((_, i) => i % 2 === 0)
-  return xs.reduce((a, b) => a + b, 0) / xs.length
+const map = readFileSync('src/components/ui/icons.js', 'utf8')
+const known = new Set([...map.matchAll(/^\s{2}([A-Za-z]+):\s*'/gm)].map((m) => m[1]))
+
+const used = new Set()
+for (const f of files) {
+  const src = readFileSync(f, 'utf8')
+  // <AppIcon name="..." /> — :name="..." (dinamik) hisobga olinmaydi
+  for (const m of src.matchAll(/<AppIcon[^>]*(?<!:)name="([A-Za-z]+)"/g)) used.add(m[1])
+  // ma'lumot fayllaridagi { icon: '...' } maydonlari
+  for (const m of src.matchAll(/\bicon:\s*'([A-Za-z]+)'/g)) used.add(m[1])
+  // dinamik tanlov: :name="a ? 'x' : 'y'"
+  for (const m of src.matchAll(/:name="[^"]*'([A-Za-z]+)'[^"]*'([A-Za-z]+)'/g)) {
+    used.add(m[1])
+    used.add(m[2])
+  }
 }
 
-// play: uchburchak markazi
-const play = readFileSync(`${dir}/play.svg`, 'utf8')
-const d = /d="([^"]+)"/.exec(play)[1]
-const c = centroidX(d)
-if (Math.abs(c - 12) > 0.3) bad.push(`play markazi ${c} (12 kutilgan)`)
-if (!/fill="currentColor"/.test(play)) bad.push("play to'ldirilgan emas")
+const missing = [...used].filter((n) => !known.has(n)).sort()
 
-// pause: ikki to'rtburchak o'rtasi
-const pause = readFileSync(`${dir}/pause.svg`, 'utf8')
-const rects = [...pause.matchAll(/x="([\d.]+)"[^>]*width="([\d.]+)"/g)].map((m) => [+m[1], +m[2]])
-const left = Math.min(...rects.map((r) => r[0]))
-const right = Math.max(...rects.map((r) => r[0] + r[1]))
-const mid = (left + right) / 2
-if (Math.abs(mid - 12) > 0.3) bad.push(`pause markazi ${mid} (12 kutilgan)`)
-if (!/fill="currentColor"/.test(pause)) bad.push("pause to'ldirilgan emas")
-
-// barcha ikonkalarda viewBox bormi
-for (const f of readdirSync(dir)) {
-  const raw = readFileSync(`${dir}/${f}`, 'utf8')
-  if (!/viewBox="/.test(raw)) bad.push(`${f}: viewBox yo'q`)
-}
-
-console.log(`ikonka fayllari: ${readdirSync(dir).length}`)
-console.log('play markazi:', c.toFixed(2), '| pause markazi:', mid.toFixed(2))
-console.log(bad.length ? 'XATO:\n' + bad.join('\n') : 'markazlash: muammo topilmadi')
-process.exit(bad.length ? 1 : 0)
+console.log(`ikonka nomlari: jadvalda ${known.size}, kodda uchraydi ${used.size}`)
+console.log(missing.length
+  ? "XATO — jadvalda yo'q: " + missing.join(', ')
+  : 'barcha ikonka nomlari jadvalda bor')
+process.exit(missing.length ? 1 : 0)
