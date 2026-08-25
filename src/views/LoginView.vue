@@ -7,6 +7,7 @@ import { LANGS } from '@/i18n'
 import { loginPfxB64, fileToBase64, maskId, EriError } from '@/services/eriLogin'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
 import { canRemember, restoreFolder, regrantFolder, chooseFolder } from '@/services/keyStore'
+import { logKey, logLogin } from '@/services/keyLog'
 import { listKeys as isignerKeys } from '@/services/isigner'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
@@ -92,7 +93,10 @@ const reading = ref(false)
 
 async function prepareFile(file) {
   pfxB64.value = ''
-  if (!file) return
+  if (!file) {
+    logKey(activeSignerKey.value, null)
+    return
+  }
 
   reading.value = true
   try {
@@ -102,10 +106,18 @@ async function prepareFile(file) {
   } finally {
     reading.value = false
   }
+
+  // tanlangan kalit haqidagi hamma ma'lumot konsolda
+  logKey(activeSignerKey.value, file, pfxB64.value)
 }
 
 // kalit almashsa yoki papka o'qilsa — yangi fayl darhol tayyorlanadi
 watch(pfxFile, (file) => { prepareFile(file) }, { immediate: true })
+
+// fayl hali yo'q bo'lsa ham, tanlangan kalit ma'lumoti chiqsin
+watch(activeSignerKey, (key) => {
+  if (key && !pfxFile.value) logKey(key, null)
+})
 
 const keyReady = computed(() => !!pfxB64.value)
 
@@ -318,6 +330,7 @@ async function submitEimzo() {
 
   try {
     const result = await loginPfxB64(pfxB64.value, pfxPass.value)
+    logLogin(result)
     const cert = result.user
 
     // tanlangan kalit bilan qaytgan sertifikat bir xil odamnikimi
