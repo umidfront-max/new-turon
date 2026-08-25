@@ -177,4 +177,40 @@ export async function loginPfx(file, password) {
   }
 }
 
+/* ---------- ISigner imzosi orqali ---------- */
+
+/** Server tokeni va imzolanadigan challenge. */
+export async function serverToken() {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT)
+
+  let res
+  try {
+    res = await fetch(`${BASE}/token`, { signal: controller.signal })
+  } catch (e) {
+    throw new EriError(e.name === 'AbortError' ? 'timeout' : 'network')
+  } finally {
+    clearTimeout(timer)
+  }
+
+  if (!res.ok) throw new EriError('server', `HTTP ${res.status}`)
+  const data = await res.json()
+  if (!data?.token || !data?.challenge) throw new EriError('server')
+  return data
+}
+
+/**
+ * ISigner yasagan imzoni serverda tekshiradi.
+ * @param {{signature:string, data:string, certificate?:string}} p
+ */
+export async function verifySignature({ signature, data, certificate = '' }) {
+  return post('/verify', {
+    format: 'isigner',
+    certificate,
+    signature,
+    data,
+    data_type: 'text'
+  })
+}
+
 export const ERI_BASE = BASE
