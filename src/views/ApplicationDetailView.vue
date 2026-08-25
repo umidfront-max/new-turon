@@ -6,7 +6,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
 import BlockedRequisites from '@/components/detail/BlockedRequisites.vue'
 import TransactionPanel from '@/components/detail/TransactionPanel.vue'
-import { detailFor } from '@/data/detail'
+import { detailFor, formatAmount } from '@/data/detail'
 import { buildChain, chainStats, chainMatches } from '@/data/chain'
 import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
@@ -52,7 +52,11 @@ const row = computed(() => data.value.row)
 
 /* ---------- rekvizitlar ochilishi ---------- */
 const opened = ref(new Set([0]))
+
+/* ---------- bloklangan rekvizitlar ---------- */
 const blockedOpen = ref(false)
+const blockedTop = computed(() => data.value.blocked.slice(0, 5))
+const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) => s + r.raw, 0)))
 
 function toggleReq(i) {
   const next = new Set(opened.value)
@@ -390,10 +394,6 @@ function exportXlsx() {
               {{ $t('detail.requisites.cards', data.requisites.length) }} ·
               {{ $t('detail.requisites.tx', data.txTotal) }}
             </span>
-            <button type="button" class="req-all" @click="blockedOpen = true">
-              <AppIcon name="lock" :size="15" />
-              {{ $t('blocked.all') }}
-            </button>
             <div class="spacer" />
             <span class="total-value mono">
               {{ data.total }}<span class="dim"> {{ $t('detail.sum') }}</span>
@@ -454,6 +454,52 @@ function exportXlsx() {
                   <span class="mono">{{ r.card }}</span>
                   <span class="req-chip-bank">{{ r.bank }}</span>
                 </span>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="e.body === 'blocked'" class="event-body column">
+            <div class="blk">
+              <div class="blk-head">
+                <span class="blk-title">{{ $t('blocked.title') }}</span>
+                <div class="spacer" />
+                <button type="button" class="blk-excel" @click="toast($t('blocked.exported'))">
+                  <AppIcon name="excel" :size="16" />
+                  Excel
+                </button>
+              </div>
+
+              <div class="blk-grid head">
+                <span>#</span>
+                <span>{{ $t('blocked.colCard') }}</span>
+                <span>{{ $t('blocked.colKind') }}</span>
+                <span>{{ $t('filters.groups.bank') }}</span>
+                <span class="right">{{ $t('table.amount') }}</span>
+                <span>{{ $t('blocked.colCur') }}</span>
+              </div>
+
+              <div v-for="b in blockedTop" :key="b.card" class="blk-grid">
+                <span class="mono dim">{{ b.n }}</span>
+                <span class="mono blk-card">{{ b.card }}</span>
+                <span>
+                  <span class="blk-kind" :class="{ acc: b.account }">
+                    <AppIcon :name="b.account ? 'accountBank' : 'card'" :size="17" />
+                    {{ $t(`blocked.kinds.${b.account ? 'account' : 'card'}`) }}
+                  </span>
+                </span>
+                <span class="truncate blk-bank">{{ b.bank }}</span>
+                <span class="right mono blk-sum">{{ b.sum }}</span>
+                <span><span class="blk-cur mono">{{ b.cur }}</span></span>
+              </div>
+
+              <div class="blk-foot">
+                <button type="button" class="blk-all" @click="blockedOpen = true">
+                  {{ $t('blocked.allCount', data.blocked.length) }}
+                  <AppIcon name="chevronRight" :size="17" />
+                </button>
+                <div class="spacer" />
+                <span class="dim">{{ $t('blocked.shown', blockedTop.length) }}</span>
+                <span class="mono blk-total">{{ blockedShown }} UZS</span>
               </div>
             </div>
           </div>
@@ -729,18 +775,9 @@ function exportXlsx() {
       <p class="soon-text">{{ $t(`detail.soon.${tab}`) }}</p>
     </section>
 
-    <BlockedRequisites
-      v-if="blockedOpen"
-      :requisites="data.requisites"
-      @close="blockedOpen = false"
-    />
+    <BlockedRequisites v-if="blockedOpen" :rows="data.blocked" @close="blockedOpen = false" />
 
-    <TransactionPanel
-      v-if="txNode"
-      :node="txNode"
-      :applicant="data.row.name"
-      @close="txNode = null"
-    />
+    <TransactionPanel v-if="txNode" :node="txNode" @close="txNode = null" />
   </div>
 </template>
 
@@ -802,24 +839,162 @@ function exportXlsx() {
   white-space: nowrap;
 }
 
-.req-all {
+/* ---------- bloklangan rekvizitlar jadvali ---------- */
+.blk {
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.blk-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  background: var(--cf8fafc);
+  border-bottom: 1px solid var(--ce2e8f1);
+}
+
+.blk-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.blk-excel {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   height: 30px;
   padding: 0 11px;
-  margin-left: 12px;
-  border-radius: 8px;
+  border-radius: 7px;
   border: 1px solid var(--ce2e8f1);
   background: var(--s-card);
-  color: var(--c23568f);
+  color: var(--c1a6e4b);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.req-all:hover {
+.blk-excel:hover {
+  border-color: var(--cc3cbd8);
+  background: var(--cf8fafc);
+}
+
+.blk-grid {
+  display: grid;
+  grid-template-columns: 48px minmax(150px, 200px) 108px minmax(120px, 1fr) 140px 78px;
+  align-items: center;
+  border-bottom: 1px solid var(--cf2f5f9);
+}
+
+.blk-grid > span {
+  padding: 11px 12px;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--c3d4d66);
+}
+
+.blk-grid.head > span {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c8b95a6);
+  background: var(--s-card);
+}
+
+.blk-grid .right {
+  text-align: right;
+}
+
+.blk-card {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c1c2b45);
+}
+
+.blk-sum {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c1c2b45);
+}
+
+.blk-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
   background: var(--ce8eef7);
+  border: 1px solid var(--kc9d9ec);
+  font-size: 13px;
+  color: var(--c23568f);
+  white-space: nowrap;
+}
+
+.blk-kind.acc {
+  background: var(--cefeafa);
+  border-color: var(--cd8cff2);
+  color: var(--c5b3fa8);
+}
+
+.blk-cur {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--ce6f2ec);
+  border: 1px solid var(--cc8e2d4);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: .03em;
+  color: var(--c1a6e4b);
+}
+
+.blk-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  background: var(--cf8fafc);
+  flex-wrap: wrap;
+}
+
+.blk-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c23568f);
+  cursor: pointer;
+}
+
+.blk-all:hover {
+  text-decoration: underline;
+}
+
+.blk-total {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c1c2b45);
+}
+
+@media (max-width: 900px) {
+  .blk-grid {
+    grid-template-columns: 40px minmax(140px, 1fr) 104px 120px 70px;
+  }
+
+  .blk-grid > span.blk-bank,
+  .blk-grid.head > span:nth-child(4) {
+    display: none;
+  }
 }
 
 .deadline-dot {

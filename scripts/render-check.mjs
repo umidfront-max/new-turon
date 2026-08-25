@@ -49,6 +49,7 @@ const PATHS = [
   '/', '/queue/new', '/queue/in-bank', '/queue/returned', '/queue/blocked',
   '/queue/autopayment', '/queue/cancelled', '/queue/completed', '/queue/overdue',
   '/application?id=' + encodeURIComponent('M0126284/2026-10008') + '&tab=bank',
+  '/application?id=' + encodeURIComponent('M0126279/2026-10004') + '&tab=bank',
   '/application?id=' + encodeURIComponent('M0126290/2026-10011') + '&tab=workflow',
   '/application?id=' + encodeURIComponent('M0126279/2026-10004') + '&tab=sanctions',
   '/application?id=' + encodeURIComponent('M0126279/2026-10004') + '&tab=transactions',

@@ -52,11 +52,11 @@ for (const lang of ['uz', 'uzk', 'ru']) {
     const data = detailFor(row)
     const chain = buildChain(data)
 
-    await draw(`${lang} blocked ${id}`, Blocked, { requisites: data.requisites })
+    await draw(`${lang} blocked ${id}`, Blocked, { rows: data.blocked })
 
     const n1 = chain.level1[0]
-    await draw(`${lang} tx-l1 ${id}`, TxPanel, { node: n1, applicant: row.name })
-    await draw(`${lang} tx-l3 ${id}`, TxPanel, { node: n1.children[0].children[0], applicant: row.name })
+    await draw(`${lang} tx-l1 ${id}`, TxPanel, { node: n1 })
+    await draw(`${lang} tx-l3 ${id}`, TxPanel, { node: n1.children[0].children[0] })
 
     const dups = items.value.slice(0, 3)
     await draw(`${lang} history ${id}`, History, { card: row.card, rows: dups })
@@ -66,8 +66,9 @@ for (const lang of ['uz', 'uzk', 'ru']) {
 // jami summa haqiqatan hisoblanadimi
 setLang('uz')
 const one = detailFor(items.value[0])
-const html = await draw('summa tekshiruvi', Blocked, { requisites: one.requisites })
-if (!html.includes(one.total)) problems.push('bloklangan rekvizitlar jami summasi arizanikiga teng emas')
+const html = await draw('summa tekshiruvi', Blocked, { rows: one.blocked })
+if (!one.blocked.length) problems.push("bloklangan rekvizitlar bo'sh")
+if (!html.includes(one.blocked[0].card)) problems.push("birinchi rekvizit jadvalda yo'q")
 
 await vite.close()
 console.log(`tekshirildi: ${n} ta oyna (3 til x ${ids.length} ariza)`)

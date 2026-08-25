@@ -76,6 +76,60 @@ function requestId(row) {
   return `REQ-${year}${String(num).slice(-4)}`
 }
 
+/* ---------- bloklangan rekvizitlar ---------- */
+// Ariza rekvizitlari + zanjirdagi bloklangan kartalar. Barchasi barqaror hisoblanadi.
+const BLOCK_BANKS = ['Uzum Bank', 'Kapitalbank', 'Anorbank', 'Aloqabank', 'Trastbank',
+  'Ipoteka bank', 'Hamkorbank', 'Davr bank', 'TBC bank', 'Agrobank']
+
+const BLOCK_CURS = ['UZS', 'UZS', 'UZS', 'UZS', 'UZS', 'RUB', 'UZS', 'USD', 'UZS', 'UZS']
+
+function blockCard(seed, account) {
+  const p = (n, len) => String(n).padStart(len, '0')
+  const head = account ? '2050' : (seed % 2 ? '8600' : '9860')
+  return `${head} ${p((1300 + seed * 53) % 10000, 4)} ${p((4100 + seed * 97) % 10000, 4)} ${p((2600 + seed * 131) % 10000, 4)}`
+}
+
+/**
+ * Bank bloklagan barcha rekvizitlar.
+ * Birinchi qatorlar — arizaning o'z rekvizitlari, qolgani zanjir bo'ylab topilganlari.
+ */
+export function buildBlocked(row, requisites) {
+  const base = requisites.map((r, i) => ({
+    card: r.card,
+    account: false,
+    bank: r.bank,
+    cur: 'UZS',
+    raw: parseAmount(r.sum),
+    tx: r.tx.length,
+    own: true,
+    n: i + 1
+  }))
+
+  // zanjirdan topilgan qo'shimcha rekvizitlar — summasi kamayib boradi
+  const extraCount = 8 + (parseAmount(row.amount) % 7)
+  const seed0 = parseAmount(row.id) % 97
+  let amount = Math.max(900000, Math.round(parseAmount(row.amount) / 12 / 10000) * 10000)
+  const extra = []
+
+  for (let i = 0; i < extraCount; i += 1) {
+    const seed = seed0 + i * 11 + 5
+    const account = i % 5 === 3
+    extra.push({
+      card: blockCard(seed, account),
+      account,
+      bank: BLOCK_BANKS[seed % BLOCK_BANKS.length],
+      cur: BLOCK_CURS[seed % BLOCK_CURS.length],
+      raw: amount,
+      tx: (seed % 4) + 1,
+      own: false,
+      n: base.length + i + 1
+    })
+    amount = Math.max(120000, Math.round(amount * 0.82 / 10000) * 10000)
+  }
+
+  return [...base, ...extra].map((r) => ({ ...r, sum: formatAmount(r.raw) }))
+}
+
 /* ---------- muddat ---------- */
 const CLOSED = ['blocked', 'done', 'autopayment', 'cancelled']
 
@@ -135,7 +189,7 @@ function buildExchange(row, requisites) {
   }
 
   if (row.status === 'blocked') {
-    events.push({ id: 'blk', kind: 'blocked', tone: 'ok', icon: 'lock', time: shift(row.time, 2, '14:05'), attempt: 1 })
+    events.push({ id: 'blk', kind: 'blocked', tone: 'ok', icon: 'lock', time: shift(row.time, 2, '14:05'), attempt: 1, body: 'blocked' })
   }
 
   if (row.status === 'autopayment') {
@@ -144,7 +198,7 @@ function buildExchange(row, requisites) {
 
   if (row.status === 'done') {
     events.push({ id: 'ref', kind: 'refunded', tone: 'ok', icon: 'check', time: shift(row.time, 5, '11:20'), attempt: 1 })
-    events.push({ id: 'blk', kind: 'blocked', tone: 'ok', icon: 'lock', time: shift(row.time, 2, '14:05'), attempt: 1 })
+    events.push({ id: 'blk', kind: 'blocked', tone: 'ok', icon: 'lock', time: shift(row.time, 2, '14:05'), attempt: 1, body: 'blocked' })
   }
 
   if (row.status === 'cancelled') {
@@ -255,6 +309,7 @@ export function detailFor(source) {
     action: { new: 'send', error: 'fix' }[row.status] || null,
     requisites,
     txTotal,
+    blocked: buildBlocked(row, requisites),
     exchange,
     steps: buildSteps(row, exchange, deadline),
     workflow: buildWorkflow(row, exchange),

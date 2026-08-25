@@ -6,6 +6,31 @@ const BANKS = ['Uzum Bank', 'Kapitalbank', 'Anorbank', 'TBC Bank', 'Ipoteka bank
 
 const OPS = ['P2P', 'Terminal', 'Onlayn', 'Bank ilovasi']
 
+// karta egasi ma'lumotlari — barqaror (tasodifiy son ishlatilmaydi)
+const NAMES = [
+  'RASULOV BEKZOD ILHOMOVICH',
+  'YUSUPOVA MADINA ANVAROVNA',
+  'TOSHMATOV JAMSHID BAXTIYOROVICH',
+  "SAIDOVA GULNORA O'TKIROVNA",
+  'NORMATOV SANJAR RUSTAMOVICH',
+  'ERGASHEV DILSHOD FARHODOVICH',
+  'QODIROVA ZILOLA AKMALOVNA'
+]
+
+const APPS_MOBILE = ['Uzum Bank', 'Kapital 24', 'Anor', 'TBC UZ', 'Ipoteka Mobile', 'Hamkor Mobile', 'SQB Mobile']
+
+const BIRTH_PLACES = [
+  'Toshkent shahri',
+  'Samarqand viloyati',
+  'Farg\'ona viloyati',
+  'Andijon viloyati',
+  'Buxoro viloyati',
+  'Namangan viloyati',
+  'Qashqadaryo viloyati'
+]
+
+const OS_LIST = ['Android 14', 'iOS 17.4', 'Android 13', 'HarmonyOS 4']
+
 function pad(n, len) {
   return String(n).padStart(len, '0')
 }
@@ -28,16 +53,41 @@ function shiftDate(base, days, hhmm) {
 }
 
 function node(seed, amount, time, level, children = []) {
+  const card = makeCard(seed)
+  const d = pad((seed * 3) % 28 + 1, 2)
+  const m = pad((seed * 5) % 12 + 1, 2)
+  const y = 1972 + (seed * 7) % 30
+
   return {
     id: `n${level}-${seed}`,
+    txId: `TX-${pad(2026000 + seed * 137 % 900000, 7)}`,
     level,
-    card: makeCard(seed),
-    system: cardSystem(makeCard(seed)),
+    card,
+    system: cardSystem(card),
     amount: formatAmount(amount),
     raw: amount,
     bank: BANKS[seed % BANKS.length],
     op: OPS[seed % OPS.length],
     date: time,
+    // karta egasi (bank javobidan keladigan ma'lumot o'rnida)
+    name: NAMES[seed % NAMES.length],
+    pinfl: `${(seed % 5) + 3} ${pad((seed * 311) % 10000, 4)} ${pad((seed * 137) % 10000, 4)} ${pad((seed * 71) % 100000, 5)}`,
+    passport: `A${String.fromCharCode(65 + seed % 6)} ${pad((seed * 913) % 10000000, 7)}`,
+    birth: `${d}.${m}.${y}`,
+    birthPlace: BIRTH_PLACES[seed % BIRTH_PLACES.length],
+    issued: `${pad((seed * 11) % 28 + 1, 2)}.${pad((seed * 3) % 12 + 1, 2)}.${2015 + seed % 8}`,
+    expires: `${pad((seed * 11) % 28 + 1, 2)}.${pad((seed * 3) % 12 + 1, 2)}.${2025 + seed % 8}`,
+    age: 2026 - y,
+    male: seed % 2 === 0,
+    addr: `${BIRTH_PLACES[seed % BIRTH_PLACES.length]}, ${(seed % 20) + 1}-kvartal, ${(seed % 60) + 1}-uy`,
+    phone: `+998 ${90 + seed % 10} ${pad((seed * 17) % 1000, 3)} ${pad((seed * 29) % 100, 2)} ${pad((seed * 41) % 100, 2)}`,
+    merchant: `M${pad((seed * 4409) % 10000000, 7)}`,
+    dev: `DEV-${pad((seed * 733) % 100000, 5)}`,
+    ip: `91.${seed % 200 + 10}.${(seed * 7) % 250 + 1}.${(seed * 13) % 250 + 1}`,
+    os: OS_LIST[seed % OS_LIST.length],
+    app: APPS_MOBILE[seed % APPS_MOBILE.length],
+    reqId: `REQ-${pad((seed * 8081) % 100000000, 8)}`,
+    key: `K${pad((seed * 613) % 100000, 5)}`,
     children
   }
 }
