@@ -4,4 +4,4 @@ dist
 *.local
 
 # dizayn namunasi (2 MB, faqat mahalliy ma'lumot uchun)
-cardBlock.html
+cardBlock*.html
