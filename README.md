@@ -65,6 +65,8 @@ src/
 │                         ApplicationsTable · TablePagination
 └─ views/
    ├─ LoginView.vue              Tizimga kirish (to'liq)
+   ├─ admin/                     Admin ekranlari (panel, foydalanuvchilar,
+   │                             jurnal, banklar, sozlamalar)
    ├─ DashboardView.vue          Rahbar paneli (to'liq)
    ├─ NotificationsView.vue      Bildirishnomalar (to'liq)
    ├─ NotFoundView.vue           404
@@ -90,6 +92,11 @@ Manzillar inglizcha, interfeys matni esa i18n orqali tarjima qilinadi.
 | `/drafts` | Qoralamalar | to'liq |
 | `/reasons` | Bloklash sabablari | to'liq |
 | `/notifications` | Bildirishnomalar | to'liq |
+| `/admin` | Respublika bo'yicha holat | to'liq |
+| `/admin/users` | Foydalanuvchilar | to'liq |
+| `/admin/logs` | Tizim jurnali | to'liq |
+| `/admin/banks` | Banklar ma'lumotnomasi | to'liq |
+| `/admin/settings` | Tizim sozlamalari (super admin) | keyingi bosqich |
 | `/dashboard` | Rahbar paneli | to'liq |
 
 Navbat bo'lagi (`:queue`): `new`, `in-bank`, `returned`, `blocked`,
@@ -98,6 +105,32 @@ jadval ustidagi tablar shu manzillarga o'tadi, KPI kartalari ham shunday.
 
 `/dashboard` faqat "Rahbar" roli tanlanganda menyuda ko'rinadi — rolni yuqori
 o'ng burchakdagi profil menyusidan almashtiring.
+
+## Rollar
+
+To'rtta rol bor, profil menyusidan almashtiriladi:
+
+| Rol | Ko'radigan ekranlari |
+| --- | --- |
+| Navbatchi / ijrochi | arizalar, qoralamalar, yangi murojaat, sabablar |
+| Rahbar | rahbar paneli + arizalar |
+| Respublika admini | boshqaruv paneli, foydalanuvchilar, jurnal, banklar |
+| Super admin | yuqoridagilar + tizim sozlamalari |
+
+Admin sahifalari `router.beforeEach` da rol bo'yicha himoyalangan: ruxsati
+yo'q rol o'sha manzilni ochsa bosh sahifaga qaytariladi.
+
+## Admin ekranlari
+
+* **Boshqaruv paneli** — 4 ta KPI va hududlar matritsasi: 14 viloyat, ustunlar
+  «Shundan» va «Muddati» guruhlariga birlashtirilgan, viloyat qatori bosilganda
+  tumanlar ochiladi, tuman bosilganda arizalar ro'yxati o'sha hudud bo'yicha
+  filtrlanadi; pastda jami qatori.
+* **Foydalanuvchilar** — 4 ta KPI, 15 ta xodim, parolni tiklash va hisobni
+  bloklash/faollashtirish.
+* **Tizim jurnali** — oxirgi amallar (vaqt, xodim, amal, obyekt, IP).
+* **Banklar ma'lumotnomasi** — 34 bank, 56 BIN; qidiruv, qo'shish/tahrirlash
+  oynasi (bir bankka bir nechta BIN), Excel importi namunasi, o'chirish.
 
 ## Kirish va sessiya
 
@@ -299,11 +332,15 @@ Ish tayinlangach jamoa yuklamasi va ro'yxat darhol yangilanadi.
 
 ## Ikonkalar
 
-Barcha ikonkalar `src/assets/icons/*.svg` da — asl dizayndan ajratib olingan.
-`AppIcon` ularni qurilish vaqtida o'qiydi (`import.meta.glob(... '?raw')`),
-`viewBox` ni fayldan oladi va o'lcham/qalinlikni props orqali beradi. Yangi
-ikonka qo'shish uchun shu papkaga `.svg` tashlash kifoya. Rangli ikonka
-(masalan Excel) `fill` bilan yozilgan bo'lsa, `stroke` qo'llanmaydi.
+Ikonkalar — **Google Material Symbols Rounded** (fonts.google.com/icons),
+yangi dizayndagidek `wght 300`, `opsz 24`. Shrift `index.html` da ulanadi,
+umumiy uslub `base.css` dagi `.material-symbols-rounded` da.
+
+`src/components/ui/icons.js` — loyihadagi qisqa nom bilan shrift glifi
+o'rtasidagi jadval (`inbox → credit_card`, `refresh → history` ...).
+Komponentlarda `<AppIcon name="lock" :size="20" />` yoziladi; kerak bo'lsa
+`weight` va `fill` proplari beriladi. Yangi ikonka — jadvalga bitta qator.
+`npm test` har bir ishlatilgan nom jadvalda borligini tekshiradi.
 
 ## Ma'lumotlar
 

@@ -9,13 +9,20 @@ import { useAuth } from '@/stores/useAuth'
 
 const router = useRouter()
 const { t } = useI18n()
-const { state, isExec, setRole, setTheme, setLanguage, toggleRoleMenu, toast } = useUi()
+const { state, setRole, setTheme, setLanguage, toggleRoleMenu, toast } = useUi()
 const { signOut } = useAuth()
 
-const roles = computed(() => [
-  { key: 'staff', label: t('role.staff.label'), note: t('role.staff.note'), on: !isExec.value },
-  { key: 'exec', label: t('role.exec.label'), note: t('role.exec.note'), on: isExec.value }
-])
+const ROLE_KEYS = ['staff', 'exec', 'admin', 'sadmin']
+
+const roles = computed(() => ROLE_KEYS.map((key) => ({
+  key,
+  label: t(`role.${key}.label`),
+  note: t(`role.${key}.note`),
+  on: state.role === key
+})))
+
+// rol almashganda o'sha rolning bosh ekraniga o'tamiz
+const HOME = { staff: '/', exec: '/dashboard', admin: '/admin', sadmin: '/admin' }
 
 const groups = computed(() => [
   {
@@ -53,8 +60,7 @@ function pickLang(v) {
 
 function pickRole(key) {
   setRole(key)
-  if (key === 'exec') router.push('/dashboard')
-  else if (router.currentRoute.value.path === '/dashboard') router.push('/')
+  router.push(HOME[key] || '/')
 }
 
 function exit() {

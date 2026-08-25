@@ -28,6 +28,12 @@ export default {
 
   nav: {
     dashboard: 'Rahbar paneli',
+    adminPanel: 'Boshqaruv paneli',
+    users: 'Foydalanuvchilar',
+    logs: 'Tizim jurnali',
+    banks: 'Banklar',
+    settings: 'Tizim sozlamalari',
+    groupManage: 'Boshqarish',
     all: 'Barcha arizalar',
     add: "Ariza qo'shish",
     drafts: 'Qoralamalar',
@@ -56,7 +62,9 @@ export default {
 
   profile: {
     staff: { name: 'Suvonov Farrux', label: 'Navbatchi ijrochi', ini: 'SF' },
-    exec: { name: 'Umrbek Boybayev', label: 'Rahbar', ini: 'RJ' }
+    exec: { name: 'Umrbek Boybayev', label: 'Rahbar', ini: 'RJ' },
+    admin: { name: 'Alisher Rahimov', label: 'Respublika admini', ini: 'AR' },
+    sadmin: { name: 'Ravshan Sattorov', label: 'Super admin', ini: 'RS' }
   },
 
   duty: {
@@ -102,6 +110,8 @@ export default {
     title: 'Rolni tanlash',
     staff: { label: 'Navbatchi / ijrochi', note: 'Arizalar bilan ishlash' },
     exec: { label: 'Rahbar', note: 'Umumiy nazorat va taqsimlash' },
+    admin: { label: 'Respublika admini', note: 'Hududlar statistikasi va foydalanuvchilar' },
+    sadmin: { label: 'Super admin', note: 'Tizim sozlamalari, integratsiyalar, huquqlar' },
     lang: 'Til',
     theme: 'Mavzu',
     light: 'Kunduzgi',
@@ -159,6 +169,139 @@ export default {
     minAgo: '{n} daqiqa avval',
     hourAgo: '{n} soat avval',
     dayAgo: '{n} kun avval'
+  },
+
+  admin: {
+    title: "Respublika bo'yicha holat",
+    exportReady: '{file} tayyorlandi',
+    exportDone: '{file} yuklab olindi',
+    kpi: {
+      apps: { label: 'Jami arizalar', unit: 'ta' },
+      blocked: { label: 'Bloklangan rekvizit', unit: 'karta va hisob' },
+      loss: { label: "Ushlab qolingan mablag'", unit: "mlrd so'm" },
+      staff: { label: 'Faol xodimlar', unit: '14 hududda' }
+    },
+    matrix: {
+      title: "Hududlar bo'yicha statistika",
+      colName: 'Hudud',
+      sync: 'Oxirgi yangilanish: {time}',
+      refresh: 'Yangilash',
+      syncing: 'Yangilanmoqda...',
+      synced: "Ma'lumotlar yangilandi · {time}",
+      districts: '{n} ta hudud',
+      openList: 'arizalar bazasini ochish',
+      opened: "{name} bo'yicha arizalar ochildi",
+      total: 'Jami',
+      groups: { from: 'Shundan', deadline: 'Muddati' },
+      cols: {
+        apps: 'Jami arizalar',
+        d24: 'Oxirgi 24 soat',
+        work: 'Ijroda',
+        bank: 'Bankda javob kutilmoqda',
+        blocked: 'Bloklangan rekvizit',
+        today: 'Bugun tugaydi',
+        over: 'Muddati buzilgan',
+        ret: 'Qaytarilgan',
+        closed: 'Yopilgan',
+        loss: "Zarar, mln so'm"
+      }
+    },
+    roles: {
+      staff: 'Navbatchi / ijrochi',
+      exec: 'Rahbar',
+      admin: 'Respublika admini',
+      sadmin: 'Super admin',
+      analyst: 'Tahlilchi'
+    },
+    deps: {
+      cardblock: 'CardBlock guruhi',
+      night: 'Tungi smena',
+      analysis: "Tahlil bo'limi",
+      it: 'IT boshqarmasi'
+    },
+    users: {
+      title: 'Foydalanuvchilar',
+      count: '{n} ta hisob',
+      kpi: {
+        all: 'Jami foydalanuvchi',
+        active: 'Faol hisoblar',
+        blocked: 'Bloklangan',
+        today: 'Bugun tizimga kirgan'
+      },
+      colName: 'Xodim',
+      colRole: 'Rol',
+      colDep: "Bo'lim",
+      colSeen: 'Oxirgi kirish',
+      colState: 'Holat',
+      on: 'Faol',
+      off: 'Bloklangan',
+      reset: 'Parolni tiklash',
+      resetTitle: 'Parolni tiklaysizmi?',
+      resetText: "{name} uchun vaqtinchalik parol yaratiladi va SMS orqali yuboriladi.",
+      resetDone: '{login} uchun vaqtinchalik parol yuborildi',
+      block: 'Hisobni bloklash',
+      unblock: 'Hisobni faollashtirish',
+      blockedDone: '{login} bloklandi',
+      activeDone: '{login} faollashtirildi'
+    },
+    logs: {
+      title: 'Tizim jurnali',
+      count: '{n} ta yozuv · bugun',
+      colTime: 'Vaqt',
+      colWho: 'Foydalanuvchi',
+      colAct: 'Amal',
+      colObj: 'Obyekt',
+      colIp: 'IP',
+      acts: {
+        reportSent: 'Navbatchilik hisobotini yubordi',
+        signIn: 'Tizimga kirdi',
+        blocked: 'Rekvizit bloklandi',
+        assigned: 'Ishlarni ijrochilarga taqsimladi',
+        created: 'Yangi ariza yaratdi',
+        userAdded: "Foydalanuvchi qo'shdi",
+        returned: 'Ariza qaytarildi',
+        sync: 'Bank bilan almashinuv'
+      }
+    },
+    banks: {
+      title: 'Bank rekvizitlari',
+      count: '{n} ta bank · {bins} ta BIN',
+      search: 'Bank, BIN yoki MFO',
+      add: "Bank qo'shish",
+      addTitle: "Bank qo'shish",
+      editTitle: 'Bankni tahrirlash',
+      edit: 'Tahrirlash',
+      import: 'Excel orqali import',
+      importTitle: 'Excel orqali import',
+      importCount: '{n} ta yozuv',
+      importDo: "Qo'shish",
+      imported: "{n} ta bank qo'shildi",
+      colName: 'Bank nomi',
+      colMfo: 'MFO',
+      colBins: 'BIN kodlari',
+      namePh: 'Bank nomini kiriting',
+      addBin: "BIN qo'shish",
+      binHint: "Bir bankka bir nechta BIN biriktirish mumkin.",
+      save: 'Saqlash',
+      invalid: "Bank nomi, MFO va kamida bitta BIN kerak",
+      added: "{name} qo'shildi",
+      updated: '{name} yangilandi',
+      removeTitle: "Bankni o'chirasizmi?",
+      removeText: "{name} ma'lumotnomadan olib tashlanadi.",
+      removed: "{name} o'chirildi",
+      emptyTitle: 'Hech narsa topilmadi',
+      emptyText: '«{q}» bo\'yicha bank, BIN yoki MFO topilmadi.'
+    },
+    settings: {
+      title: 'Tizim sozlamalari',
+      text: 'Bu bo\'lim keyingi bosqichda yig\'iladi: integratsiyalar, huquqlar va reglament sozlamalari shu yerda bo\'ladi.',
+      blocks: {
+        integrations: 'Integratsiyalar',
+        rights: 'Rollar va huquqlar',
+        deadlines: 'Muddat reglamenti',
+        notifications: 'Bildirishnomalar'
+      }
+    }
   },
 
   applications: {

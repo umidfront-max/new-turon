@@ -6,12 +6,14 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import SidebarLink from './SidebarLink.vue'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
+import { useAdmin } from '@/stores/useAdmin'
 import { BLOCK_REASONS } from '@/data/reasons'
 
 const route = useRoute()
 const { t } = useI18n()
-const { state, isExec, isStaff, toggleSidebar, setMobileNav, toast } = useUi()
+const { state, isExec, isStaff, isAdmin, isSuper, toggleSidebar, setMobileNav, toast } = useUi()
 const { counts, drafts } = useApplications()
+const { banks } = useAdmin()
 
 function otherModule() {
   toast(t('modules.soon'), 'warn')
@@ -53,6 +55,16 @@ function go() {
       />
 
       <SidebarLink
+        v-if="isAdmin"
+        icon="chart"
+        :label="$t('nav.adminPanel')"
+        to="/admin"
+        :active="isActive('/admin')"
+        :compact="compact"
+        @click="go"
+      />
+
+      <SidebarLink
         icon="list"
         :label="$t('nav.all')"
         :count="counts.all"
@@ -82,6 +94,48 @@ function go() {
         />
       </template>
 
+      <!-- ---------- admin bo'limi ---------- -->
+      <template v-if="isAdmin">
+        <div class="rule" :class="{ visible: compact }" />
+        <div v-if="!compact" class="group-label">{{ $t('nav.groupManage') }}</div>
+
+        <SidebarLink
+          icon="badge"
+          :label="$t('nav.users')"
+          to="/admin/users"
+          :active="isActive('/admin/users')"
+          :compact="compact"
+          @click="go"
+        />
+        <SidebarLink
+          icon="clock"
+          :label="$t('nav.logs')"
+          to="/admin/logs"
+          :active="isActive('/admin/logs')"
+          :compact="compact"
+          @click="go"
+        />
+        <SidebarLink
+          icon="accountBank"
+          :label="$t('nav.banks')"
+          :count="banks.length"
+          to="/admin/banks"
+          :active="isActive('/admin/banks')"
+          :compact="compact"
+          @click="go"
+        />
+        <SidebarLink
+          v-if="isSuper"
+          icon="settings"
+          :label="$t('nav.settings')"
+          to="/admin/settings"
+          :active="isActive('/admin/settings')"
+          :compact="compact"
+          @click="go"
+        />
+      </template>
+
+      <template v-if="!isAdmin">
       <div class="rule" :class="{ visible: compact }" />
       <div v-if="!compact" class="group-label">
         {{ isExec ? $t('nav.groupAttention') : $t('nav.groupTasks') }}
@@ -139,6 +193,8 @@ function go() {
         :compact="compact"
         @click="go"
       />
+
+      </template>
 
       <template v-if="isStaff">
         <div class="rule" :class="{ visible: compact }" />

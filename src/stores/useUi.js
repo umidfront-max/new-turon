@@ -46,9 +46,12 @@ watch(() => state.lang, (lang) => {
 
 /* ---------- amallar ---------- */
 export function useUi() {
+  // rollar: staff (navbatchi), exec (rahbar), admin (respublika), sadmin (super)
+  const roleKey = computed(() => state.role)
   const isExec = computed(() => state.role === 'exec')
-  const isStaff = computed(() => state.role !== 'exec')
-  const roleKey = computed(() => (isExec.value ? 'exec' : 'staff'))
+  const isAdmin = computed(() => state.role === 'admin' || state.role === 'sadmin')
+  const isSuper = computed(() => state.role === 'sadmin')
+  const isStaff = computed(() => state.role === 'staff')
 
   const profile = computed(() => ({
     name: t(`profile.${roleKey.value}.name`),
@@ -63,9 +66,12 @@ export function useUi() {
     closed: '#8fa4c2'
   }
 
+  // navbatchilik faqat navbatchi va rahbarda ko'rinadi
+  const dutyRole = computed(() => (isExec.value ? 'exec' : 'staff'))
+
   const duty = computed(() => ({
-    state: t(`duty.${roleKey.value}.${state.dutyPhase}.state`),
-    meta: t(`duty.${roleKey.value}.${state.dutyPhase}.meta`),
+    state: t(`duty.${dutyRole.value}.${state.dutyPhase}.state`),
+    meta: t(`duty.${dutyRole.value}.${state.dutyPhase}.meta`),
     dot: DUTY_DOT[state.dutyPhase]
   }))
 
@@ -148,6 +154,8 @@ export function useUi() {
     locale: i18n.global.locale,
     isExec,
     isStaff,
+    isAdmin,
+    isSuper,
     roleKey,
     profile,
     duty,

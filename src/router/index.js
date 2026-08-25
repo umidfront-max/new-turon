@@ -3,6 +3,7 @@ import { watch } from 'vue'
 import i18n, { t } from '@/i18n'
 import { queueFromSlug } from '@/data/queues'
 import { useAuth } from '@/stores/useAuth'
+import { useUi } from '@/stores/useUi'
 import LoginView from '@/views/LoginView.vue'
 import NotificationsView from '@/views/NotificationsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
@@ -12,6 +13,11 @@ import NewApplicationView from '@/views/NewApplicationView.vue'
 import DraftsView from '@/views/DraftsView.vue'
 import ReasonsView from '@/views/ReasonsView.vue'
 import DashboardView from '@/views/DashboardView.vue'
+import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
+import AdminUsersView from '@/views/admin/AdminUsersView.vue'
+import AdminLogsView from '@/views/admin/AdminLogsView.vue'
+import AdminBanksView from '@/views/admin/AdminBanksView.vue'
+import AdminSettingsView from '@/views/admin/AdminSettingsView.vue'
 import StubView from '@/views/StubView.vue'
 
 const routes = [
@@ -71,6 +77,36 @@ const routes = [
     meta: { titleKey: 'stub.dashboard.title' }
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: AdminDashboardView,
+    meta: { titleKey: 'admin.title', roles: ['admin', 'sadmin'] }
+  },
+  {
+    path: '/admin/users',
+    name: 'admin-users',
+    component: AdminUsersView,
+    meta: { titleKey: 'admin.users.title', roles: ['admin', 'sadmin'] }
+  },
+  {
+    path: '/admin/logs',
+    name: 'admin-logs',
+    component: AdminLogsView,
+    meta: { titleKey: 'admin.logs.title', roles: ['admin', 'sadmin'] }
+  },
+  {
+    path: '/admin/banks',
+    name: 'admin-banks',
+    component: AdminBanksView,
+    meta: { titleKey: 'admin.banks.title', roles: ['admin', 'sadmin'] }
+  },
+  {
+    path: '/admin/settings',
+    name: 'admin-settings',
+    component: AdminSettingsView,
+    meta: { titleKey: 'admin.settings.title', roles: ['sadmin'] }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: NotFoundView,
@@ -94,12 +130,14 @@ function applyTitle(route) {
   document.title = title ? `${title} · TURON CYBER` : t('app.defaultTitle')
 }
 
-// kirmagan foydalanuvchi faqat /login ni ko'radi
+// kirmagan foydalanuvchi faqat /login ni ko'radi, admin sahifalari rolga bog'liq
 router.beforeEach((to) => {
   const { isAuthed } = useAuth()
+  const { state } = useUi()
   if (to.meta.public) return isAuthed.value ? { path: '/' } : true
-  if (isAuthed.value) return true
-  return { path: '/login', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
+  if (!isAuthed.value) return { path: '/login', query: to.fullPath === '/' ? {} : { next: to.fullPath } }
+  if (to.meta.roles && !to.meta.roles.includes(state.role)) return { path: '/' }
+  return true
 })
 
 router.afterEach(applyTitle)

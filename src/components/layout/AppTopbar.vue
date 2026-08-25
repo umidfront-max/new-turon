@@ -8,7 +8,7 @@ import { useUi } from '@/stores/useUi'
 
 const { t } = useI18n()
 const {
-  state, isExec, profile, duty, unread,
+  state, isExec, isAdmin, profile, duty, unread,
   toggleRoleMenu, toggleNotify, setMobileNav, ask, toast
 } = useUi()
 
@@ -111,8 +111,8 @@ function onDutyClick() {
 
     <div class="spacer" />
 
-    <!-- navbatchilik holati -->
-    <div class="duty" :title="dutyButton ? $t(`duty.tip.${dutyButton.key}`) : undefined">
+    <!-- navbatchilik holati (admin rollarida ko'rinmaydi) -->
+    <div v-if="!isAdmin" class="duty" :title="dutyButton ? $t(`duty.tip.${dutyButton.key}`) : undefined">
       <span class="duty-dot" :style="{ background: duty.dot }" />
       <span class="duty-text">
         <span class="duty-state">{{ duty.state }}</span>

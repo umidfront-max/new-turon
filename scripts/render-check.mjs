@@ -51,12 +51,14 @@ const PATHS = [
   '/application?id=' + encodeURIComponent('M0126284/2026-10008') + '&tab=bank',
   '/application?id=' + encodeURIComponent('M0126290/2026-10011') + '&tab=workflow',
   '/application?id=yoq-bunday-ariza',
-  '/application/new', '/drafts', '/reasons', '/notifications', '/dashboard', '/bunday-sahifa-yoq'
+  '/application/new', '/drafts', '/reasons', '/notifications', '/dashboard',
+  '/admin', '/admin/users', '/admin/logs', '/admin/banks', '/admin/settings',
+  '/bunday-sahifa-yoq'
 ]
 
 for (const lang of ['uz', 'uzk', 'ru']) {
   setLang(lang)
-  for (const role of ['staff', 'exec']) {
+  for (const role of ['staff', 'exec', 'admin', 'sadmin']) {
     auth.signIn({ name: 'Test', role, method: 'password', login: 't@t.uz', remember: true })
     for (const path of PATHS) {
       const { html } = await render(path)
@@ -96,7 +98,7 @@ if (!missing.html.includes('not-found-title')) problems.push('ariza topilmadi ho
 const nf = await render('/qwerty')
 if (!nf.html.includes('404')) problems.push('404 sahifasi chiqmadi')
 
-console.log(`tekshirildi: ${n} ta sahifa (3 til x 2 rol x ${PATHS.length} yo'l)`)
+console.log(`tekshirildi: ${n} ta sahifa (3 til x 4 rol x ${PATHS.length} yo'l)`)
 console.log(`bosh sahifa: ${rowCount} qator, ${pagerPages} sahifa raqami`)
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'muammo topilmadi')
 
