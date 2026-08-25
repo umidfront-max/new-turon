@@ -323,7 +323,13 @@ function exportXlsx() {
               <button type="button" class="req-toggle" @click="toggleReq(i)">
                 {{ $t('detail.requisites.transactions') }}
                 <span class="req-badge mono">{{ r.tx.length }}</span>
-                <AppIcon name="chevronDown" :size="13" :class="{ up: opened.has(i) }" />
+                <AppIcon
+                  name="chevronUp"
+                  :size="18"
+                  :width="1.7"
+                  class="req-caret"
+                  :class="{ down: !opened.has(i) }"
+                />
               </button>
             </div>
 
@@ -1076,7 +1082,12 @@ function exportXlsx() {
   font-size: 12.5px;
 }
 
-.req-toggle .up {
+.req-caret {
+  color: var(--c1c2b45);
+  transition: transform .18s var(--ease);
+}
+
+.req-caret.down {
   transform: rotate(180deg);
 }
 
