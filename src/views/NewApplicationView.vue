@@ -661,7 +661,7 @@ function cancelAll() {
 
 .col.side {
   position: sticky;
-  top: 76px;
+  top: 0;
 }
 
 /* ---------- blok ---------- */

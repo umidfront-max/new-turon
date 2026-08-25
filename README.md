@@ -180,6 +180,20 @@ profil menyusi → **Mavzu**.
 Yangi rang qo'shganda `tokens.css` dagi ikkala blokka ham yozing, aks holda
 tungi rejimda rang qotib qoladi.
 
+## Tartib (app shell)
+
+Ilova to'liq ekran balandligida ishlaydi: `.shell` — `100dvh`, `overflow:hidden`.
+Topbar va yon menyu **qotib turadi**, faqat markazdagi `main` aylanadi
+(`overflow-y:auto`). Shundan kelib chiqadigan tafsilotlar:
+
+* ekran almashganda oyna emas, shu blok tepaga qaytariladi;
+* kontent aylantirilganda topbar ostida yengil soya paydo bo'ladi;
+* `scrollbar-gutter: stable` — skrollbar paydo bo'lganda tartib sakramaydi;
+* `overscroll-behavior: contain` — ro'yxat oxiriga yetganda sahifa "tortilmaydi";
+* yon menyuni yig'ish tugmasi endi doim ko'rinib turadi (avval sahifa bilan
+  birga yuqoriga chiqib ketardi);
+* menyu uzun bo'lsa, u o'z ichida alohida aylanadi.
+
 ## Responsive
 
 | Kenglik | O'zgarish |

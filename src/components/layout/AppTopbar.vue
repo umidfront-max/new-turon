@@ -187,9 +187,14 @@ function onDutyClick() {
   align-items: center;
   gap: 18px;
   padding: 0 20px 0 18px;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 80;
+  transition: box-shadow .2s ease;
+}
+
+/* kontent aylanganda topbar ostida yengil soya paydo bo'ladi */
+.topbar.raised {
+  box-shadow: 0 6px 18px rgba(5, 12, 28, .22);
 }
 
 /* ---------- brend ---------- */
