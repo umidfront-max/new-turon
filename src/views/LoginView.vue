@@ -4,9 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
-import { loginPfx, serverToken, verifySignature, maskId, EriError } from '@/services/eriLogin'
+import { loginPfx, maskId, EriError } from '@/services/eriLogin'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
-import { listKeys as isignerKeys, hash as isignerHash, sign as isignerSign, ISignerError } from '@/services/isigner'
+import { listKeys as isignerKeys } from '@/services/isigner'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
 
@@ -37,12 +37,14 @@ const showPassword = ref(false)
 const errors = reactive({})
 
 /* ---------- e-imzo ---------- */
-// ISigner ishlab tursa — kalitlar ro'yxati shundan olinadi va kirish imzo
-// orqali tekshiriladi (/token -> hash -> sign -> /verify).
-// ISigner bo'lmasa — foydalanuvchi .pfx faylni tanlaydi, kirish /login-pfx orqali.
+// Kalitlar ro'yxati ISigner'dan olinadi, kirish esa /login-pfx orqali bo'ladi.
+// ISigner kalit faylini bermaydi, lekin uning ro'yxati DSKEYS papkasidagi
+// fayllar tartibiga aynan mos keladi — shu bog'lanish ishlatiladi.
+// Papka «Kirish» bosilganda bir marta so'raladi (brauzer talabi).
 const signerState = ref('loading') // loading | ready | off
 const signerKeys = ref([])
 const signerPick = ref('')
+const signerTotal = ref(0) // muddati o'tganlari bilan birga — fayl tartibini solishtirish uchun
 
 const pfxPass = ref('')
 const showPin = ref(false)
@@ -53,7 +55,7 @@ const fileInput = ref(null)
 const folderInput = ref(null)
 const folderSupported = canPickFolder()
 
-// ISigner yo'q bo'lganda foydalanuvchi tanlagan fayllar
+// foydalanuvchi ruxsat bergan kalit fayllari
 const files = ref([])
 const selectedKey = ref('')
 
@@ -61,7 +63,26 @@ const activeSignerKey = computed(
   () => signerKeys.value.find((k) => k.serial === signerPick.value) || null
 )
 
-const pfxFile = computed(() => files.value.find((f) => f.key === selectedKey.value)?.file || null)
+// ISigner ro'yxatidagi o'rin -> papkadagi fayl.
+// Tartib mos kelishiga ishonish uchun sonlar teng bo'lishi shart; teng bo'lmasa
+// fayl nomidagi JSHSHIR/STIR bo'yicha qidiriladi.
+const activeFile = computed(() => {
+  const key = activeSignerKey.value
+  if (!key || !files.value.length) return null
+
+  if (files.value.length === signerTotal.value) {
+    const hit = files.value[key.index]
+    if (hit) return hit.file
+  }
+
+  const byId = files.value.find(
+    (f) => f.idValue && (f.idValue === key.pinfl || f.idValue === key.tin)
+  )
+  return byId ? byId.file : null
+})
+
+const manualFile = computed(() => files.value.find((f) => f.key === selectedKey.value)?.file || null)
+const pfxFile = computed(() => (signerState.value === 'ready' ? activeFile.value : manualFile.value))
 
 async function loadSignerKeys() {
   signerState.value = 'loading'
@@ -69,13 +90,16 @@ async function loadSignerKeys() {
   try {
     const found = await isignerKeys()
     // faqat amal muddati tugamagan kalitlar ko'rsatiladi
+    // (index — ISigner ro'yxatidagi asl o'rin, fayl bilan bog'lash uchun kerak)
     const live = found.filter((k) => !k.expired)
+    signerTotal.value = found.length
     signerKeys.value = live
     signerState.value = live.length ? 'ready' : 'off'
     signerPick.value = live.length ? live[0].serial : ''
     if (found.length && !live.length) eriError.value = t('login.eri.errors.allExpired')
   } catch {
     signerKeys.value = []
+    signerTotal.value = 0
     signerState.value = 'off'
   }
 }
@@ -93,6 +117,8 @@ function onSignerPick() {
 
 /* ---------- kalit fayllari ---------- */
 
+let awaitingFiles = null
+
 function pickFile() {
   fileInput.value?.click()
 }
@@ -101,13 +127,30 @@ function pickFolder() {
   folderInput.value?.click()
 }
 
+// papkani so'rab, foydalanuvchi tanlashini kutamiz
+function requestFolder() {
+  return new Promise((resolve) => {
+    awaitingFiles = resolve
+    if (folderSupported) pickFolder()
+    else pickFile()
+    // oyna yopilib, hech narsa tanlanmasa — kutib qolmaslik uchun
+    setTimeout(() => {
+      if (awaitingFiles === resolve) {
+        awaitingFiles = null
+        resolve(false)
+      }
+    }, 120000)
+  })
+}
+
 function addFiles(list) {
   const found = collectKeys(list)
   if (!found.length) {
     eriError.value = t('login.eri.errors.noKeys')
-    return
+    return false
   }
 
+  // ISigner bilan bir xil tartib bo'lishi uchun nom bo'yicha saralanadi
   const seen = new Set(files.value.map((f) => f.key))
   files.value = [...files.value, ...found.filter((f) => !seen.has(f.key))]
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -115,11 +158,17 @@ function addFiles(list) {
   if (!selectedKey.value) selectedKey.value = found[0].key
   eriError.value = ''
   delete errors.pfx
+  return true
 }
 
 function onFile(e) {
-  addFiles(e.target.files)
+  const ok = addFiles(e.target.files)
   e.target.value = '' // bir xil faylni qayta tanlash mumkin bo'lsin
+  if (awaitingFiles) {
+    const done = awaitingFiles
+    awaitingFiles = null
+    done(ok)
+  }
 }
 
 function onDrop(e) {
@@ -185,72 +234,30 @@ function submitPassword() {
   })
 }
 
-// ISigner orqali: server tokeni -> hash -> imzo -> /verify
-// ISigner orqali: server tokeni -> hash -> imzo -> /verify
-async function signInWithSigner() {
+async function submitEimzo() {
+  if (loading.value) return
+
   const key = activeSignerKey.value
-  if (!key) {
+  if (signerState.value === 'ready' && !key) {
     eriError.value = t('login.eri.errors.noKey')
     return
   }
 
-  loading.value = true
-  eriError.value = ''
-
-  try {
-    const { token, challenge } = await serverToken()
-    const digest = await isignerHash(challenge)
-    // parol bo'sh qoldirilsa ISigner o'z oynasida so'raydi
-    const signed = await isignerSign({
-      token,
-      digest,
-      serial: key.serial,
-      password: pfxPass.value
-    })
-
-    const signature = typeof signed === 'string' ? signed : (signed?.signature || signed?.sign || '')
-    if (!signature) throw new EriError('server')
-
-    const res = await verifySignature({
-      signature,
-      data: challenge,
-      certificate: typeof signed === 'object' ? (signed.certificate || '') : ''
-    })
-    if (!res.valid) throw new EriError('rejected', res.message)
-
-    signIn({
-      name: key.name,
-      role: 'staff',
-      method: 'eimzo',
-      login: maskId(key.pinfl || key.tin),
-      remember: true
-    })
-    toast(t('login.welcome', { name: key.name }))
-    router.push(typeof route.query.next === 'string' ? route.query.next : '/')
-  } catch (e) {
-    if (e instanceof ISignerError) {
-      eriError.value = t(`login.eri.errors.${e.key}`)
-      errors.pfxPass = e.key === 'wrongPassword'
-    } else {
-      const code = e instanceof EriError ? e.key : 'server'
-      eriError.value = e instanceof EriError && e.detail ? e.detail : t(`login.eri.errors.${code}`)
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// ISigner yo'q: yuklangan .pfx fayli -> /login-pfx
-async function signInWithFile() {
-  if (!pfxFile.value) {
-    errors.pfx = true
-    eriError.value = t('login.eri.errors.noFile')
-    return
-  }
   if (!pfxPass.value) {
     errors.pfxPass = true
     eriError.value = t('login.eri.errors.noPassword')
     return
+  }
+
+  // /login-pfx kalit faylini talab qiladi — papka bir marta so'raladi
+  if (!pfxFile.value) {
+    eriError.value = ''
+    const granted = await requestFolder()
+    if (!granted || !pfxFile.value) {
+      errors.pfx = true
+      if (!eriError.value) eriError.value = t('login.eri.errors.noFile')
+      return
+    }
   }
 
   loading.value = true
@@ -259,8 +266,14 @@ async function signInWithFile() {
   try {
     const result = await loginPfx(pfxFile.value, pfxPass.value)
     const cert = result.user
-    const name = cert.name || t('login.eri.unknownOwner')
-    const shown = cert.pinfl || cert.tin
+
+    // tanlangan kalit bilan qaytgan sertifikat bir xil odamnikimi
+    if (key && key.pinfl && cert.pinfl && key.pinfl !== cert.pinfl) {
+      throw new EriError('mismatch')
+    }
+
+    const name = cert.name || key?.name || t('login.eri.unknownOwner')
+    const shown = cert.pinfl || cert.tin || key?.pinfl || key?.tin
 
     signIn({
       name,
@@ -269,20 +282,17 @@ async function signInWithFile() {
       login: shown ? maskId(shown) : '',
       remember: true
     })
+
     toast(t('login.welcome', { name }))
     router.push(typeof route.query.next === 'string' ? route.query.next : '/')
   } catch (e) {
     const code = e instanceof EriError ? e.key : 'server'
+    // serverning o'z xabari bo'lsa — o'shani ko'rsatamiz
     eriError.value = e instanceof EriError && e.detail ? e.detail : t(`login.eri.errors.${code}`)
     errors.pfxPass = code === 'rejected'
   } finally {
     loading.value = false
   }
-}
-
-function submitEimzo() {
-  if (loading.value) return
-  return signerState.value === 'ready' ? signInWithSigner() : signInWithFile()
 }
 
 function startScan() {
@@ -558,6 +568,7 @@ function onPass(e) {
                   autocomplete="off"
                   :disabled="signerState === 'ready' ? !activeSignerKey : !pfxFile"
                   :placeholder="$t('login.eri.passwordPh')"
+                  @keyup.enter="submitEimzo"
                   @input="onPass"
                 />
                 <button

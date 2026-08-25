@@ -963,6 +963,7 @@ export default {
         failed: "E-imzo dasturida xatolik",
         notRunning: "E-imzo (ISigner) dasturi ishlamayapti",
         disconnected: "E-imzo dasturi bilan aloqa uzildi",
+        mismatch: "Tanlangan kalit bilan fayl mos kelmadi — papkani qayta tanlang",
         noKeys: "Bu papkada .pfx yoki .p12 kalit topilmadi",
         noKey: 'Avval ERI kalitini tanlang',
         allExpired: "Amal muddati tugamagan kalit yo'q",
