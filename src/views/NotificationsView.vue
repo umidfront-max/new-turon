@@ -171,14 +171,18 @@ function readAll() {
 }
 
 .chip.unread {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  height: 22px;
+  padding: 0 10px;
   border-radius: 20px;
   background: var(--cd9483f);
   color: #fff;
   font-size: 12.5px;
   font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .spacer {

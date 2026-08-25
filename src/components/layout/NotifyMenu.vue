@@ -98,7 +98,7 @@ function readAll() {
   top: 46px;
   right: 0;
   z-index: 90;
-  width: 352px;
+  width: 376px;
   background: var(--s-card);
   border: 1px solid var(--ce2e8f1);
   border-radius: 12px;
@@ -112,6 +112,8 @@ function readAll() {
   display: flex;
   align-items: center;
   gap: 8px;
+  row-gap: 6px;
+  flex-wrap: wrap;
   padding: 12px 14px;
   border-bottom: 1px solid var(--ceef1f6);
 }
@@ -120,15 +122,23 @@ function readAll() {
   font-size: 14.5px;
   font-weight: 700;
   color: var(--c16233d);
+  white-space: nowrap;
 }
 
+/* badge hech qachon ikki qatorga bo'linmasin */
 .head-count {
-  font-size: 12px;
-  font-weight: 600;
-  padding: 2px 8px;
+  flex: 0 0 auto;
+  height: 20px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
   border-radius: 20px;
   background: var(--cd9483f);
   color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .spacer {
@@ -136,6 +146,7 @@ function readAll() {
 }
 
 .head-action {
+  flex: 0 0 auto;
   border: 0;
   background: transparent;
   padding: 0;
@@ -284,7 +295,7 @@ function readAll() {
 
 @media (max-width: 560px) {
   .notify-menu {
-    width: min(92vw, 352px);
+    width: min(92vw, 376px);
     right: -60px;
   }
 }
