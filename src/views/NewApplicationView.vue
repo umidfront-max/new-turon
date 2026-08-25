@@ -530,7 +530,9 @@ function cancelAll() {
               <div v-if="!requisites.length" class="added-empty">{{ $t('form.requisite.empty') }}</div>
 
               <div v-for="r in requisites" :key="r.id" class="added-row">
-                <span class="added-ico"><AppIcon :name="r.kind === 'card' ? 'card' : 'bank'" :size="16" /></span>
+                <span class="added-ico" :class="{ plain: r.kind === 'card' }">
+                  <AppIcon :name="r.kind === 'card' ? 'cardFilled' : 'bank'" :size="r.kind === 'card' ? 22 : 16" />
+                </span>
                 <span class="added-main">
                   <span class="mono added-num">{{ r.number }}</span>
                   <span class="added-meta">
@@ -1045,15 +1047,20 @@ function cancelAll() {
 }
 
 .added-ico {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--ce8eef7);
   color: var(--c23568f);
+}
+
+.added-ico.plain {
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
 }
 
 .added-main {

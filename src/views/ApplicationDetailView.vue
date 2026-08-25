@@ -308,7 +308,7 @@ function exportXlsx() {
         <div class="block-body">
           <div v-for="(r, i) in data.requisites" :key="r.card" class="req">
             <div class="req-head">
-              <span class="req-icon"><AppIcon name="card" :size="19" /></span>
+              <span class="req-icon"><AppIcon name="cardFilled" :size="24" /></span>
               <div class="req-main">
                 <div class="req-card mono">{{ r.card }}</div>
                 <div class="req-meta">
@@ -988,15 +988,15 @@ function exportXlsx() {
 }
 
 .req-icon {
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--brand-a);
-  color: #fff;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
 }
 
 .req-main {
