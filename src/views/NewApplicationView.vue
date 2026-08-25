@@ -71,7 +71,11 @@ onMounted(() => {
   timer = setInterval(() => { elapsed.value += 1 }, 1000)
   loadDraft()
 })
-onBeforeUnmount(() => clearInterval(timer))
+onBeforeUnmount(() => {
+  clearInterval(timer)
+  clearInterval(recTimer)
+  clearInterval(playTimer)
+})
 
 /* ---------- maskalar ---------- */
 function onCard(e) {
@@ -161,6 +165,9 @@ const canAdd = computed(() =>
   && digitsOnly(draft.amount).length > 0
   && isValidDateTime(draft.time))
 
+let seq = 0
+
+// bitta rekvizitga bir nechta tranzaksiya biriktiriladi
 function addRequisite() {
   if (digitsOnly(draft.number).length !== requiredLength.value) errors.number = true
   else delete errors.number
@@ -174,19 +181,26 @@ function addRequisite() {
     return
   }
 
-  requisites.value = [...requisites.value, {
-    id: `${draft.number}-${draft.time}`,
-    kind: draft.kind,
-    number: draft.number,
-    system: system.value,
-    amount: draft.amount,
-    time: draft.time
-  }]
+  seq += 1
+  const exists = requisites.value.find((r) => digitsOnly(r.number) === digitsOnly(draft.number))
 
-  draft.number = ''
-  draft.amount = ''
-  draft.time = ''
-  toast(t('form.requisite.addedToast'))
+  if (exists) {
+    // shu raqam allaqachon bor — tranzaksiya sifatida qo'shiladi
+    exists.txs = [...exists.txs, { id: `t${seq}`, amount: draft.amount, time: draft.time }]
+    toast(t('form.requisite.txAdded'))
+  } else {
+    requisites.value = [...requisites.value, {
+      id: `r${seq}`,
+      kind: draft.kind,
+      number: draft.number,
+      system: system.value,
+      open: true,
+      txs: [{ id: `t${seq}`, amount: draft.amount, time: draft.time }]
+    }]
+    toast(t('form.requisite.addedToast'))
+  }
+
+  clearRequisite()
 }
 
 function clearRequisite() {
@@ -200,8 +214,66 @@ function removeRequisite(id) {
   requisites.value = requisites.value.filter((r) => r.id !== id)
 }
 
+function toggleRequisite(r) {
+  r.open = !r.open
+}
+
+const sumOf = (r) => maskAmount(String(r.txs.reduce((acc, x) => acc + Number(digitsOnly(x.amount)), 0)))
+
+/* ---------- rekvizit ichidagi tranzaksiya ---------- */
+// { reqId, txId | null } — yangi qo'shish yoki tahrirlash
+const txForm = reactive({ reqId: null, txId: null, amount: '', time: '' })
+
+function openTxForm(r, tx = null) {
+  txForm.reqId = r.id
+  txForm.txId = tx ? tx.id : null
+  txForm.amount = tx ? tx.amount : ''
+  txForm.time = tx ? tx.time : ''
+}
+
+function closeTxForm() {
+  txForm.reqId = null
+  txForm.txId = null
+  txForm.amount = ''
+  txForm.time = ''
+}
+
+const canSaveTx = computed(() => digitsOnly(txForm.amount).length > 0 && isValidDateTime(txForm.time))
+
+function saveTx() {
+  if (!canSaveTx.value) {
+    toast(t('form.invalid'), 'bad')
+    return
+  }
+  const r = requisites.value.find((x) => x.id === txForm.reqId)
+  if (!r) return
+  if (txForm.txId) {
+    r.txs = r.txs.map((x) => (x.id === txForm.txId ? { ...x, amount: txForm.amount, time: txForm.time } : x))
+    toast(t('form.requisite.txUpdated'))
+  } else {
+    seq += 1
+    r.txs = [...r.txs, { id: `t${seq}`, amount: txForm.amount, time: txForm.time }]
+    toast(t('form.requisite.txAdded'))
+  }
+  closeTxForm()
+}
+
+function removeTx(r, txId) {
+  if (r.txs.length === 1) {
+    removeRequisite(r.id)
+    toast(t('form.requisite.removed'))
+    return
+  }
+  r.txs = r.txs.filter((x) => x.id !== txId)
+  toast(t('form.requisite.txRemoved'))
+}
+
+const txCount = computed(() => requisites.value.reduce((n, r) => n + r.txs.length, 0))
+
 const total = computed(() => {
-  const sum = requisites.value.reduce((acc, r) => acc + Number(digitsOnly(r.amount)), 0)
+  const sum = requisites.value.reduce(
+    (acc, r) => acc + r.txs.reduce((a, x) => a + Number(digitsOnly(x.amount)), 0), 0
+  )
   return maskAmount(String(sum))
 })
 
@@ -214,8 +286,63 @@ function addHint(key) {
   delete errors.fabula
 }
 
-function voice() {
-  toast(t('form.app.voiceToast'), 'warn')
+/* ---------- ovozli fabula ---------- */
+// namuna yozuv: mikrofon so'ralmaydi, faqat interfeys holatlari
+const rec = reactive({ state: 'idle', seconds: 0, length: 0, playing: 0 })
+let recTimer = null
+let playTimer = null
+
+const WAVE = [10, 16, 22, 14, 26, 18, 12, 24, 20, 15, 23, 11, 19, 25, 13, 21]
+
+function clock(sec) {
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function startRec() {
+  rec.state = 'recording'
+  rec.seconds = 0
+  clearInterval(recTimer)
+  recTimer = setInterval(() => { rec.seconds += 1 }, 1000)
+}
+
+function cancelRec() {
+  clearInterval(recTimer)
+  rec.state = 'idle'
+  rec.seconds = 0
+}
+
+function saveRec() {
+  clearInterval(recTimer)
+  rec.length = Math.max(1, rec.seconds)
+  rec.state = 'saved'
+  rec.seconds = 0
+  toast(t('form.app.recSaved', { time: clock(rec.length) }))
+}
+
+function removeRec() {
+  clearInterval(playTimer)
+  rec.state = 'idle'
+  rec.length = 0
+  rec.playing = 0
+}
+
+function togglePlay() {
+  if (rec.state === 'playing') {
+    clearInterval(playTimer)
+    rec.state = 'saved'
+    return
+  }
+  rec.state = 'playing'
+  playTimer = setInterval(() => {
+    rec.playing += 1
+    if (rec.playing >= rec.length) {
+      clearInterval(playTimer)
+      rec.playing = 0
+      rec.state = 'saved'
+    }
+  }, 1000)
 }
 
 /* ---------- yuborish ---------- */
@@ -392,10 +519,49 @@ function cancelAll() {
             <div class="fabula-head">
               <span class="label">{{ $t('form.app.fabula') }} <i class="req">*</i></span>
               <div class="spacer" />
-              <button type="button" class="btn-soft" @click="voice">
+
+              <!-- yozib olish: bo'sh holat -->
+              <button v-if="rec.state === 'idle'" type="button" class="btn-soft" @click="startRec">
                 <AppIcon name="mic" :size="16" />
                 {{ $t('form.app.voice') }}
               </button>
+
+              <!-- yozilmoqda -->
+              <span v-else-if="rec.state === 'recording'" class="rec live">
+                <span class="rec-dot" />
+                <span class="rec-clock mono">{{ clock(rec.seconds) }}</span>
+                <span class="wave">
+                  <span
+                    v-for="(h, i) in WAVE"
+                    :key="i"
+                    class="bar"
+                    :style="{ height: `${h}px`, animationDelay: `${-i * 0.14}s` }"
+                  />
+                </span>
+                <button type="button" class="rec-btn" :title="$t('common.cancel')" @click="cancelRec">
+                  <AppIcon name="close" :size="18" />
+                </button>
+                <button type="button" class="rec-btn ok" :title="$t('form.requisite.save')" @click="saveRec">
+                  <AppIcon name="check" :size="18" />
+                </button>
+              </span>
+
+              <!-- yozib olingan -->
+              <span v-else class="rec saved">
+                <button type="button" class="rec-play" @click="togglePlay">
+                  <AppIcon :name="rec.state === 'playing' ? 'pause' : 'play'" :size="17" />
+                </button>
+                <span class="rec-name">{{ $t('form.app.recorded') }}</span>
+                <span class="rec-clock mono">
+                  {{ clock(rec.state === 'playing' ? rec.playing : rec.length) }}
+                </span>
+                <button type="button" class="rec-btn" :title="$t('form.app.reRecord')" @click="startRec">
+                  <AppIcon name="mic" :size="18" />
+                </button>
+                <button type="button" class="rec-btn danger" :title="$t('common.remove')" @click="removeRec">
+                  <AppIcon name="trash" :size="18" />
+                </button>
+              </span>
             </div>
 
             <textarea
@@ -581,26 +747,76 @@ function cancelAll() {
               <div class="added-head">
                 <span class="label">{{ $t('form.requisite.added') }}</span>
                 <div class="spacer" />
-                <span v-if="requisites.length" class="added-count mono">{{ requisites.length }}</span>
+                <span v-if="requisites.length" class="added-count mono">{{ $t('form.requisite.summary', { n: requisites.length, tx: txCount }) }}</span>
               </div>
 
               <div v-if="!requisites.length" class="added-empty">{{ $t('form.requisite.empty') }}</div>
 
-              <div v-for="r in requisites" :key="r.id" class="added-row">
-                <span class="added-ico">
-                  <AppIcon :name="r.kind === 'card' ? 'card' : 'accountBank'" :size="20" />
-                </span>
-                <span class="added-main">
-                  <span class="mono added-num">{{ r.number }}</span>
-                  <span class="added-meta">
-                    <span v-if="r.system" class="tag">{{ r.system }}</span>
-                    <span class="mono">{{ r.time }}</span>
+              <div v-for="r in requisites" :key="r.id" class="req-card">
+                <button type="button" class="req-head" @click="toggleRequisite(r)">
+                  <span class="added-ico">
+                    <AppIcon :name="r.kind === 'card' ? 'card' : 'accountBank'" :size="20" />
                   </span>
-                </span>
-                <span class="added-sum mono">{{ r.amount }}</span>
-                <button type="button" class="icon-btn" :title="$t('common.remove')" @click="removeRequisite(r.id)">
-                  <AppIcon name="trash" :size="15" />
+                  <span class="added-main">
+                    <span class="mono added-num">{{ r.number }}</span>
+                    <span class="added-meta">
+                      <span v-if="r.system" class="tag">{{ r.system }}</span>
+                      <span>{{ $t('form.requisite.txCount', r.txs.length) }}</span>
+                      <span class="mono">{{ sumOf(r) }} {{ $t('form.requisite.sum') }}</span>
+                    </span>
+                  </span>
+                  <AppIcon :name="r.open ? 'chevronUp' : 'chevronDown'" :size="20" class="req-chev" />
                 </button>
+
+                <div v-if="r.open" class="req-body">
+                  <div v-for="(tx, i) in r.txs" :key="tx.id" class="tx-row">
+                    <span class="tx-n mono">{{ i + 1 }}</span>
+                    <span class="tx-main">
+                      <span class="tx-amount mono">{{ tx.amount }} <span class="dim">{{ $t('form.requisite.sum') }}</span></span>
+                      <span class="tx-date mono">{{ tx.time }}</span>
+                    </span>
+                    <button type="button" class="icon-btn" :title="$t('admin.banks.edit')" @click="openTxForm(r, tx)">
+                      <AppIcon name="edit" :size="16" />
+                    </button>
+                    <button type="button" class="icon-btn danger" :title="$t('common.remove')" @click="removeTx(r, tx.id)">
+                      <AppIcon name="trash" :size="16" />
+                    </button>
+                  </div>
+
+                  <!-- tranzaksiya qo'shish / tahrirlash -->
+                  <div v-if="txForm.reqId === r.id" class="tx-form">
+                    <span class="input-wrap">
+                      <input
+                        :value="txForm.amount"
+                        class="input bare mono"
+                        placeholder="0"
+                        @input="txForm.amount = maskAmount($event.target.value)"
+                      />
+                      <span class="unit">{{ $t('form.requisite.sum') }}</span>
+                    </span>
+                    <span class="input-wrap">
+                      <input
+                        :value="txForm.time"
+                        class="input bare mono"
+                        :placeholder="$t('form.requisite.timePh')"
+                        @input="txForm.time = maskDateTime($event.target.value)"
+                      />
+                      <AppIcon name="clock" :size="16" class="input-ico" />
+                    </span>
+                    <button type="button" class="btn-dark sm" :disabled="!canSaveTx" @click="saveTx">
+                      <AppIcon name="check" :size="16" />
+                      {{ txForm.txId ? $t('form.requisite.save') : $t('form.requisite.add') }}
+                    </button>
+                    <button type="button" class="icon-btn" @click="closeTxForm">
+                      <AppIcon name="close" :size="16" />
+                    </button>
+                  </div>
+
+                  <button v-else type="button" class="tx-add" @click="openTxForm(r)">
+                    <AppIcon name="plus" :size="16" />
+                    {{ $t('form.requisite.addTx') }}
+                  </button>
+                </div>
               </div>
 
               <div v-if="requisites.length" class="added-total">
@@ -1268,6 +1484,230 @@ function cancelAll() {
   font-size: 16px;
   font-weight: 700;
   color: var(--c16233d);
+}
+
+/* ---------- ovoz yozish ---------- */
+.rec {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 6px 0 13px;
+  border-radius: 11px;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--cdfe4ec);
+}
+
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--cc0392b);
+  animation: recPulse 1.1s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1 }
+  50% { opacity: .25 }
+}
+
+.rec-clock {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c1c2b45);
+}
+
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  width: 2px;
+  flex: 0 0 2px;
+  border-radius: 2px;
+  background: var(--c6b7788);
+  transform-origin: center;
+  animation: recWave .9s ease-in-out infinite;
+}
+
+@keyframes recWave {
+  0%, 100% { transform: scaleY(.45) }
+  50% { transform: scaleY(1) }
+}
+
+.rec-btn {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--s-card);
+  color: var(--c66748c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.rec-btn:hover {
+  background: var(--ce6ebf3);
+  color: var(--c23568f);
+}
+
+.rec-btn.ok:hover {
+  background: var(--ce3f2e9);
+  color: var(--c1a6e4b);
+}
+
+.rec-btn.danger:hover {
+  background: var(--cfceceb);
+  color: var(--ca52220);
+}
+
+.rec-play {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--brand-a);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.rec-name {
+  font-size: 14px;
+  color: var(--c3d4d66);
+  white-space: nowrap;
+}
+
+/* ---------- rekvizit kartasi ---------- */
+.req-card {
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 10px;
+  overflow: hidden;
+  animation: riseIn .26s var(--ease);
+}
+
+.req-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 0;
+  background: var(--s-card);
+  cursor: pointer;
+  text-align: left;
+}
+
+.req-head:hover {
+  background: var(--cf8fafc);
+}
+
+.req-chev {
+  color: var(--c8b95a6);
+}
+
+.req-body {
+  padding: 4px 12px 12px;
+  border-top: 1px solid var(--ceef1f6);
+  background: var(--cfafbfc);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tx-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+}
+
+.tx-n {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border-radius: 7px;
+  border: 1px solid var(--ce2e8f1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  color: var(--c66748c);
+}
+
+.tx-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tx-amount {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.tx-date {
+  font-size: 12.5px;
+  color: var(--c8b95a6);
+}
+
+.tx-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tx-form .input-wrap {
+  flex: 1;
+  min-width: 150px;
+  height: 40px;
+}
+
+.tx-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px dashed var(--cc8cdd6);
+  background: transparent;
+  color: var(--c23568f);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.tx-add:hover {
+  background: var(--ce8eef7);
+  border-style: solid;
+}
+
+.btn-dark.sm {
+  height: 40px;
+  padding: 0 14px;
+}
+
+.icon-btn.danger:hover {
+  background: var(--cfceceb);
+  color: var(--ca52220);
 }
 
 /* ---------- responsive ---------- */

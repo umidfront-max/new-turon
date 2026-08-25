@@ -174,7 +174,13 @@ qism API va token bilan almashtiriladi.
   (`+998 90 123 45 67` maskasi), hudud, manzil;
 * **Karta / hisob raqam** — 16 yoki 20 raqamli maska, raqam bo'yicha to'lov
   tizimi aniqlanadi (Humo / UzCard / Visa / Mastercard), summa va tranzaksiya
-  vaqti maskalari, qo'shilgan rekvizitlar ro'yxati va jami summa.
+  vaqti maskalari. **Bitta rekvizitga bir nechta tranzaksiya** biriktiriladi:
+  qo'shilgan rekvizit kartasi ochiladi, ichida tranzaksiyalar ro'yxati —
+  qo'shish, tahrirlash, o'chirish; jami summa hammasidan hisoblanadi.
+  Bir xil raqam qayta kiritilsa, yangi rekvizit emas, tranzaksiya qo'shiladi.
+* **Ovozli fabula** — yozib olish interfeysi: yozilayotgan vaqt, jonli to'lqin
+  animatsiyasi, bekor qilish/saqlash, so'ng tinglash va o'chirish
+  (mikrofon so'ralmaydi — bu namuna).
 
 Har bir blokning «Tekshirish» tugmasi majburiy maydonlarni tekshiradi va
 sarlavhaga yashil belgi qo'yadi. «Bloklashga yuborish» barcha majburiy maydon
@@ -267,6 +273,8 @@ ulashish va brauzer «orqaga» tugmasi ishlaydi.
 | Tab | Nima ko'rsatiladi |
 | --- | --- |
 | Murojaat | asosiy maydonlar, arizachi, fabula + ovozli fabula pleyeri, rekvizitlar (tranzaksiyalari ochiladi) |
+| Sanksiyalar | qaror hujjati ko'ruvchisi: sahifa tanlash, masshtab, yuklab olish va chop etish; bank hali bloklamagan bo'lsa bo'sh holat |
+| Tranzaksiyalar | zanjir statistikasi, bank ko'chirmasi fayli, qidiruv va summa bo'yicha saralash, 1–3 darajali pul harakati (har bir tugun ochiladi) |
 | Bank amaliyotlari | Markaziy bank bilan almashinuv lentasi: yuborilgan so'rov (REQ raqami, E2202 kodi, urinish, rekvizitlar), bank javoblari, qaytarilganda — bank xodimi va «Avto to'lov izohi» |
 | Ish jarayoni | daraxt ko'rinishidagi tarix: vaqt, xodim/bank, bosqich yorlig'i |
 
