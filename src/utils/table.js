@@ -23,7 +23,7 @@ export function isoDay(time) {
  * @param {object} opts { queue, picked, cols, dups, labels }
  *   labels — matn qidiruvida ishlatiladigan tarjimalar: { flow(a), method(a) }
  */
-export function filterApplications(items, { queue = 'all', picked = {}, cols = EMPTY_COLS, dups = new Set(), labels = {} } = {}) {
+export function filterApplications(items, { queue = 'all', region = '', picked = {}, cols = EMPTY_COLS, dups = new Set(), labels = {} } = {}) {
   const inQueue = queueFilter(queue)
   const groups = Object.entries(picked).filter(([, list]) => list && list.length)
   const min = toNumber(cols.min)
@@ -33,6 +33,7 @@ export function filterApplications(items, { queue = 'all', picked = {}, cols = E
 
   return items.filter((a) => {
     if (!inQueue(a)) return false
+    if (region && a.region !== region) return false
 
     for (const [group, list] of groups) {
       if (!list.includes(groupValue(a, group, dups))) return false

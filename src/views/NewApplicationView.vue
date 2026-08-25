@@ -15,7 +15,7 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { ask, toast } = useUi()
-const { draftById, removeDraft, addApplication } = useApplications()
+const { items, draftById, removeDraft, addApplication } = useApplications()
 
 /* ---------- forma holati ---------- */
 const form = reactive({
@@ -26,6 +26,7 @@ const form = reactive({
   fabula: '',
   fio: '',
   phone: '',
+  phone2: '',
   region: '',
   address: ''
 })
@@ -93,12 +94,28 @@ function onPhone(e) {
   delete errors.phone
 }
 
+function onPhone2(e) {
+  form.phone2 = maskPhone(e.target.value)
+}
+
+function openApplication(id) {
+  router.push({ path: '/application', query: { id } })
+}
+
 function onFio(e) {
   form.fio = e.target.value.toUpperCase().replace(/[^A-Z'\s-]/g, '')
   delete errors.fio
 }
 
 const system = computed(() => (draft.kind === 'card' ? cardSystem(draft.number) : null))
+
+/* ---------- karta takroriyligi ---------- */
+// kiritilayotgan raqam ro'yxatdagi arizalarda uchrasa — ogohlantiramiz
+const duplicates = computed(() => {
+  const digits = digitsOnly(draft.number)
+  if (digits.length < 16) return []
+  return items.value.filter((a) => digitsOnly(a.card) === digits)
+})
 
 /* ---------- tekshiruvlar ---------- */
 const REQUIRED_APP = ['id', 'method', 'source', 'fabula']
@@ -292,6 +309,34 @@ function cancelAll() {
           </header>
 
           <div class="block-body">
+            <!-- karta bo'yicha takroriylik (yangi dizayn) -->
+            <div v-if="duplicates.length" class="dup">
+              <AppIcon name="error" :size="22" class="dup-ico" />
+              <div class="dup-body">
+                <div class="dup-head">
+                  <span class="dup-title">{{ $t('form.dup.title') }}</span>
+                  <span class="dup-card mono">{{ draft.number }}</span>
+                </div>
+                <span class="dup-text">{{ $t('form.dup.text', duplicates.length) }}</span>
+                <div class="dup-rows">
+                  <button
+                    v-for="d in duplicates"
+                    :key="d.id"
+                    type="button"
+                    class="dup-row"
+                    @click="openApplication(d.id)"
+                  >
+                    <span class="dup-row-main">
+                      <span class="mono dup-id">{{ d.id }}</span>
+                      <span class="dup-name truncate">{{ d.name }}</span>
+                    </span>
+                    <span class="mono dup-sum">{{ d.amount }}</span>
+                    <AppIcon name="chevronRight" :size="16" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="grid-2">
               <label class="field">
                 <span class="label">{{ $t('form.app.id') }} <i class="req">*</i></span>
@@ -404,6 +449,18 @@ function cancelAll() {
                   :class="{ bad: errors.phone }"
                   placeholder="+998 __ ___ __ __"
                   @input="onPhone"
+                />
+              </label>
+
+              <label class="field">
+                <span class="label">
+                  {{ $t('form.applicant.phone2') }} <i class="opt">· {{ $t('form.optional') }}</i>
+                </span>
+                <input
+                  :value="form.phone2"
+                  class="input mono"
+                  placeholder="+998 __ ___ __ __"
+                  @input="onPhone2"
                 />
               </label>
 
@@ -852,6 +909,107 @@ function cancelAll() {
 
 .sys.on .sys-dot {
   background: var(--c23568f);
+}
+
+/* ---------- takroriylik ogohlantirishi ---------- */
+.dup {
+  display: flex;
+  gap: 13px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--cfff5e9);
+  border: 1px solid var(--cf6dfc0);
+  animation: riseIn .26s var(--ease);
+}
+
+.dup-ico {
+  color: var(--ce07c1e);
+}
+
+.dup-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.dup-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.dup-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cb45309);
+}
+
+.dup-card {
+  font-size: 14px;
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: var(--s-card);
+  border: 1px solid var(--cf6dfc0);
+  color: var(--c1c2b45);
+}
+
+.dup-text {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--c3d4d66);
+}
+
+.dup-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dup-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--s-card);
+  border: 1px solid var(--cf6dfc0);
+  color: var(--c3d4d66);
+  cursor: pointer;
+  text-align: left;
+  transition: filter .16s ease;
+}
+
+.dup-row:hover {
+  filter: brightness(.985);
+}
+
+.dup-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dup-id {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.dup-name {
+  font-size: 13px;
+  color: var(--c8b95a6);
+}
+
+.dup-sum {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c16233d);
+  white-space: nowrap;
 }
 
 /* ---------- fabula ---------- */

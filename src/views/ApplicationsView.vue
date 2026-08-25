@@ -32,11 +32,21 @@ const picked = ref({})
 
 const queue = computed(() => queueFromSlug(route.params.queue))
 
+// hudud filtri manzildan keladi: /?region=tashkentCity (admin panelidan o'tiladi)
+const region = computed(() => (typeof route.query.region === 'string' ? route.query.region : ''))
+
+function clearRegion() {
+  const query = { ...route.query }
+  delete query.region
+  router.replace({ query })
+}
+
 // navbat yoki filtr o'zgarsa — birinchi sahifaga
 watch([queue, cols, picked, perPage], () => { page.value = 1 }, { deep: true })
 
 const filtered = computed(() => filterApplications(items.value, {
   queue: queue.value,
+  region: region.value,
   picked: picked.value,
   cols: cols.value,
   dups: duplicateCards.value,
@@ -52,7 +62,8 @@ const rows = computed(() => pageSlice(filtered.value, page.value, perPage.value)
 
 const activeFilters = computed(() =>
   Object.values(picked.value).reduce((n, list) => n + list.length, 0)
-  + Object.values(cols.value).filter((v) => String(v).trim()).length)
+  + Object.values(cols.value).filter((v) => String(v).trim()).length
+  + (region.value ? 1 : 0))
 
 function openApplication(row) {
   router.push({ path: '/application', query: { id: row.id } })
@@ -71,6 +82,7 @@ function onFilters(groups) {
 function clearFilters() {
   picked.value = {}
   cols.value = { ...EMPTY_COLS }
+  if (region.value) clearRegion()
   toast(t('applications.filtersCleared'))
 }
 
@@ -117,6 +129,21 @@ async function exportXlsx() {
         </button>
       </header>
 
+      <div v-if="region" class="region-bar">
+        <span class="region-label">{{ $t('applications.regionFilter') }}</span>
+        <span class="region-chip">
+          {{ $t(`regions.${region}`) }}
+          <button
+            type="button"
+            class="region-clear"
+            :title="$t('applications.regionClear')"
+            @click="clearRegion"
+          >
+            <AppIcon name="close" :size="14" />
+          </button>
+        </span>
+      </div>
+
       <Transition name="collapse">
         <FilterPanel
           v-if="filterOpen"
@@ -145,6 +172,55 @@ async function exportXlsx() {
 </template>
 
 <style scoped>
+/* ---------- hudud filtri chizig'i ---------- */
+.region-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px;
+  background: var(--cf4f7fb);
+  border-bottom: 1px solid var(--cd6e3f2);
+}
+
+.region-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--c8b95a6);
+}
+
+.region-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 30px;
+  padding: 0 6px 0 12px;
+  border-radius: 20px;
+  background: var(--s-card);
+  border: 1px solid var(--c9fc0e4, var(--kc9d9ec));
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c23568f);
+}
+
+.region-clear {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--ce8eef7);
+  color: var(--c23568f);
+}
+
+.region-clear:hover {
+  background: var(--cd6e3f2);
+}
+
 .screen {
   display: flex;
   flex-direction: column;

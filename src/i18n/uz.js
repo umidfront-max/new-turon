@@ -169,6 +169,8 @@ export default {
     exportDone: 'Yuklab olindi: {file}',
     exportEmpty: "Eksport uchun ariza yo'q",
     filtersCleared: 'Filtrlar tozalandi',
+    regionFilter: 'Hudud filtri',
+    regionClear: 'Filtrni olib tashlash',
     filtersApplied: '{n} ta filtr qo‘llandi',
     emptyTitle: "Bu navbatda ariza yo'q",
     emptyText: "Boshqa navbatni tanlang yoki filtrlarni tozalab ko'ring."
@@ -460,6 +462,7 @@ export default {
       title: 'Murojaat qiluvchi',
       fio: 'F.I.Sh.',
       phone: 'Telefon raqami',
+      phone2: "Qo'shimcha telefon",
       region: 'Hudud',
       address: 'Yashash manzili',
       addressValue: 'Chilonzor tumani, 19-kvartal, 24-uy'
@@ -648,6 +651,10 @@ export default {
       region: 'Hudud',
       address: 'Yashash manzili',
       addressPh: "Tuman, mahalla, ko'cha, uy"
+    },
+    dup: {
+      title: "Karta bo'yicha takroriylik topildi",
+      text: "Shu karta bo'yicha ilgari {n} ta ariza qabul qilingan. Summani va tranzaksiya vaqtini solishtirib ko'ring."
     },
     requisite: {
       title: "Karta, hisob raqam qo'shish",
