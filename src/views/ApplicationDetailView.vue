@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
+import BlockedRequisites from '@/components/detail/BlockedRequisites.vue'
+import TransactionPanel from '@/components/detail/TransactionPanel.vue'
 import { detailFor } from '@/data/detail'
 import { buildChain, chainStats, chainMatches } from '@/data/chain'
 import { useApplications } from '@/stores/useApplications'
@@ -50,6 +52,7 @@ const row = computed(() => data.value.row)
 
 /* ---------- rekvizitlar ochilishi ---------- */
 const opened = ref(new Set([0]))
+const blockedOpen = ref(false)
 
 function toggleReq(i) {
   const next = new Set(opened.value)
@@ -122,8 +125,10 @@ function toggleNode(id) {
   openNodes.value = next
 }
 
+const txNode = ref(null)
+
 function openChainCard(node) {
-  toast(t('detail.tx.opened', { card: node.card }))
+  txNode.value = node
 }
 
 function bankFile(action) {
@@ -385,6 +390,10 @@ function exportXlsx() {
               {{ $t('detail.requisites.cards', data.requisites.length) }} ·
               {{ $t('detail.requisites.tx', data.txTotal) }}
             </span>
+            <button type="button" class="req-all" @click="blockedOpen = true">
+              <AppIcon name="lock" :size="15" />
+              {{ $t('blocked.all') }}
+            </button>
             <div class="spacer" />
             <span class="total-value mono">
               {{ data.total }}<span class="dim"> {{ $t('detail.sum') }}</span>
@@ -719,6 +728,19 @@ function exportXlsx() {
       <span class="soon-icon"><AppIcon :name="TABS.find((x) => x.key === tab).icon" :size="26" /></span>
       <p class="soon-text">{{ $t(`detail.soon.${tab}`) }}</p>
     </section>
+
+    <BlockedRequisites
+      v-if="blockedOpen"
+      :requisites="data.requisites"
+      @close="blockedOpen = false"
+    />
+
+    <TransactionPanel
+      v-if="txNode"
+      :node="txNode"
+      :applicant="data.row.name"
+      @close="txNode = null"
+    />
   </div>
 </template>
 
@@ -778,6 +800,26 @@ function exportXlsx() {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.req-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px;
+  margin-left: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c23568f);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.req-all:hover {
+  background: var(--ce8eef7);
 }
 
 .deadline-dot {

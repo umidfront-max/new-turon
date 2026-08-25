@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import CardHistory from '@/components/form/CardHistory.vue'
 import {
   METHOD_OPTIONS, SOURCE_OPTIONS, REGION_OPTIONS,
   maskCard, maskAccount, maskAmount, maskPhone, maskDateTime,
@@ -120,6 +121,8 @@ const duplicates = computed(() => {
   if (digits.length < 16) return []
   return items.value.filter((a) => digitsOnly(a.card) === digits)
 })
+
+const historyOpen = ref(false)
 
 /* ---------- tekshiruvlar ---------- */
 const REQUIRED_APP = ['id', 'method', 'source', 'fabula']
@@ -443,6 +446,11 @@ function cancelAll() {
                 <div class="dup-head">
                   <span class="dup-title">{{ $t('form.dup.title') }}</span>
                   <span class="dup-card mono">{{ draft.number }}</span>
+                  <div class="spacer" />
+                  <button type="button" class="dup-more" @click="historyOpen = true">
+                    <AppIcon name="history" :size="15" />
+                    {{ $t('cardHistory.open') }}
+                  </button>
                 </div>
                 <span class="dup-text">{{ $t('form.dup.text', duplicates.length) }}</span>
                 <div class="dup-rows">
@@ -463,6 +471,14 @@ function cancelAll() {
                 </div>
               </div>
             </div>
+
+            <CardHistory
+              v-if="historyOpen && duplicates.length"
+              :card="draft.number"
+              :rows="duplicates"
+              @close="historyOpen = false"
+              @open="historyOpen = false; openApplication($event)"
+            />
 
             <div class="grid-2">
               <label class="field">
@@ -1170,6 +1186,25 @@ function cancelAll() {
   background: var(--s-card);
   border: 1px solid var(--cf6dfc0);
   color: var(--c1c2b45);
+}
+
+.dup-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--cf6dfc0);
+  background: var(--s-card);
+  color: var(--cb45309);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dup-more:hover {
+  background: var(--cfff5e9);
 }
 
 .dup-text {

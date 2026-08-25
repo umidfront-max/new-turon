@@ -172,6 +172,35 @@ export default {
     }
   },
 
+  blocked: {
+    title: 'Bloklangan rekvizitlar',
+    count: '{n} ta rekvizit',
+    cards: 'Kartalar',
+    accounts: 'Hisob raqamlar',
+    sum: 'Ushlab qolingan summa',
+    colCard: 'Rekvizit',
+    colKind: 'Turi',
+    colCur: 'Valyuta',
+    kinds: { card: 'Karta', account: 'Hisob raqam' },
+    footCount: 'Jami {n} ta rekvizit bloklangan',
+    footSum: 'Ushlab qolingan summa:',
+    exported: 'Bloklangan rekvizitlar eksport qilinmoqda · XLSX',
+    all: "Barchasini ko'rish"
+  },
+
+  cardHistory: {
+    title: 'Karta tarixi',
+    card: 'Rekvizit',
+    lead: "Ushbu karta bo'yicha avval ham ariza qabul qilingan. Yangi arizani yuborishdan oldin oldingi natijalarni tekshiring.",
+    previous: 'Oldingi arizalar',
+    count: '{n} ta',
+    copy: 'Nusxalash',
+    copied: '{text} nusxalandi',
+    foot: "Ariza raqamiga bosib to'liq tafsilotni ochishingiz mumkin.",
+    ok: 'Tushunarli',
+    open: 'Karta tarixi'
+  },
+
   role: {
     title: 'Rolni tanlash',
     staff: { label: 'Navbatchi / ijrochi', note: 'Arizalar bilan ishlash' },
@@ -691,6 +720,22 @@ export default {
       downloaded: '{file} yuklab olindi',
       print: 'Chop etish',
       printing: 'Chop etishga yuborildi'
+    },
+    txPanel: {
+      title: 'Tranzaksiya tafsilotlari',
+      photo: 'Rasm',
+      contacts: "Bog'lanish ma'lumotlari",
+      address: 'Manzil',
+      phone: 'Telefon',
+      operation: 'Amaliyot',
+      fields: {
+        amount: "O'tkazilgan summa",
+        date: 'Amaliyot vaqti',
+        bank: 'Bank',
+        op: 'Amaliyot turi',
+        system: "To'lov tizimi"
+      },
+      hint: "Karta egasi ma'lumotlari bank va soliq bazasidan olinadi. Rasmiy so'rov yuborilgandan keyin to'liq versiyasi ochiladi."
     },
     tx: {
       title: 'Tranzaksiyalar zanjiri',
