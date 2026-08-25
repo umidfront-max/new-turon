@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
-import { loginPfx, maskId, EriError } from '@/services/eriLogin'
+import { loginPfxB64, fileToBase64, maskId, EriError } from '@/services/eriLogin'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
 import { canRemember, restoreFolder, regrantFolder, chooseFolder } from '@/services/keyStore'
 import { listKeys as isignerKeys } from '@/services/isigner'
@@ -84,6 +84,30 @@ const activeFile = computed(() => {
 
 const manualFile = computed(() => files.value.find((f) => f.key === selectedKey.value)?.file || null)
 const pfxFile = computed(() => (signerState.value === 'ready' ? activeFile.value : manualFile.value))
+
+// Tanlangan kalit fayli o'qilgan holda tayyor turadi: «Kirish» bosilganda
+// hech narsa kutilmaydi — base64 allaqachon hisoblangan.
+const pfxB64 = ref('')
+const reading = ref(false)
+
+async function prepareFile(file) {
+  pfxB64.value = ''
+  if (!file) return
+
+  reading.value = true
+  try {
+    pfxB64.value = await fileToBase64(file)
+  } catch {
+    eriError.value = t('login.eri.errors.read')
+  } finally {
+    reading.value = false
+  }
+}
+
+// kalit almashsa yoki papka o'qilsa — yangi fayl darhol tayyorlanadi
+watch(pfxFile, (file) => { prepareFile(file) }, { immediate: true })
+
+const keyReady = computed(() => !!pfxB64.value)
 
 async function loadSignerKeys() {
   signerState.value = 'loading'
@@ -276,11 +300,13 @@ async function submitEimzo() {
     return
   }
 
-  // /login-pfx kalit faylini talab qiladi — papka bir marta so'raladi
-  if (!pfxFile.value) {
+  // fayl hali o'qilmagan bo'lsa — papkaga ruxsat so'raymiz
+  if (!pfxB64.value) {
     eriError.value = ''
     const granted = await requestFolder()
-    if (!granted || !pfxFile.value) {
+    if (granted) await prepareFile(pfxFile.value)
+
+    if (!pfxB64.value) {
       errors.pfx = true
       if (!eriError.value) eriError.value = t('login.eri.errors.noFile')
       return
@@ -291,7 +317,7 @@ async function submitEimzo() {
   eriError.value = ''
 
   try {
-    const result = await loginPfx(pfxFile.value, pfxPass.value)
+    const result = await loginPfxB64(pfxB64.value, pfxPass.value)
     const cert = result.user
 
     // tanlangan kalit bilan qaytgan sertifikat bir xil odamnikimi
@@ -509,6 +535,11 @@ function onPass(e) {
                     {{ maskId(activeSignerKey.pinfl || activeSignerKey.tin) }}
                     · {{ $t('login.eimzo.expires', { date: activeSignerKey.validTo }) }}
                   </span>
+                </span>
+                <span class="key-state" :class="{ ok: keyReady }">
+                  <span v-if="reading" class="spinner dark small" />
+                  <AppIcon v-else-if="keyReady" name="check" :size="16" />
+                  <AppIcon v-else name="folder" :size="16" />
                 </span>
               </div>
             </template>
@@ -1223,6 +1254,23 @@ function onPass(e) {
   font-style: normal;
   font-weight: 400;
   color: #98a3b6;
+}
+
+.key-state {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  color: #98a3b6;
+}
+
+.key-state.ok {
+  color: #1a6e4b;
+}
+
+.spinner.small {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
 }
 
 .keys-head {

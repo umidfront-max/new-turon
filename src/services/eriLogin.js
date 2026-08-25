@@ -159,9 +159,19 @@ export function maskId(value) {
 export async function loginPfx(file, password) {
   if (!file) throw new EriError('noFile')
   if (file.size > MAX_PFX) throw new EriError('tooBig')
+  const pfx_b64 = await fileToBase64(file)
+  return loginPfxB64(pfx_b64, password)
+}
+
+/**
+ * Kalit allaqachon base64 ga o'girilgan bo'lsa — to'g'ridan-to'g'ri yuboriladi.
+ * @param {string} pfx_b64 .pfx fayli (base64)
+ * @param {string} password kalit paroli
+ */
+export async function loginPfxB64(pfx_b64, password) {
+  if (!pfx_b64) throw new EriError('noFile')
   if (!password) throw new EriError('noPassword')
 
-  const pfx_b64 = await fileToBase64(file)
   const data = await post('/login-pfx', { pfx_b64, password })
 
   if (!data.success) throw new EriError('rejected', data.message)
