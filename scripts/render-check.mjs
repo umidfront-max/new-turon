@@ -4,7 +4,7 @@ globalThis.localStorage = mem(); globalThis.sessionStorage = mem()
 globalThis.document = {
   body: { dataset: {} }, documentElement: {}, title: '',
   addEventListener() {}, removeEventListener() {},
-  createElement: () => ({ innerHTML: '', content: {}, setAttribute() {}, style: {} }),
+  createElement: () => ({ webkitdirectory: false, innerHTML: '', content: {}, setAttribute() {}, style: {} }),
   createElementNS: () => ({ setAttribute() {}, style: {} }),
   createTextNode: () => ({}), createComment: () => ({}), querySelector: () => null
 }

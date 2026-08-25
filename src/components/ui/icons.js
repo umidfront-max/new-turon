@@ -75,6 +75,7 @@ export const ICONS = {
   edit: 'edit',
   check: 'check',
   scan: 'crop_free',
+  folder: 'folder_open',
   close: 'close',
   warn: 'warning',
   error: 'error',

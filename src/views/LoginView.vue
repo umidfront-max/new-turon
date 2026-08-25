@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { LANGS } from '@/i18n'
 import { loginPfx, maskId, EriError } from '@/services/eriLogin'
+import { collectKeys, canPickFolder } from '@/services/dsKeys'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
 
@@ -34,45 +35,70 @@ const form = reactive({ login: '', password: '', remember: true })
 const showPassword = ref(false)
 const errors = reactive({})
 
-/* ---------- e-imzo (.pfx + parol) ---------- */
-// Foydalanuvchi JSHSHIR kiritmaydi — u kalit ichidagi sertifikatdan olinadi.
-const pfxFile = ref(null)
+/* ---------- e-imzo: kalitlar ro'yxati ---------- */
+// Brauzer diskni o'zi ko'ra olmaydi, shuning uchun foydalanuvchi kalitlar
+// papkasini (odatda C:\DSKEYS) bir marta tanlaydi — keyin ro'yxat UIda turadi.
+const keys = ref([])
+const selectedKey = ref('')
 const pfxPass = ref('')
 const showPin = ref(false)
 const dragOver = ref(false)
 const eriError = ref('')
-const fileInput = ref(null)
 
-const fileName = computed(() => (pfxFile.value ? pfxFile.value.name : ''))
-const fileSize = computed(() => (pfxFile.value ? `${(pfxFile.value.size / 1024).toFixed(1)} KB` : ''))
+const fileInput = ref(null)
+const folderInput = ref(null)
+const folderSupported = canPickFolder()
+
+const activeKey = computed(() => keys.value.find((k) => k.key === selectedKey.value) || null)
+const pfxFile = computed(() => activeKey.value?.file || null)
 
 function pickFile() {
   fileInput.value?.click()
 }
 
-function acceptFile(file) {
-  if (!file) return
-  if (!/\.(pfx|p12)$/i.test(file.name)) {
-    eriError.value = t('login.eri.errors.badType')
+function pickFolder() {
+  folderInput.value?.click()
+}
+
+// yangi kalitlar ro'yxatga qo'shiladi, takrorlanganlari tashlanadi
+function addKeys(files) {
+  const found = collectKeys(files)
+  if (!found.length) {
+    eriError.value = t('login.eri.errors.noKeys')
     return
   }
-  pfxFile.value = file
+
+  const seen = new Set(keys.value.map((k) => k.key))
+  const fresh = found.filter((k) => !seen.has(k.key))
+  keys.value = [...keys.value, ...fresh].sort((a, b) => a.name.localeCompare(b.name))
+
+  if (!selectedKey.value || fresh.length === 1) selectedKey.value = (fresh[0] || found[0]).key
   eriError.value = ''
   delete errors.pfx
 }
 
 function onFile(e) {
-  acceptFile(e.target.files?.[0])
+  addKeys(e.target.files)
   e.target.value = '' // bir xil faylni qayta tanlash mumkin bo'lsin
 }
 
 function onDrop(e) {
   dragOver.value = false
-  acceptFile(e.dataTransfer?.files?.[0])
+  addKeys(e.dataTransfer?.files)
 }
 
-function clearFile() {
-  pfxFile.value = null
+function selectKey(key) {
+  selectedKey.value = key
+  pfxPass.value = ''
+  eriError.value = ''
+  delete errors.pfx
+  delete errors.pfxPass
+}
+
+function clearKeys() {
+  keys.value = []
+  selectedKey.value = ''
+  pfxPass.value = ''
   eriError.value = ''
 }
 
@@ -307,17 +333,23 @@ function onPass(e) {
               ref="fileInput"
               type="file"
               accept=".pfx,.p12"
+              multiple
+              class="file-input"
+              @change="onFile"
+            />
+            <input
+              ref="folderInput"
+              type="file"
+              webkitdirectory
               class="file-input"
               @change="onFile"
             />
 
-            <!-- kalit fayli tanlanmagan -->
-            <button
-              v-if="!pfxFile"
-              type="button"
+            <!-- kalitlar hali yuklanmagan -->
+            <div
+              v-if="!keys.length"
               class="drop"
               :class="{ over: dragOver, bad: errors.pfx }"
-              @click="pickFile"
               @dragover.prevent="dragOver = true"
               @dragleave="dragOver = false"
               @drop.prevent="onDrop"
@@ -327,19 +359,54 @@ function onPass(e) {
                 <span class="drop-title">{{ $t('login.eri.pick') }}</span>
                 <span class="drop-note">{{ $t('login.eri.pickNote') }}</span>
               </span>
-            </button>
-
-            <!-- tanlangan kalit -->
-            <div v-else class="key on">
-              <span class="key-ico"><AppIcon name="key" :size="18" /></span>
-              <span class="key-text">
-                <span class="key-name truncate">{{ fileName }}</span>
-                <span class="key-meta mono">{{ fileSize }}</span>
+              <span class="drop-acts">
+                <button v-if="folderSupported" type="button" class="drop-btn primary" @click="pickFolder">
+                  <AppIcon name="folder" :size="16" />
+                  {{ $t('login.eri.openFolder') }}
+                </button>
+                <button type="button" class="drop-btn" @click="pickFile">
+                  {{ $t('login.eri.openFile') }}
+                </button>
               </span>
-              <button type="button" class="key-clear" :title="$t('common.remove')" @click="clearFile">
-                <AppIcon name="close" :size="17" />
-              </button>
             </div>
+
+            <!-- topilgan kalitlar ro'yxati -->
+            <template v-else>
+              <div class="keys-head">
+                <span class="keys-count">{{ $t('login.eri.found', keys.length) }}</span>
+                <div class="spacer" />
+                <button type="button" class="keys-link" @click="folderSupported ? pickFolder() : pickFile()">
+                  {{ $t('login.eri.change') }}
+                </button>
+                <button type="button" class="keys-link" @click="clearKeys">{{ $t('common.clear') }}</button>
+              </div>
+
+              <div class="keys thin-scroll">
+                <button
+                  v-for="k in keys"
+                  :key="k.key"
+                  type="button"
+                  class="key"
+                  :class="{ on: selectedKey === k.key }"
+                  @click="selectKey(k.key)"
+                >
+                  <span class="key-ico">
+                    <AppIcon :name="k.idKind === 'tin' ? 'bank' : 'user'" :size="18" />
+                  </span>
+                  <span class="key-text">
+                    <span class="key-name truncate">{{ k.title }}</span>
+                    <span class="key-meta mono">
+                      <template v-if="k.idKind">
+                        {{ $t(`login.eri.ids.${k.idKind}`) }} {{ k.idValue }}<template v-if="k.idSeq"> · {{ k.idSeq }}</template>
+                      </template>
+                      <template v-else>{{ k.name }}</template>
+                      · {{ k.size }}
+                    </span>
+                  </span>
+                  <span class="radio"><span class="radio-dot" /></span>
+                </button>
+              </div>
+            </template>
 
             <label class="field">
               <span class="label">{{ $t('login.eri.password') }}</span>
@@ -349,6 +416,7 @@ function onPass(e) {
                   class="input bare"
                   :type="showPin ? 'text' : 'password'"
                   autocomplete="off"
+                  :disabled="!activeKey"
                   :placeholder="$t('login.eri.passwordPh')"
                   @input="onPass"
                 />
@@ -862,15 +930,80 @@ function onPass(e) {
   border: 1.6px dashed #c8cdd6;
   border-radius: 12px;
   background: #f8fafc;
-  cursor: pointer;
   text-align: left;
+  flex-wrap: wrap;
   transition: border-color .18s ease, background .18s ease;
 }
 
-.drop:hover,
 .drop.over {
   border-color: #16233d;
   background: #f1f4f9;
+}
+
+.drop-acts {
+  display: flex;
+  gap: 8px;
+  flex: 1 0 100%;
+}
+
+.drop-btn {
+  flex: 1;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid #e7ecf3;
+  background: #fff;
+  color: #3d4d66;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.drop-btn:hover {
+  border-color: #16233d;
+}
+
+.drop-btn.primary {
+  background: #16233d;
+  border-color: #16233d;
+  color: #fff;
+}
+
+.keys-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.keys-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3d4d66;
+}
+
+.keys-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+  color: #23568f;
+  cursor: pointer;
+}
+
+.keys-link:hover {
+  text-decoration: underline;
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 224px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .drop.bad {

@@ -1,6 +1,6 @@
 const mem = () => { const m = new Map(); return { getItem: k => m.has(k)?m.get(k):null, setItem:(k,v)=>m.set(k,String(v)), removeItem:k=>m.delete(k) } }
 globalThis.localStorage = mem(); globalThis.sessionStorage = mem()
-globalThis.document = { body:{dataset:{}}, documentElement:{}, title:'', addEventListener(){}, removeEventListener(){}, createElement:()=>({innerHTML:'',content:{},setAttribute(){},style:{}}), createElementNS:()=>({setAttribute(){},style:{}}), createTextNode:()=>({}), createComment:()=>({}), querySelector:()=>null }
+globalThis.document = { body:{dataset:{}}, documentElement:{}, title:'', addEventListener(){}, removeEventListener(){}, createElement:()=>({webkitdirectory:false,innerHTML:'',content:{},setAttribute(){},style:{}}), createElementNS:()=>({setAttribute(){},style:{}}), createTextNode:()=>({}), createComment:()=>({}), querySelector:()=>null }
 globalThis.location = { pathname:'/', search:'', hash:'', href:'http://localhost/', origin:'http://localhost' }
 globalThis.history = { state:{}, pushState(){}, replaceState(){}, scrollRestoration:'auto', go(){} }
 globalThis.addEventListener=()=>{}; globalThis.removeEventListener=()=>{}; globalThis.scrollTo=()=>{}
