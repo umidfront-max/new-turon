@@ -1079,9 +1079,10 @@ function cancelAll() {
 .input.area {
   height: auto;
   padding: 12px 13px;
-  line-height: 1.55;
+  font-size: 16px;
+  line-height: 1.7;
   resize: vertical;
-  min-height: 132px;
+  min-height: 118px;
 }
 
 .select {
@@ -1601,7 +1602,7 @@ function cancelAll() {
 }
 
 @keyframes recWave {
-  0%, 100% { transform: scaleY(.45) }
+  0%, 100% { transform: scaleY(.28) }
   50% { transform: scaleY(1) }
 }
 

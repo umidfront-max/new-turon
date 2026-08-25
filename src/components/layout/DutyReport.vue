@@ -70,6 +70,8 @@ function runMain() {
   toast(t('duty.toast.sent'))
 }
 
+const retNote = ref('')
+
 function runReturn() {
   if (!returning.value) {
     returning.value = true
@@ -91,12 +93,13 @@ function runReturn() {
       <div class="sheet">
         <!-- sarlavha -->
         <header class="head dark-bar">
-          <AppIcon name="doc" :size="24" />
-          <span class="title">{{ $t('dutyReport.title') }}</span>
-          <span class="code mono">{{ CODE }}</span>
+          <span class="head-ico"><AppIcon name="doc" :size="28" /></span>
+          <div class="head-text">
+            <span class="title">{{ $t('dutyReport.title') }}</span>
+            <span class="code mono">{{ CODE }}</span>
+          </div>
           <span class="tag">{{ $t(`dutyReport.phase.${phase}`) }}</span>
-          <div class="spacer" />
-          <button type="button" class="close" @click="close">
+          <button type="button" class="close" :title="$t('common.close')" @click="close">
             <AppIcon name="close" :size="20" />
           </button>
         </header>
@@ -218,8 +221,8 @@ function runReturn() {
           </section>
 
           <!-- qaytarish sababi -->
-          <section v-if="returning" class="group">
-            <span class="group-title">{{ $t('dutyReport.reason') }}</span>
+          <section v-if="returning" class="ret">
+            <span class="ret-title">{{ $t('dutyReport.reason') }}</span>
             <div class="reasons">
               <button
                 v-for="r in REASONS"
@@ -230,6 +233,11 @@ function runReturn() {
                 @click="reason = r"
               >{{ $t(`dutyReport.reasons.${r}`) }}</button>
             </div>
+            <textarea
+              v-model="retNote"
+              class="ret-note"
+              :placeholder="$t('dutyReport.reasonPh')"
+            />
           </section>
         </div>
 
@@ -266,32 +274,50 @@ function runReturn() {
 }
 
 .sheet {
-  width: 760px;
-  max-width: 100%;
-  max-height: 90vh;
+  width: 860px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 72px);
   display: flex;
   flex-direction: column;
   background: var(--s-card);
   border-radius: 14px;
-  box-shadow: 0 14px 34px rgba(5, 12, 28, .18);
+  box-shadow: 0 18px 44px rgba(5, 12, 28, .28);
   overflow: hidden;
 }
 
 .head {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 0 16px;
-  height: 52px;
+  gap: 13px;
+  padding: 0 20px;
+  height: 66px;
   color: #c9d9ec;
-  flex-wrap: wrap;
+}
+
+.head-ico {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .09);
+  border: 1px solid rgba(255, 255, 255, .16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.head-text {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
 }
 
 .title {
-  font-size: 15px;
+  font-size: 17.5px;
   font-weight: 600;
-  letter-spacing: .06em;
-  text-transform: uppercase;
   color: #fff;
 }
 
@@ -301,12 +327,18 @@ function runReturn() {
 }
 
 .tag {
-  padding: 3px 9px;
-  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, .10);
   border: 1px solid rgba(255, 255, 255, .20);
-  font-size: 12.5px;
+  font-size: 13px;
+  font-weight: 600;
   color: #fff;
+  white-space: nowrap;
 }
 
 .spacer {
@@ -617,15 +649,48 @@ function runReturn() {
   flex-wrap: wrap;
 }
 
+.ret {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid var(--cf2cfcd);
+  border-radius: 10px;
+  background: var(--cfceceb);
+}
+
+.ret-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ce0452f);
+}
+
 .reason {
-  padding: 9px 13px;
-  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  height: 29px;
+  padding: 0 11px;
+  border-radius: 20px;
   border: 1px solid var(--cf2cfcd);
   background: var(--s-card);
   color: var(--ce0452f);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13.5px;
   cursor: pointer;
+}
+
+.ret-note {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  padding: 11px 13px;
+  border: 1px solid var(--cf2cfcd);
+  border-radius: 9px;
+  background: var(--s-card);
+  color: var(--c1c2b45);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.6;
+  outline: none;
 }
 
 .reason.on {

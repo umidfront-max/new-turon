@@ -82,6 +82,9 @@ const allPicked = computed(() =>
   regions.value.length > 0 && regions.value.every((r) => picked.value.has(r.name))
 )
 
+// bir qismi tanlangan bo'lsa — belgi o'rniga chiziqcha
+const somePicked = computed(() => picked.value.size > 0 && !allPicked.value)
+
 function togglePick(name) {
   const next = new Set(picked.value)
   if (next.has(name)) next.delete(name)
@@ -214,11 +217,12 @@ function exportReport() {
                   <button
                     type="button"
                     class="pick"
-                    :class="{ on: allPicked }"
+                    :class="{ on: allPicked, some: somePicked }"
                     :title="$t('admin.matrix.pickAll')"
                     @click.stop="toggleAll"
                   >
-                    <AppIcon name="check" :size="14" />
+                    <span v-if="somePicked" class="dash" />
+                    <AppIcon v-else name="check" :size="14" />
                   </button>
                   {{ $t('admin.matrix.colName') }}
                 </span>
@@ -579,6 +583,17 @@ function exportReport() {
   background: var(--c23568f);
   border-color: var(--c23568f);
   color: #fff;
+}
+
+.pick.some {
+  border-color: var(--c23568f);
+}
+
+.dash {
+  width: 9px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--btn);
 }
 
 .name-cell {

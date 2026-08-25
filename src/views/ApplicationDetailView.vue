@@ -269,7 +269,7 @@ function exportXlsx() {
         <div class="damage">
           <div class="damage-label">{{ $t('detail.damage') }}</div>
           <div class="damage-value mono">
-            {{ data.total }}<span class="damage-cur">{{ $t('detail.sum') }}</span>
+            <span>{{ data.total }}</span><span class="damage-cur">{{ $t('detail.sum') }}</span>
           </div>
         </div>
       </div>
@@ -729,13 +729,15 @@ function exportXlsx() {
         <div class="chain">
           <!-- jabrlanuvchi kartasi -->
           <div class="victim">
-            <span class="victim-label">{{ $t('detail.tx.victim') }}</span>
-            <span class="pill mono">{{ chain.victim.card }}</span>
-            <span class="pill soft">{{ chain.victim.bank }}</span>
-            <div class="spacer" />
-            <span class="victim-sum mono">
-              {{ $t('detail.tx.taken') }} {{ chain.victim.amount }} <span class="dim">{{ $t('detail.sum') }}</span>
+            <span class="victim-label">
+              <AppIcon name="card" :size="17" />
+              {{ $t('detail.tx.victim') }}
             </span>
+            <span class="victim-card mono">{{ chain.victim.card }}</span>
+            <span class="victim-bank">{{ chain.victim.bank }} · {{ row.method ? $t(`methods.${row.method}`) : '' }}</span>
+            <div class="spacer" />
+            <span class="victim-taken">{{ $t('detail.tx.taken') }}</span>
+            <span class="victim-sum mono">{{ chain.victim.amount }}</span>
           </div>
 
           <!-- 1-daraja -->
@@ -1209,23 +1211,27 @@ function exportXlsx() {
 }
 
 .damage-label {
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--c8b95a6);
 }
 
 .damage-value {
-  margin-top: 2px;
-  font-size: 27px;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 7px;
+  margin-top: 3px;
+  font-size: 31px;
   font-weight: 700;
+  line-height: 1;
   color: var(--ca52220);
   letter-spacing: .01em;
 }
 
 .damage-cur {
-  margin-left: 7px;
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 500;
-  color: var(--c98a3b6);
+  color: var(--c66748c);
 }
 
 /* ---------- qadamlar ---------- */
@@ -1522,9 +1528,9 @@ function exportXlsx() {
 .player-track {
   flex: 1;
   min-width: 60px;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--ce2e8f1);
+  height: 5px;
+  border-radius: 20px;
+  background: var(--cdfe6ef);
   overflow: hidden;
 }
 
@@ -1787,7 +1793,7 @@ function exportXlsx() {
 }
 
 .event-title {
-  font-size: 15.5px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--c16233d);
 }
@@ -1812,20 +1818,22 @@ function exportXlsx() {
 }
 
 .tag {
-  padding: 2px 9px;
-  border-radius: 20px;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
-  font-size: 12.5px;
-  color: var(--c66748c);
+  padding: 3px 9px;
+  border-radius: 8px;
+  background: rgba(102, 112, 128, .16);
+  border: 0;
+  font-size: 13.5px;
+  color: var(--c667080);
   white-space: nowrap;
 }
 
 .tag.code {
+  padding: 3px 8px;
+  border-radius: 4px;
   background: var(--ce8eef7);
-  border-color: var(--kc9d9ec, var(--ce2e8f1));
-  color: var(--c23568f);
+  font-size: 12.5px;
   font-weight: 600;
+  color: var(--c23568f);
 }
 
 .event-body {
@@ -2092,7 +2100,7 @@ function exportXlsx() {
 }
 
 .thumb.on {
-  border: 2px solid var(--k3d7cc0, #3d7cc0);
+  border: 2px solid var(--k3d7cc0);
 }
 
 .thumb-nums {
@@ -2285,24 +2293,56 @@ function exportXlsx() {
 .victim {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 13px;
+  gap: 12px;
+  padding: 13px 15px;
   border-radius: 9px;
-  background: var(--cfff5e9);
-  border: 1px solid var(--cf6dfc0);
+  background: var(--ce8eef7);
+  border: 2px solid var(--k3d7cc0);
   flex-wrap: wrap;
 }
 
 .victim-label {
-  font-size: 13.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 5px;
+  background: var(--s-card);
+  border: 1px solid var(--kc9d9ec);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--c1b4272);
+}
+
+.victim-label :deep(.app-icon) {
+  color: var(--c23568f);
+}
+
+.victim-card,
+.victim-sum {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  background: var(--s-card);
+  border: 1px solid var(--k3d7cc0);
+  font-size: 16px;
   font-weight: 600;
-  color: var(--cb45309);
 }
 
 .victim-sum {
+  border-color: var(--cf2cfcd);
+  color: var(--ca52220);
+}
+
+.victim-bank,
+.victim-taken {
   font-size: 14.5px;
-  font-weight: 600;
-  color: var(--c16233d);
+  color: var(--c3d4d66);
 }
 
 .node {
@@ -2447,7 +2487,7 @@ function exportXlsx() {
 }
 
 .kids {
-  margin: 0 0 2px 38px;
+  margin: 9px 0 2px 38px;
   padding-left: 16px;
   border-left: 2px dashed var(--ka3bad6, var(--cc8cdd6));
   display: flex;

@@ -664,8 +664,8 @@ function runImport() {
 }
 
 .modal-title {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 17.5px;
+  font-weight: 600;
   color: var(--c16233d);
 }
 

@@ -148,6 +148,7 @@ export default {
       incomplete: "Rekvizit ma'lumotlari to'liq emas",
       unconfirmed: 'Natijalar tasdiqlanmagan'
     },
+    reasonPh: "Qaytarish sababini qo'shimcha izohlang (ixtiyoriy)…",
     pickReason: 'Qaytarish sababini tanlang',
     return: 'Qaytarish',
     returnConfirm: 'Qaytarishni tasdiqlash',
