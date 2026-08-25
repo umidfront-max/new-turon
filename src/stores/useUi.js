@@ -23,6 +23,7 @@ const state = reactive({
   lang: storedLang(),       // 'uz' | 'uzk' | 'ru'
   year: 2026,
   dutyPhase: 'on',          // on | review | returned | closed
+  dutyModal: false,         // navbatchilik hisoboti oynasi
   toast: null,              // { msg, kind }
   confirm: null             // { title, text, ok, cancel, danger, run }
 })

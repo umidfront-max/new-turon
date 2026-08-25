@@ -106,6 +106,72 @@ export default {
     }
   },
 
+  dutyReport: {
+    title: 'Navbatchilik hisoboti',
+    phase: { on: 'Qoralama', review: 'Tekshiruvda', returned: 'Qaytarilgan', closed: 'Yopilgan' },
+    hoursValue: '{n} soat',
+    meta: { officer: 'Navbatchi', shift: 'Smena', hours: 'Davomiylik', receiver: 'Qabul qiluvchi' },
+    results: 'Smena natijalari',
+    items: '{n} ta',
+    stats: {
+      accepted: 'ariza qabul qilindi',
+      blocked: 'rekvizit bloklandi',
+      sent: 'bankka yuborildi',
+      closed: 'ariza yopildi',
+      autopayment: "avto to'lov to'xtatildi",
+      answer: "o'rtacha javob vaqti"
+    },
+    done: 'Bajarilgan ishlar',
+    doneItems: {
+      blocked: "Karta bloklandi, mablag' ushlab qolindi",
+      bankRequest: "Bankka so'rov yuborildi (Kapitalbank)",
+      autopayment: "Avto to'lov to'xtatildi",
+      manyBlocked: '12 rekvizit bloklandi'
+    },
+    tags: { closed: 'Yopildi', done: 'Bajarildi' },
+    left: 'Topshirilayotgan (qolgan) ishlar',
+    leftItems: {
+      waitBank: 'Bank javobi kutilmoqda',
+      noContact: "Fuqaro bilan bog'lanilmadi",
+      notEnough: "Ma'lumot yetarli emas"
+    },
+    next: { tomorrow: 'Ertaga 12:00 gacha', recall: "Qayta qo'ng'iroq", request: "Tergovchidan so'rov" },
+    note: 'Navbatchi izohi',
+    notePh: "Smena davomidagi muhim holatlar, e'tibor talab qiladigan arizalar…",
+    noteEmpty: 'Izoh qoldirilmagan',
+    handTo: 'Kimga topshiriladi',
+    handedTo: 'Navbatchilik kimga topshirilmoqda',
+    passing: "Qolgan {n} ta ish o'tadi",
+    reason: 'Qaytarish sababi',
+    reasons: {
+      noNote: 'Qolgan ishlar izohsiz',
+      incomplete: "Rekvizit ma'lumotlari to'liq emas",
+      unconfirmed: 'Natijalar tasdiqlanmagan'
+    },
+    pickReason: 'Qaytarish sababini tanlang',
+    return: 'Qaytarish',
+    returnConfirm: 'Qaytarishni tasdiqlash',
+    returned: 'Hisobot navbatchiga qaytarildi',
+    actions: { send: 'Rahbarga yuborish', resend: 'Qayta yuborish', approve: 'Tasdiqlash va yopish' },
+    banner: {
+      returned: {
+        title: 'Rahbar hisobotni qaytardi',
+        text: "CB-2026-4833 bo'yicha qayta qo'ng'iroq natijasi ko'rsatilmagan, CB-2026-4830 esa tergovchiga so'rovsiz qoldirilgan. Izohni to'ldirib qayta yuboring."
+      },
+      check: {
+        title: 'Tasdiqlashdan oldin tekshirilishi kerak',
+        text: "Qolgan 3 ta ish keyingi navbatchiga o'tadi. Tasdiqlangandan so'ng smena yopiladi va hisobot o'zgartirilmaydi."
+      }
+    },
+    foot: {
+      editHint: "Yuborilgandan so'ng hisobotni faqat rahbar qaytarsa o'zgartirish mumkin.",
+      waiting: 'Rahbar tasdiqlashini kutmoqda. Tasdiqlangach smena yopiladi.',
+      archived: 'Smena yopilgan. Hisobot arxivda saqlanadi.',
+      sentAt: 'Hisobot 09:41 da Suvonov Farrux tomonidan yuborilgan.',
+      returnHint: "Sabab tanlangandan so'ng hisobot navbatchiga qaytariladi."
+    }
+  },
+
   role: {
     title: 'Rolni tanlash',
     staff: { label: 'Navbatchi / ijrochi', note: 'Arizalar bilan ishlash' },

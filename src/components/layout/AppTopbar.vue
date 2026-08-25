@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RoleMenu from './RoleMenu.vue'
 import NotifyMenu from './NotifyMenu.vue'
+import DutyReport from './DutyReport.vue'
 import { useUi } from '@/stores/useUi'
 
 const { t } = useI18n()
@@ -83,13 +84,8 @@ function onDutyClick() {
     })
     return
   }
-  if (isExec.value && phase === 'review') {
-    state.dutyPhase = 'closed'
-    toast(t('duty.toast.approved'))
-    return
-  }
-  state.dutyPhase = 'review'
-  toast(t('duty.toast.sent'))
+  // qolgan holatlarda hisobot oynasi ochiladi
+  state.dutyModal = true
 }
 </script>
 
@@ -176,6 +172,8 @@ function onDutyClick() {
         </Transition>
       </div>
     </div>
+
+    <DutyReport />
   </header>
 </template>
 
