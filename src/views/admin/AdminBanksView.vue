@@ -173,9 +173,29 @@ function runImport() {
       </div>
 
       <div v-if="!rows.length" class="empty">
-        <span class="empty-icon"><AppIcon name="searchOff" :size="28" /></span>
-        <div class="empty-title">{{ $t('admin.banks.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('admin.banks.emptyText', { q: query }) }}</div>
+        <span class="empty-icon">
+          <AppIcon :name="banks.length ? 'searchOff' : 'accountBank'" :size="28" />
+        </span>
+
+        <template v-if="banks.length">
+          <div class="empty-title">{{ $t('admin.banks.emptyTitle') }}</div>
+          <div class="empty-text">{{ $t('admin.banks.emptyText', { q: query }) }}</div>
+        </template>
+
+        <template v-else>
+          <div class="empty-title">{{ $t('admin.banks.noneTitle') }}</div>
+          <div class="empty-text">{{ $t('admin.banks.noneText') }}</div>
+          <div class="empty-actions">
+            <button type="button" class="btn-dark" @click="openAdd">
+              <AppIcon name="plus" :size="16" />
+              {{ $t('admin.banks.add') }}
+            </button>
+            <button type="button" class="btn-light" @click="importOpen = true">
+              <AppIcon name="upload" :size="16" />
+              {{ $t('admin.banks.import') }}
+            </button>
+          </div>
+        </template>
       </div>
 
       <div v-if="rows.length" class="pager">
@@ -772,6 +792,14 @@ function runImport() {
   border: 1px solid var(--ce2e8f1);
   border-radius: 10px;
   overflow: hidden;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .btn-light,

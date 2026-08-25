@@ -117,10 +117,45 @@ const txQuery = ref('')
 const sortDesc = ref(true)
 const openNodes = ref(new Set())
 
+// amaliyot turi bo'yicha filtr — bo'sh qiymat «barcha kategoriyalar»
+const txOp = ref('')
+const KIDS_SHOWN = 2 // qolganlari «Yana …» bosilganda ochiladi
+const moreOpen = ref(new Set())
+
+const txOps = computed(() => {
+  const set = new Set()
+  const walk = (nodes) => nodes.forEach((n) => { set.add(n.op); walk(n.children) })
+  walk(chain.value.level1)
+  return [...set]
+})
+
 const chainRows = computed(() => {
-  const list = chain.value.level1.filter((n) => chainMatches(n, txQuery.value))
+  const list = chain.value.level1
+    .filter((n) => chainMatches(n, txQuery.value))
+    .filter((n) => !txOp.value || opMatches(n, txOp.value))
   return [...list].sort((a, b) => (sortDesc.value ? b.raw - a.raw : a.raw - b.raw))
 })
+
+// tanlangan tur tugunning o'zida yoki farzandlarida uchraydimi
+function opMatches(node, op) {
+  if (node.op === op) return true
+  return node.children.some((c) => opMatches(c, op))
+}
+
+// 2-darajada nechta karta ko'rsatiladi
+function shownKids(node) {
+  return moreOpen.value.has(node.id) ? node.children : node.children.slice(0, KIDS_SHOWN)
+}
+
+function hiddenKids(node) {
+  return moreOpen.value.has(node.id) ? 0 : Math.max(0, node.children.length - KIDS_SHOWN)
+}
+
+function showMore(id) {
+  const next = new Set(moreOpen.value)
+  next.add(id)
+  moreOpen.value = next
+}
 
 function toggleNode(id) {
   const next = new Set(openNodes.value)
@@ -522,6 +557,9 @@ function exportXlsx() {
                 {{ $t('detail.bank.noteTitle') }}
               </div>
               <p class="note-text">{{ $t('detail.bank.note', e.note) }}</p>
+              <button v-if="data.action === 'fix'" type="button" class="note-fix" @click="onAction">
+                {{ $t('detail.bank.fixField') }}
+              </button>
             </div>
           </div>
         </article>
@@ -675,6 +713,13 @@ function exportXlsx() {
             <AppIcon name="search" :size="18" />
             <input v-model="txQuery" class="tx-input" :placeholder="$t('detail.tx.search')" />
           </span>
+          <label class="tx-cat">
+            <select v-model="txOp" class="tx-cat-select">
+              <option value="">{{ $t('detail.tx.allCategories') }}</option>
+              <option v-for="op in txOps" :key="op" :value="op">{{ op }}</option>
+            </select>
+            <AppIcon name="chevronDown" :size="18" />
+          </label>
           <button type="button" class="tx-sort" @click="sortDesc = !sortDesc">
             <span class="sort-label">{{ $t('detail.tx.sortAmount') }}</span>
             <AppIcon :name="sortDesc ? 'chevronDown' : 'chevronUp'" :size="18" />
@@ -717,7 +762,7 @@ function exportXlsx() {
 
             <!-- 2-daraja -->
             <div v-if="openNodes.has(n1.id)" class="kids">
-              <div v-for="n2 in n1.children" :key="n2.id" class="node">
+              <div v-for="n2 in shownKids(n1)" :key="n2.id" class="node">
                 <div class="node-row">
                   <button type="button" class="node-tog" :class="{ on: openNodes.has(n2.id) }" @click="toggleNode(n2.id)">
                     <AppIcon :name="openNodes.has(n2.id) ? 'chevronUp' : 'chevronDown'" :size="20" />
@@ -758,6 +803,13 @@ function exportXlsx() {
                   </div>
                 </div>
               </div>
+
+              <button
+                v-if="hiddenKids(n1)"
+                type="button"
+                class="tx-more"
+                @click="showMore(n1.id)"
+              >{{ $t('detail.tx.more', hiddenKids(n1)) }}</button>
             </div>
           </div>
 
@@ -995,6 +1047,63 @@ function exportXlsx() {
   .blk-grid.head > span:nth-child(4) {
     display: none;
   }
+}
+
+.tx-cat {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--ca3adbd);
+  cursor: pointer;
+}
+
+.tx-cat-select {
+  appearance: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: var(--c3d4d66);
+  cursor: pointer;
+}
+
+.tx-more {
+  align-self: flex-start;
+  border: 0;
+  padding: 2px 0 4px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c23568f);
+  cursor: pointer;
+}
+
+.tx-more:hover {
+  text-decoration: underline;
+}
+
+.note-fix {
+  align-self: flex-start;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid var(--btn);
+  background: var(--btn);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.note-fix:hover {
+  filter: brightness(1.14);
 }
 
 .deadline-dot {
@@ -1768,6 +1877,10 @@ function exportXlsx() {
 }
 
 .note {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
   border-radius: 8px;
   border: 1px solid var(--cf2cfcd);
   background: var(--cfceceb);
@@ -1786,7 +1899,7 @@ function exportXlsx() {
 }
 
 .note-text {
-  margin: 6px 0 0;
+  margin: 0;
   font-size: 14.5px;
   line-height: 1.55;
   color: var(--c3d4d66);

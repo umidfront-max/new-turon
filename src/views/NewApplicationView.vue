@@ -82,16 +82,19 @@ onBeforeUnmount(() => {
 function onCard(e) {
   draft.number = draft.kind === 'card' ? maskCard(e.target.value) : maskAccount(e.target.value)
   delete errors.number
+  verified.value = false
 }
 
 function onAmount(e) {
   draft.amount = maskAmount(e.target.value)
   delete errors.amount
+  verified.value = false
 }
 
 function onTime(e) {
   draft.time = maskDateTime(e.target.value)
   delete errors.time
+  verified.value = false
 }
 
 function onPhone(e) {
@@ -170,8 +173,10 @@ const canAdd = computed(() =>
 
 let seq = 0
 
-// bitta rekvizitga bir nechta tranzaksiya biriktiriladi
-function addRequisite() {
+// dizayndagi ikki bosqich: avval «Tekshirish», so'ng «Briktirish»
+const verified = ref(false)
+
+function markErrorsRequisite() {
   if (digitsOnly(draft.number).length !== requiredLength.value) errors.number = true
   else delete errors.number
   if (!digitsOnly(draft.amount)) errors.amount = true
@@ -179,7 +184,21 @@ function addRequisite() {
   if (!isValidDateTime(draft.time)) errors.time = true
   else delete errors.time
 
-  if (errors.number || errors.amount || errors.time) {
+  return !(errors.number || errors.amount || errors.time)
+}
+
+function checkRequisite() {
+  if (!markErrorsRequisite()) {
+    toast(t('form.invalid'), 'bad')
+    return
+  }
+  verified.value = true
+  toast(t('form.requisite.checked', { bank: system.value || t('form.requisite.bank') }))
+}
+
+// bitta rekvizitga bir nechta tranzaksiya biriktiriladi
+function addRequisite() {
+  if (!markErrorsRequisite()) {
     toast(t('form.invalid'), 'bad')
     return
   }
@@ -210,6 +229,7 @@ function clearRequisite() {
   draft.number = ''
   draft.amount = ''
   draft.time = ''
+  verified.value = false
   Object.keys(errors).forEach((k) => { if (['number', 'amount', 'time'].includes(k)) delete errors[k] })
 }
 
@@ -751,9 +771,19 @@ function cancelAll() {
             </div>
 
             <div class="block-actions">
-              <button type="button" class="btn-dark" :disabled="!canAdd" @click="addRequisite">
+              <button
+                v-if="!verified"
+                type="button"
+                class="btn-dark"
+                :disabled="!canAdd"
+                @click="checkRequisite"
+              >
+                <AppIcon name="scan" :size="16" />
+                {{ $t('form.requisite.check') }}
+              </button>
+              <button v-else type="button" class="btn-dark" @click="addRequisite">
                 <AppIcon name="plus" :size="16" />
-                {{ $t('form.requisite.add') }}
+                {{ $t('form.requisite.attach') }}
               </button>
               <button type="button" class="btn-light" @click="clearRequisite">{{ $t('common.cancel') }}</button>
             </div>

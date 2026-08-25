@@ -102,9 +102,10 @@ export function buildChain(detail) {
     const total = parseAmount(r.sum)
     const seed = i + 3
 
-    // 2-daraja: summa 60/40 ga bo'linadi
-    const a2 = Math.round(total * 0.6 / 10000) * 10000
-    const b2 = total - a2
+    // 2-daraja: summa 45/33/22 ga bo'linadi
+    const a2 = Math.round(total * 0.45 / 10000) * 10000
+    const b2 = Math.round(total * 0.33 / 10000) * 10000
+    const c2 = total - a2 - b2
 
     const kid = (k, amount) => {
       const s = seed * 7 + k
@@ -113,7 +114,7 @@ export function buildChain(detail) {
       return node(s, amount, shiftDate(row.time, 2 + k, '14:35'), 2, [leaf])
     }
 
-    return node(seed, total, shiftDate(row.time, 1, '09:24'), 1, [kid(1, a2), kid(2, b2)])
+    return node(seed, total, shiftDate(row.time, 1, '09:24'), 1, [kid(1, a2), kid(2, b2), kid(3, c2)])
   })
 
   const victimTotal = level1.reduce((s, n) => s + n.raw, 0)

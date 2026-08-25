@@ -74,6 +74,7 @@ export const ICONS = {
   trash: 'delete',
   edit: 'edit',
   check: 'check',
+  scan: 'crop_free',
   close: 'close',
   warn: 'warning',
   error: 'error',

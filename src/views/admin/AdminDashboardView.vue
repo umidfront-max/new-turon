@@ -75,6 +75,29 @@ function cellStyle(col, row, bold) {
   }
 }
 
+/* ---------- hisobot uchun tanlash ---------- */
+const picked = ref(new Set())
+
+const allPicked = computed(() =>
+  regions.value.length > 0 && regions.value.every((r) => picked.value.has(r.name))
+)
+
+function togglePick(name) {
+  const next = new Set(picked.value)
+  if (next.has(name)) next.delete(name)
+  else next.add(name)
+  picked.value = next
+}
+
+function toggleAll() {
+  picked.value = allPicked.value ? new Set() : new Set(regions.value.map((r) => r.name))
+}
+
+function exportMatrix() {
+  const n = picked.value.size || regions.value.length
+  toast(t('admin.matrix.exported', { n }))
+}
+
 function toggleRegion(name) {
   const next = new Set(opened.value)
   if (next.has(name)) next.delete(name)
@@ -161,6 +184,10 @@ function exportReport() {
         <AppIcon name="chart" :size="24" />
         <span class="panel-title">{{ $t('admin.matrix.title') }}</span>
         <div class="spacer" />
+        <button type="button" class="head-btn" :title="$t('admin.matrix.exportTip')" @click="exportMatrix">
+          <AppIcon name="excel" :size="17" />
+          <span>{{ $t('admin.matrix.export') }}</span>
+        </button>
         <span class="sync mono">{{ $t('admin.matrix.sync', { time: syncAt }) }}</span>
         <button type="button" class="head-btn" :disabled="syncing" @click="refresh">
           <AppIcon name="refresh" :size="17" />
@@ -182,7 +209,20 @@ function exportReport() {
               >{{ g.label ? $t(`admin.matrix.groups.${g.label}`) : '' }}</th>
             </tr>
             <tr class="cols">
-              <th class="name-col">{{ $t('admin.matrix.colName') }}</th>
+              <th class="name-col">
+                <span class="name-cell">
+                  <button
+                    type="button"
+                    class="pick"
+                    :class="{ on: allPicked }"
+                    :title="$t('admin.matrix.pickAll')"
+                    @click.stop="toggleAll"
+                  >
+                    <AppIcon name="check" :size="14" />
+                  </button>
+                  {{ $t('admin.matrix.colName') }}
+                </span>
+              </th>
               <th
                 v-for="c in MTX_COLS"
                 :key="c.k"
@@ -201,6 +241,16 @@ function exportReport() {
             >
               <td class="name-col">
                 <span class="name-cell" :style="{ paddingLeft: r.kind === 'district' ? '28px' : '0' }">
+                  <button
+                    v-if="r.kind === 'region'"
+                    type="button"
+                    class="pick"
+                    :class="{ on: picked.has(r.name) }"
+                    :title="$t('admin.matrix.pickRow')"
+                    @click.stop="togglePick(r.name)"
+                  >
+                    <AppIcon name="check" :size="14" />
+                  </button>
                   <AppIcon
                     :name="r.kind === 'region' && r.open ? 'chevronUp' : 'chevronRight'"
                     :size="18"
@@ -508,6 +558,27 @@ function exportReport() {
 
 .mtx-row.district:hover {
   background: var(--cf4f7fb);
+}
+
+.pick {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 5px;
+  border: 1px solid var(--cc8cdd6);
+  background: var(--s-card);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease;
+}
+
+.pick.on {
+  background: var(--c23568f);
+  border-color: var(--c23568f);
+  color: #fff;
 }
 
 .name-cell {
