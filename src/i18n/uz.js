@@ -481,6 +481,80 @@ export default {
     }
   },
 
+  dashboard: {
+    export: 'Hisobotni yuklab olish',
+    exportToast: 'Hisobot tayyorlanmoqda',
+    exportReady: '{file} tayyorlandi',
+    periods: { today: 'Bugun', week: 'Hafta', month: 'Oy', quarter: 'Chorak' },
+    types: { app: 'Ariza', notice: 'Bildirgi' },
+    roles: { senior: 'Katta inspektor', inspector: 'Inspektor', junior: 'Yosh inspektor' },
+    unassigned: {
+      title: 'Taqsimlanmagan murojaatlar',
+      auto: 'Avto taqsimlash',
+      empty: 'Barcha murojaatlar taqsimlangan',
+      colId: 'Raqami',
+      colMethod: 'Sodir etish usuli',
+      colDeadline: 'Muddat',
+      assign: 'Tayinlash',
+      hours: '{n} soat',
+      viewAll: "Barchasini ko'rish"
+    },
+    deadline: {
+      title: 'Muddat',
+      chip: '5 kunlik',
+      total: 'Jami {n} ta',
+      labels: {
+        today: 'Bugun', tomorrow: 'Ertaga', afterTomorrow: 'Indinga',
+        d3: '3 kun', d4: '4 kun', d5: '5 kun'
+      }
+    },
+    team: { title: 'Jamoa yuklamasi', link: 'Jamoa', load: '{n} ish' },
+    channels: {
+      title: 'Hujum kanallari',
+      note: "Firibgar mijozga qaysi yo'l bilan yetgan",
+      items: {
+        fakeLink: 'Soxta havola / zararli dastur',
+        fakeCalls: "Soxta qo'ng'iroqlar",
+        fakeTrading: 'Soxta treyding va birja',
+        onlineTrade: 'Onlayn savdoda aldov',
+        investment: 'Investitsiya aldovi',
+        onlineLoan: 'Onlayn qarz va kredit',
+        bankStaff: 'Bank xodimi ishtirokida',
+        techWeak: 'Texnik zaiflik',
+        inheritance: 'Meros va xayriya nomidan',
+        other: 'Boshqa'
+      }
+    },
+    methodsShort: {
+      prepay: "To'lovni oldindan undurish",
+      virusApp: 'Virusli ilova',
+      onlineShop: "Onlayn do'konda aldov",
+      socialHack: 'Ijtimoiy tarmoq buzib kirilgan',
+      phoneFraud: 'Telefon orqali firibgarlik',
+      fakeBankStaff: "Soxta bank xodimi qo'ng'irog'i",
+      phishingInfo: "Fishing havola orqali ma'lumot olish",
+      fakeInvestPlatform: 'Soxta investitsiya platformasi',
+      smsCode: "SMS kod so'rab olish"
+    },
+    auto: {
+      title: 'Avto-taqsimlash taklifi',
+      lead: "Tizim {n} ta ishni joriy yuklama bo'yicha taqsimladi. Tasdiqlashdan oldin ijrochilarni ko'rib chiqing.",
+      note: 'Tasdiqlangach ishlar ijrochilarga biriktiriladi va muddat hisobi boshlanadi',
+      confirm: 'Tasdiqlash va taqsimlash',
+      askTitle: 'Taqsimlashni tasdiqlaysizmi?',
+      askText: '{n} ta ish ijrochilarga biriktiriladi va muddat hisobi boshlanadi.',
+      done: '{n} ta ish ijrochilarga taqsimlandi'
+    },
+    assign: {
+      title: 'Ijrochini tayinlash',
+      recommend: 'Tizim tavsiyasi',
+      recNote: 'Eng kam yuklama — {n} ish',
+      others: 'Boshqa xodimlar',
+      confirm: 'Biriktirish',
+      done: 'Ish {name} ga biriktirildi'
+    }
+  },
+
   notFound: {
     title: 'Sahifa topilmadi',
     text: "So'ralgan manzil mavjud emas yoki ko'chirilgan.",

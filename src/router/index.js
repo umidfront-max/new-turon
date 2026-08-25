@@ -11,6 +11,7 @@ import ApplicationDetailView from '@/views/ApplicationDetailView.vue'
 import NewApplicationView from '@/views/NewApplicationView.vue'
 import DraftsView from '@/views/DraftsView.vue'
 import ReasonsView from '@/views/ReasonsView.vue'
+import DashboardView from '@/views/DashboardView.vue'
 import StubView from '@/views/StubView.vue'
 
 const routes = [
@@ -66,12 +67,7 @@ const routes = [
   {
     path: '/dashboard',
     name: 'dashboard',
-    component: StubView,
-    props: {
-      screen: 'dashboard',
-      icon: 'chart',
-      blocks: ['kpi', 'rating', 'split', 'feed']
-    },
+    component: DashboardView,
     meta: { titleKey: 'stub.dashboard.title' }
   },
   {

@@ -33,7 +33,8 @@ Node.js 18+ talab qilinadi.
 src/
 ├─ assets/
 │  ├─ tokens.css          190+ rang o'zgaruvchisi — kunduzgi va tungi rejim
-│  └─ base.css            reset, shriftlar, animatsiyalar, reduced-motion
+│  ├─ base.css            reset, shriftlar, animatsiyalar, reduced-motion
+│  └─ icons/              67 ta .svg — asl dizayndan olingan ikonkalar
 ├─ i18n/
 │  ├─ index.js            vue-i18n sozlamasi, til almashtirish, ko'plik qoidalari
 │  ├─ uz.js               O'zbekcha (lotin) — asosiy til
@@ -64,6 +65,7 @@ src/
 │                         ApplicationsTable · TablePagination
 └─ views/
    ├─ LoginView.vue              Tizimga kirish (to'liq)
+   ├─ DashboardView.vue          Rahbar paneli (to'liq)
    ├─ NotificationsView.vue      Bildirishnomalar (to'liq)
    ├─ NotFoundView.vue           404
    ├─ ApplicationsView.vue       Arizalar ro'yxati va navbatlar (to'liq)
@@ -88,7 +90,7 @@ Manzillar inglizcha, interfeys matni esa i18n orqali tarjima qilinadi.
 | `/drafts` | Qoralamalar | to'liq |
 | `/reasons` | Bloklash sabablari | to'liq |
 | `/notifications` | Bildirishnomalar | to'liq |
-| `/dashboard` | Rahbar paneli | keyingi bosqich |
+| `/dashboard` | Rahbar paneli | to'liq |
 
 Navbat bo'lagi (`:queue`): `new`, `in-bank`, `returned`, `blocked`,
 `autopayment`, `cancelled`, `completed` — yon menyudagi har bir band va
@@ -257,6 +259,33 @@ navbat tablaridagi sonlar jadvaldagi haqiqiy holat bilan mos.
 «Eksport · XLSX» filtrlangan ro'yxatni haqiqiy `.xlsx` fayl qilib yuklab beradi
 (`cardblock-YYYYMMDD-HHMM.xlsx`). SheetJS faqat shu tugma bosilganda yuklanadi,
 shuning uchun asosiy paketga qo'shilmaydi.
+
+## Rahbar paneli
+
+`/dashboard` — asl dizayndan (`cardBlock.html`) bir-bir ko'chirilgan. Uslublar
+o'sha yerdagidek inline turadi, ranglar `tokens.css` dagi o'zgaruvchilardan
+olinadi — shu sababli o'lcham, bo'shliq va rang piksel darajasida mos.
+
+* sarlavha — hudud chipi, davr belgisi va Bugun / Hafta / Oy / Chorak tanlovi
+  (davr almashsa hujum kanallari sonlari qayta hisoblanadi);
+* 5 ta KPI karta — sonlar ro'yxatdan (jadval bilan mos);
+* **Taqsimlanmagan murojaatlar** — 9 ta ish, muddat 40 soatdan kam bo'lsa qizil;
+  «Tayinlash» ijrochi tanlash oynasini ochadi (tizim tavsiyasi — eng kam
+  yuklangan xodim), «Avto taqsimlash» esa hammasini bir vaqtda taqsimlaydi;
+* **Muddat** — 5 kunlik ustunli diagramma (balandlik `n / max * 88%`);
+* **Jamoa yuklamasi** — 5 xodim, yuklama 9 tadan oshsa rang o'zgaradi;
+* **Hujum kanallari** — 10 qator, ulush bo'yicha kenglik va ko'kning
+  pasayib boruvchi shaffofligi.
+
+Ish tayinlangach jamoa yuklamasi va ro'yxat darhol yangilanadi.
+
+## Ikonkalar
+
+Barcha ikonkalar `src/assets/icons/*.svg` da — asl dizayndan ajratib olingan.
+`AppIcon` ularni qurilish vaqtida o'qiydi (`import.meta.glob(... '?raw')`),
+`viewBox` ni fayldan oladi va o'lcham/qalinlikni props orqali beradi. Yangi
+ikonka qo'shish uchun shu papkaga `.svg` tashlash kifoya. Rangli ikonka
+(masalan Excel) `fill` bilan yozilgan bo'lsa, `stroke` qo'llanmaydi.
 
 ## Ma'lumotlar
 
