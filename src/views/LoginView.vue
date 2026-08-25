@@ -180,8 +180,11 @@ function onPin(e) {
             </button>
           </div>
 
+          <!-- Uchala tab bir katakda turadi: balandlik eng balandiga teng
+               bo'ladi, shuning uchun tab almashganda karta qimirlamaydi. -->
+          <div class="forms">
           <!-- ---------- login / parol ---------- -->
-          <form v-if="tab === 'password'" class="form" @submit.prevent="submitPassword">
+          <form class="form" :class="{ hidden: tab !== 'password' }" :inert="tab !== 'password'" @submit.prevent="submitPassword">
             <label class="field">
               <span class="label">{{ $t('login.loginLabel') }}</span>
               <input
@@ -236,7 +239,7 @@ function onPin(e) {
           </form>
 
           <!-- ---------- e-imzo ---------- -->
-          <form v-else-if="tab === 'eimzo'" class="form" @submit.prevent="submitEimzo">
+          <form class="form" :class="{ hidden: tab !== 'eimzo' }" :inert="tab !== 'eimzo'" @submit.prevent="submitEimzo">
             <div class="status">
               <span class="status-dot" />
               {{ $t('login.eimzo.connected') }}
@@ -290,7 +293,7 @@ function onPin(e) {
           </form>
 
           <!-- ---------- Face ID ---------- -->
-          <div v-else class="form face">
+          <div class="form face" :class="{ hidden: tab !== 'faceId' }" :inert="tab !== 'faceId'">
             <div class="face-circle" :class="{ scanning }">
               <AppIcon name="face" :size="52" :width="1.3" />
               <span v-if="scanning" class="scan-line" />
@@ -304,6 +307,8 @@ function onPin(e) {
               <AppIcon v-else name="face" :size="17" />
               {{ loading ? $t('login.signingIn') : (scanning ? $t('login.face.scanning') : $t('login.face.start')) }}
             </button>
+          </div>
+
           </div>
 
           <p class="note">{{ $t('login.note') }}</p>
@@ -531,12 +536,26 @@ function onPin(e) {
 }
 
 /* ---------- forma ---------- */
+.forms {
+  display: grid;
+  margin-top: 30px;
+}
+
+/* uchala forma ustma-ust: katak balandligi eng balandiga teng */
+.forms > * {
+  grid-area: 1 / 1;
+}
+
 .form {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  margin-top: 30px;
-  animation: riseIn .26s var(--ease);
+  transition: opacity .18s ease;
+}
+
+.form.hidden {
+  visibility: hidden;
+  opacity: 0;
 }
 
 .field {
@@ -829,6 +848,7 @@ function onPin(e) {
 /* ---------- Face ID ---------- */
 .face {
   align-items: center;
+  justify-content: center;
   text-align: center;
 }
 

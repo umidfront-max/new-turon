@@ -110,6 +110,10 @@ tezis, o'ngda til almashtirgichi (Uz / Ўз / Ru) va uchta kirish usuli:
 | **E-imzo** | ulangan kalitlar ro'yxati (shaxsiy va tashkilot), PIN-kod maydoni |
 | **Face ID** | skaner animatsiyasi va kirish |
 
+Uchala tab bitta grid katakchasida turadi va faqat bittasi ko'rinadi
+(`visibility` + `inert`) — shu sababli tab almashganda kartaning balandligi
+o'zgarmaydi va til almashganda ham qimirlamaydi.
+
 Marshrut himoyasi `router.beforeEach` da: kirmagan foydalanuvchi istalgan
 sahifadan `/login?next=<yo'l>` ga yo'naltiriladi va kirgandan keyin o'sha
 sahifaga qaytariladi; kirgan foydalanuvchi `/login` ni ochsa `/` ga tushadi.
