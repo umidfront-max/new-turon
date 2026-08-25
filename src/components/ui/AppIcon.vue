@@ -15,11 +15,13 @@ for (const [path, raw] of Object.entries(FILES)) {
   const open = raw.slice(0, raw.indexOf('>') + 1)
   const inner = raw.slice(raw.indexOf('>') + 1, raw.lastIndexOf('</svg>')).trim()
   const box = /viewBox="([^"]+)"/.exec(open)
+  const fill = /fill="([^"]+)"/.exec(open)
   ICONS[name] = {
     inner,
     viewBox: box ? box[1] : '0 0 24 24',
-    // rangli ikonka (masalan Excel) — stroke berilmaydi
-    colored: /fill="(#|var\()/.test(inner)
+    // fayldagi root qiymatlar: to'ldirilgan (play) yoki chiziqli (qolganlari)
+    fill: fill ? fill[1] : 'none',
+    stroked: /stroke="/.test(open)
   }
 }
 
@@ -29,7 +31,7 @@ const props = defineProps({
   width: { type: [Number, String], default: 1.5 }
 })
 
-const icon = computed(() => ICONS[props.name] || { inner: '', viewBox: '0 0 24 24', colored: false })
+const icon = computed(() => ICONS[props.name] || { inner: '', viewBox: '0 0 24 24', fill: 'none', stroked: false })
 </script>
 
 <template>
@@ -38,9 +40,9 @@ const icon = computed(() => ICONS[props.name] || { inner: '', viewBox: '0 0 24 2
     :width="size"
     :height="size"
     :viewBox="icon.viewBox"
-    fill="none"
-    :stroke="icon.colored ? undefined : 'currentColor'"
-    :stroke-width="icon.colored ? undefined : width"
+    :fill="icon.fill"
+    :stroke="icon.stroked ? 'currentColor' : undefined"
+    :stroke-width="icon.stroked ? width : undefined"
     aria-hidden="true"
     focusable="false"
     v-html="icon.inner"

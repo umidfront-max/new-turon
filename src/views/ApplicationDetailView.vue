@@ -281,7 +281,7 @@ function exportXlsx() {
               :aria-label="$t('detail.fabula.voice')"
               @click="togglePlay"
             >
-              <AppIcon :name="playing ? 'pause' : 'play'" :size="18" :width="playing ? 1.6 : 1.8" />
+              <AppIcon :name="playing ? 'pause' : 'play'" :size="17" />
             </button>
             <span class="player-time mono">{{ clock(played) }}</span>
             <span class="player-sep mono">/</span>
@@ -929,7 +929,6 @@ function exportXlsx() {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding-left: 2px;
   transition: filter .16s ease, transform .16s var(--ease);
 }
 
