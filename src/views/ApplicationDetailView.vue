@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
 import { detailFor } from '@/data/detail'
+import { buildChain, chainStats, chainMatches } from '@/data/chain'
 import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
 
@@ -91,6 +92,43 @@ function stopPlayer() {
 
 watch(() => route.query.id, stopPlayer)
 onBeforeUnmount(() => clearInterval(ticker))
+
+/* ---------- sanksiyalar: qaror hujjati ---------- */
+// hujjat faqat bank rekvizitni bloklagach paydo bo'ladi
+const hasDecision = computed(() => ['blocked', 'done', 'autopayment'].includes(row.value.status))
+const docName = computed(() => `qaror_${row.value.id.replace(/\D/g, '').slice(-8)}.pdf`)
+const docPage = ref(1)
+const zoom = ref(92)
+
+/* ---------- tranzaksiyalar zanjiri ---------- */
+// zanjir bank javobidan keyin ko'rinadi
+const hasChain = computed(() => row.value.status !== 'new')
+const chain = computed(() => buildChain(data.value))
+const stats = computed(() => chainStats(chain.value))
+
+const txQuery = ref('')
+const sortDesc = ref(true)
+const openNodes = ref(new Set())
+
+const chainRows = computed(() => {
+  const list = chain.value.level1.filter((n) => chainMatches(n, txQuery.value))
+  return [...list].sort((a, b) => (sortDesc.value ? b.raw - a.raw : a.raw - b.raw))
+})
+
+function toggleNode(id) {
+  const next = new Set(openNodes.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  openNodes.value = next
+}
+
+function openChainCard(node) {
+  toast(t('detail.tx.opened', { card: node.card }))
+}
+
+function bankFile(action) {
+  toast(t(`detail.tx.${action}`, { file: `kochirma_${row.value.id.replace(/\D/g, '').slice(-6)}.xlsx` }))
+}
 
 /* ---------- amallar ---------- */
 const facts = computed(() => [
@@ -470,6 +508,210 @@ function exportXlsx() {
           <span v-if="n.code" class="tag code mono">{{ n.code }}</span>
         </div>
       </div>
+    </section>
+
+    <!-- ---------- Sanksiyalar ---------- -->
+    <section v-else-if="tab === 'sanctions'" class="card-surface panel">
+      <header class="panel-head dark-bar">
+        <AppIcon name="shield" :size="24" />
+        <span class="panel-title">{{ $t('detail.doc.title') }}</span>
+      </header>
+
+      <div v-if="!hasDecision" class="empty-box">
+        <span class="empty-ico"><AppIcon name="shield" :size="26" /></span>
+        <div class="empty-title">{{ $t('detail.doc.emptyTitle') }}</div>
+        <div class="empty-text">{{ $t('detail.doc.emptyText') }}</div>
+      </div>
+
+      <template v-else>
+        <div class="doc-bar">
+          <AppIcon name="swapVert" :size="20" />
+          <span class="doc-name mono">{{ docName }}</span>
+          <div class="spacer" />
+          <span class="doc-pages mono">{{ docPage }} / 2</span>
+          <span class="doc-sep" />
+          <button type="button" class="doc-zoom" @click="zoom = Math.max(50, zoom - 8)">−</button>
+          <span class="doc-scale mono">{{ zoom }}%</span>
+          <button type="button" class="doc-zoom" @click="zoom = Math.min(200, zoom + 8)">+</button>
+          <span class="doc-sep" />
+          <button type="button" class="doc-act" :title="$t('detail.doc.download')" @click="toast($t('detail.doc.downloaded', { file: docName }))">
+            <AppIcon name="download" :size="20" />
+          </button>
+          <button type="button" class="doc-act" :title="$t('detail.doc.print')" @click="toast($t('detail.doc.printing'))">
+            <AppIcon name="print" :size="20" />
+          </button>
+        </div>
+
+        <div class="doc-body">
+          <div class="doc-thumbs">
+            <button
+              v-for="n in 2"
+              :key="n"
+              type="button"
+              class="thumb"
+              :class="{ on: n === docPage }"
+              @click="docPage = n"
+            />
+            <span class="thumb-nums mono">
+              <span v-for="n in 2" :key="n" :class="{ on: n === docPage }">{{ n }}</span>
+            </span>
+          </div>
+          <div class="doc-page">
+            <div class="page-sheet" :style="{ transform: `scale(${zoom / 100})` }">
+              <div class="page-title mono">{{ $t('detail.doc.sheet') }}</div>
+              <div class="page-text">{{ $t('detail.doc.sheetText') }}</div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <!-- ---------- Tranzaksiyalar ---------- -->
+    <section v-else-if="tab === 'transactions'" class="card-surface panel">
+      <header class="panel-head dark-bar">
+        <AppIcon name="swap" :size="24" />
+        <span class="panel-title">{{ $t('detail.tx.title') }}</span>
+      </header>
+
+      <div v-if="!hasChain" class="empty-box">
+        <span class="empty-ico"><AppIcon name="swap" :size="26" /></span>
+        <div class="empty-title">{{ $t('detail.tx.emptyTitle') }}</div>
+        <div class="empty-text">{{ $t('detail.tx.emptyText') }}</div>
+      </div>
+
+      <template v-else>
+        <div class="tx-stats">
+          <div class="stat">
+            <span class="stat-label">{{ $t('detail.tx.count') }}</span>
+            <span class="stat-value mono">{{ stats.count }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">{{ $t('detail.tx.sum') }}</span>
+            <span class="stat-value mono">{{ stats.sum }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">{{ $t('detail.tx.cards') }}</span>
+            <span class="stat-value mono">{{ stats.cards }}</span>
+          </div>
+        </div>
+
+        <div class="tx-file">
+          <span class="file-ico"><AppIcon name="excel" :size="20" /></span>
+          <div class="file-body">
+            <div class="file-head">
+              <span class="file-name">{{ $t('detail.tx.file', { file: `kochirma_${row.id.replace(/\D/g, '').slice(-6)}.xlsx` }) }}</span>
+              <span class="file-tag">XLSX</span>
+            </div>
+            <div class="file-meta">{{ $t('detail.tx.fileMeta', { time: row.time }) }}</div>
+          </div>
+          <div class="spacer" />
+          <button type="button" class="btn-light" @click="bankFile('viewed')">
+            <AppIcon name="eye" :size="17" />
+            {{ $t('detail.tx.view') }}
+          </button>
+          <button type="button" class="btn-dark" @click="bankFile('downloaded')">
+            <AppIcon name="download" :size="17" />
+            {{ $t('detail.tx.download') }}
+          </button>
+        </div>
+
+        <div class="tx-tools">
+          <span class="tx-search">
+            <AppIcon name="search" :size="18" />
+            <input v-model="txQuery" class="tx-input" :placeholder="$t('detail.tx.search')" />
+          </span>
+          <button type="button" class="tx-sort" @click="sortDesc = !sortDesc">
+            <span class="sort-label">{{ $t('detail.tx.sortAmount') }}</span>
+            <AppIcon :name="sortDesc ? 'chevronDown' : 'chevronUp'" :size="18" />
+          </button>
+        </div>
+
+        <div class="chain">
+          <!-- jabrlanuvchi kartasi -->
+          <div class="victim">
+            <span class="victim-label">{{ $t('detail.tx.victim') }}</span>
+            <span class="pill mono">{{ chain.victim.card }}</span>
+            <span class="pill soft">{{ chain.victim.bank }}</span>
+            <div class="spacer" />
+            <span class="victim-sum mono">
+              {{ $t('detail.tx.taken') }} {{ chain.victim.amount }} <span class="dim">{{ $t('detail.sum') }}</span>
+            </span>
+          </div>
+
+          <!-- 1-daraja -->
+          <div v-for="n1 in chainRows" :key="n1.id" class="node">
+            <div class="node-row">
+              <button type="button" class="node-tog" :class="{ on: openNodes.has(n1.id) }" @click="toggleNode(n1.id)">
+                <AppIcon :name="openNodes.has(n1.id) ? 'chevronUp' : 'chevronDown'" :size="20" />
+              </button>
+              <span class="level l1">{{ $t('detail.tx.level', { n: 1 }) }}</span>
+              <div class="node-card" @click="openChainCard(n1)">
+                <span class="pill mono strong">{{ n1.card }}</span>
+                <span class="pill amount mono">{{ n1.amount }}</span>
+                <span class="pill">UZS ({{ $t('detail.sum') }})</span>
+                <span class="pill mono muted">{{ n1.date }}</span>
+                <span class="pill muted">{{ n1.bank }}</span>
+                <div class="spacer" />
+                <span class="node-op">{{ n1.op }}</span>
+                <span class="node-open">
+                  {{ $t('detail.tx.open') }}
+                  <AppIcon name="chevronRight" :size="16" />
+                </span>
+              </div>
+            </div>
+
+            <!-- 2-daraja -->
+            <div v-if="openNodes.has(n1.id)" class="kids">
+              <div v-for="n2 in n1.children" :key="n2.id" class="node">
+                <div class="node-row">
+                  <button type="button" class="node-tog" :class="{ on: openNodes.has(n2.id) }" @click="toggleNode(n2.id)">
+                    <AppIcon :name="openNodes.has(n2.id) ? 'chevronUp' : 'chevronDown'" :size="20" />
+                  </button>
+                  <span class="level l2">{{ $t('detail.tx.level', { n: 2 }) }}</span>
+                  <div class="node-card sub" @click="openChainCard(n2)">
+                    <span class="pill mono">
+                      <AppIcon name="lock" :size="15" />
+                      {{ n2.card }}
+                    </span>
+                    <span class="pill amount mono">{{ n2.amount }}</span>
+                    <span class="pill mono muted">{{ n2.date }}</span>
+                    <span class="pill muted">{{ n2.bank }}</span>
+                    <div class="spacer" />
+                    <span class="node-open">
+                      {{ $t('detail.tx.open') }}
+                      <AppIcon name="chevronRight" :size="16" />
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 3-daraja -->
+                <div v-if="openNodes.has(n2.id)" class="kids">
+                  <div v-for="n3 in n2.children" :key="n3.id" class="node-row">
+                    <span class="node-gap" />
+                    <span class="level l3">{{ $t('detail.tx.level', { n: 3 }) }}</span>
+                    <div class="node-card sub" @click="openChainCard(n3)">
+                      <span class="pill mono">{{ n3.card }}</span>
+                      <span class="pill amount mono">{{ n3.amount }}</span>
+                      <span class="pill mono muted">{{ n3.date }}</span>
+                      <span class="pill muted">{{ n3.bank }}</span>
+                      <div class="spacer" />
+                      <span class="node-open">
+                        {{ $t('detail.tx.open') }}
+                        <AppIcon name="chevronRight" :size="16" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!chainRows.length" class="empty-box small">
+            <span class="empty-ico"><AppIcon name="searchOff" :size="24" /></span>
+            <div class="empty-title">{{ $t('detail.tx.noMatch') }}</div>
+          </div>
+        </div>
+      </template>
     </section>
 
     <!-- ---------- qolgan tablar ---------- -->
@@ -1394,6 +1636,533 @@ function exportXlsx() {
 .empty-box {
   padding: 34px 20px;
   text-align: center;
+}
+
+/* ---------- bo'sh holat ---------- */
+.empty-box {
+  padding: 60px 18px 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+}
+
+.empty-box.small {
+  padding: 34px 18px;
+}
+
+.empty-ico {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c8b95a6);
+}
+
+.empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c3d4d66);
+}
+
+.empty-text {
+  font-size: 14.5px;
+  color: var(--c8b95a6);
+  text-align: center;
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+/* ---------- qaror hujjati ---------- */
+.doc-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--c33373d);
+  color: var(--cc8cdd6);
+}
+
+.doc-name {
+  font-size: 14.5px;
+  color: var(--ce8ebf0);
+}
+
+.doc-pages,
+.doc-scale {
+  font-size: 14px;
+}
+
+.doc-scale {
+  color: var(--ce8ebf0);
+  padding: 2px 7px;
+  border: 1px solid var(--c4b5058);
+  border-radius: 4px;
+}
+
+.doc-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--c4b5058);
+}
+
+.doc-zoom {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--cc8cdd6);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.doc-act {
+  border: 0;
+  background: transparent;
+  color: var(--cc8cdd6);
+  cursor: pointer;
+  display: flex;
+}
+
+.doc-act:hover,
+.doc-zoom:hover {
+  color: #fff;
+}
+
+.doc-body {
+  display: flex;
+  height: 470px;
+}
+
+.doc-thumbs {
+  width: 150px;
+  flex: 0 0 150px;
+  background: var(--c3f444c);
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.thumb {
+  width: 96px;
+  height: 130px;
+  background: var(--s-card);
+  border: 1px solid var(--c5a6068);
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.thumb.on {
+  border: 2px solid var(--k3d7cc0, #3d7cc0);
+}
+
+.thumb-nums {
+  display: flex;
+  gap: 84px;
+  font-size: 13px;
+  color: var(--c8b929c);
+  margin-top: -6px;
+}
+
+.thumb-nums .on {
+  color: var(--cc8cdd6);
+}
+
+.doc-page {
+  flex: 1;
+  background: var(--c54595f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  overflow: hidden;
+}
+
+.page-sheet {
+  width: 520px;
+  height: 100%;
+  background: var(--s-card) repeating-linear-gradient(135deg, rgba(28, 43, 69, .04) 0 9px, transparent 9px 18px);
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition: transform .18s var(--ease);
+}
+
+.page-title {
+  font-size: 14px;
+  color: var(--c66748c);
+  letter-spacing: .05em;
+}
+
+.page-text {
+  font-size: 14.5px;
+  color: var(--c98a3b6);
+  text-align: center;
+  max-width: 330px;
+}
+
+/* ---------- tranzaksiyalar zanjiri ---------- */
+.tx-stats {
+  display: flex;
+  gap: 20px;
+  padding: 12px 18px;
+  background: var(--cf8fafc);
+  border-bottom: 1px solid var(--ce2e8f1);
+  flex-wrap: wrap;
+}
+
+.stat-label {
+  display: block;
+  font-size: 13px;
+  color: var(--c8b95a6);
+}
+
+.stat-value {
+  display: block;
+  margin-top: 3px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.tx-file {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--ce2e8f1);
+  flex-wrap: wrap;
+}
+
+.file-ico {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 9px;
+  background: var(--ce6f2ec);
+  color: var(--c1a6e4b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-body {
+  min-width: 0;
+}
+
+.file-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.file-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c1c2b45);
+}
+
+.file-tag {
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--ce6f2ec);
+  border: 1px solid var(--cc8e2d4);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c1a6e4b);
+}
+
+.file-meta {
+  margin-top: 4px;
+  font-size: 13.5px;
+  color: var(--c8b95a6);
+}
+
+.tx-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 4px;
+  flex-wrap: wrap;
+}
+
+.tx-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 260px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c8b95a6);
+}
+
+.tx-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-size: 14.5px;
+  color: var(--c1c2b45);
+}
+
+.tx-input:focus {
+  outline: none;
+}
+
+.tx-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c3d4d66);
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+.sort-label {
+  font-weight: 600;
+  color: var(--c1c2b45);
+}
+
+.chain {
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.victim {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: var(--cfff5e9);
+  border: 1px solid var(--cf6dfc0);
+  flex-wrap: wrap;
+}
+
+.victim-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--cb45309);
+}
+
+.victim-sum {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.node {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.node-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.node-tog {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 9px;
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c66748c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.node-tog.on {
+  background: var(--ce8eef7);
+  border-color: var(--kc9d9ec);
+  color: var(--c23568f);
+}
+
+.node-gap {
+  width: 34px;
+  flex: 0 0 34px;
+}
+
+.level {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.level.l1 {
+  background: var(--ce8eef7);
+  border: 1px solid var(--kc9d9ec);
+  color: var(--c1b4272);
+}
+
+.level.l2 {
+  background: var(--cedf1f8);
+  border: 1px solid var(--cd5e0ee);
+  color: var(--c3d4d66);
+}
+
+.level.l3 {
+  background: var(--cf0f3f8);
+  border: 1px solid var(--ce2e8f1);
+  color: var(--c66748c);
+}
+
+.node-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--cd5e0ee);
+  border-radius: 8px;
+  background: var(--s-card);
+  cursor: pointer;
+  flex-wrap: wrap;
+  transition: border-color .16s ease, background .16s ease;
+}
+
+.node-card:hover {
+  border-color: var(--c23568f);
+  background: var(--cf7fafd);
+}
+
+.node-card.sub {
+  border-color: var(--ce6ebf3);
+  padding: 8px 11px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--c3d4d66);
+  white-space: nowrap;
+}
+
+.pill.strong {
+  border-color: var(--kc9d9ec);
+  background: var(--cf7fafd);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.pill.amount {
+  justify-content: flex-end;
+  min-width: 124px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.pill.soft {
+  background: var(--s-card);
+}
+
+.pill.muted {
+  color: var(--c8b95a6);
+}
+
+.node-op {
+  font-size: 14px;
+  color: var(--c8b95a6);
+  white-space: nowrap;
+}
+
+.node-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--c23568f);
+  white-space: nowrap;
+}
+
+.kids {
+  margin: 0 0 2px 38px;
+  padding-left: 16px;
+  border-left: 2px dashed var(--ka3bad6, var(--cc8cdd6));
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.btn-light,
+.btn-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-light {
+  border: 1px solid var(--ce2e8f1);
+  background: var(--s-card);
+  color: var(--c3d4d66);
+}
+
+.btn-light:hover {
+  border-color: var(--cc3cbd8);
+  background: var(--cf8fafc);
+}
+
+.btn-dark {
+  border: 1px solid var(--btn);
+  background: var(--btn);
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .doc-thumbs {
+    display: none;
+  }
+
+  .page-sheet {
+    width: 100%;
+  }
 }
 
 /* ---------- keyingi bosqich ---------- */
