@@ -186,3 +186,54 @@ export function draftRow(row) {
     ago: agoOf(row.updated_at || row.created_at)
   }
 }
+
+/* ---------- raqam tekshiruvi ---------- */
+
+/**
+ * EarlierComplaint -> karta tarixi qatori.
+ * CardHistory paneli va formadagi takroriylik ogohlantirishi shu ko'rinishni kutadi.
+ */
+export function earlierComplaint(row) {
+  return {
+    apiId: row.id,
+    id: row.number || String(row.id),
+    material: row.material_number || null,
+    name: row.citizen_name || '',
+    status: statusToUi(row.status),
+    time: dateTime(row.date || row.created_at),
+    amount: money(row.matched_amount),
+    // shu raqamga tegishli o'tkazmalar soni
+    tx: Array.isArray(row.transactions) ? row.transactions.length : null
+  }
+}
+
+/** NumberCheckOutput -> «Tekshirish» paneli. */
+export function numberCheck(res) {
+  return {
+    number: res?.number || '',
+    numberType: res?.number_type || null,
+    numberTypeLabel: res?.number_type_display || '',
+    known: !!res?.is_known,
+    bank: res?.bank ?? null,
+    bankName: res?.bank_name || '',
+    blocked: !!res?.is_blocked,
+    frozen: res?.frozen_amount ? money(res.frozen_amount) : null,
+    total: money(res?.total_amount),
+    count: res?.complaint_count ?? 0,
+    checkedAt: dateTime(res?.checked_at),
+    earlier: (res?.complaints || []).map(earlierComplaint)
+  }
+}
+
+/** CardIdentifyOutput -> rekvizit maydonidagi bank yozuvi. */
+export function cardIdentity(res) {
+  if (!res?.matched) return null
+  return {
+    prefix: res.prefix || '',
+    system: res.processing_display || res.processing || '',
+    bank: res.bank ?? null,
+    bankName: res.bank_short_name || res.bank_name || '',
+    isBank: res.is_bank !== false,
+    numberType: res.number_type || 'card'
+  }
+}

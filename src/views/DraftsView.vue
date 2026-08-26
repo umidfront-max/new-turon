@@ -6,6 +6,7 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import { useApplications } from '@/stores/useApplications'
+import { useDrafts } from '@/stores/useDrafts'
 import { useUi } from '@/stores/useUi'
 
 const router = useRouter()
@@ -21,7 +22,14 @@ function ago(a) {
 
 const { drafts, removeDraft } = useApplications()
 
-const rows = computed(() => drafts.value.map((d, i) => ({ ...d, n: i + 1 })))
+// Serverdagi ro'yxat bo'lsa — o'sha, aks holda namuna.
+const api = useDrafts()
+api.load()
+
+const rows = computed(() => {
+  const list = api.live.value ? api.state.items : drafts.value
+  return list.map((d, i) => ({ ...d, n: i + 1 }))
+})
 
 function resume(draft) {
   router.push({ path: '/application/new', query: { draft: draft.id } })
@@ -33,15 +41,20 @@ function barColor(done) {
   return 'var(--ca52220)'
 }
 
-function remove(id) {
+function remove(row) {
   ask({
     title: t('drafts.askTitle'),
     text: t('drafts.askText'),
     ok: t('common.remove'),
     danger: true,
-    run: () => {
-      removeDraft(id)
-      toast(t('drafts.removed'))
+    run: async () => {
+      try {
+        if (api.live.value) await api.remove(row.apiId)
+        else removeDraft(row.id)
+        toast(t('drafts.removed'))
+      } catch (e) {
+        toast(e.detail || t(`api.errors.${e.key || 'server'}`), 'bad')
+      }
     }
   })
 }
@@ -117,7 +130,7 @@ function remove(id) {
                     {{ $t('common.continue') }}
                     <AppIcon name="chevronRight" :size="15" />
                   </button>
-                  <button type="button" class="icon-btn" :title="$t('common.remove')" @click="remove(d.id)">
+                  <button type="button" class="icon-btn" :title="$t('common.remove')" @click="remove(d)">
                     <AppIcon name="trash" :size="16" />
                   </button>
                 </div>

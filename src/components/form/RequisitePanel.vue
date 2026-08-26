@@ -15,6 +15,11 @@ import { useUi } from '@/stores/useUi'
 
 const requisites = defineModel({ type: Array, required: true })
 
+const props = defineProps({
+  // serverdan aniqlangan bank nomi; bo'lmasa raqamdan tizim hisoblanadi
+  bankLabel: { type: String, default: '' }
+})
+
 // kiritilayotgan raqam — ota-komponentdagi takroriylik ogohlantirishi uchun
 const emit = defineEmits(['card'])
 
@@ -24,7 +29,11 @@ const { toast } = useUi()
 const errors = reactive({})
 const draft = reactive({ kind: 'card', number: '', amount: '', time: '' })
 
-const system = computed(() => (draft.kind === 'card' ? cardSystem(draft.number) : null))
+// serverdagi javob ustun: u haqiqiy bankni biladi, cardSystem faqat BIN dan taxmin qiladi
+const system = computed(() => {
+  if (props.bankLabel) return props.bankLabel
+  return draft.kind === 'card' ? cardSystem(draft.number) : null
+})
 
 function onCard(e) {
   draft.number = draft.kind === 'card' ? maskCard(e.target.value) : maskAccount(e.target.value)

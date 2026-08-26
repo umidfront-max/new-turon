@@ -124,6 +124,43 @@ ok(draft.time.startsWith('14.08.2026'), 'qoralama vaqti: ' + draft.time)
 const bare = draftRow({ id: 4 })
 ok(bare.done === 0 && bare.missing === null, "bo'sh qoralama xato")
 
+/* ---------- raqam tekshiruvi ---------- */
+const { numberCheck, cardIdentity, earlierComplaint } = await vite.ssrLoadModule('/src/utils/adapt.js')
+
+const check = numberCheck({
+  number: '986035******8584', number_type: 'card', number_type_display: 'Karta',
+  is_known: true, bank: 7, bank_name: 'Anorbank', is_blocked: true,
+  frozen_amount: '3000000.00', complaint_count: 2, total_amount: '19400000.00',
+  checked_at: '2026-08-26T13:05:00+05:00',
+  complaints: [{
+    id: 12, number: 'M0126275/2026-10001', material_number: 'KJ-2026-004180',
+    status: 'blocked', citizen_name: 'IBRAGIMOVA R.', date: '2026-08-03T12:47:00+05:00',
+    transactions: [{}, {}], matched_amount: '19400000.00'
+  }]
+})
+ok(check.bankName === 'Anorbank', 'bank: ' + check.bankName)
+ok(check.blocked === true, 'bloklangan holati xato')
+ok(check.frozen === '3 000 000', 'muzlatilgan: ' + check.frozen)
+ok(check.total === '19 400 000', 'jami: ' + check.total)
+ok(check.earlier.length === 1, 'oldingi arizalar soni: ' + check.earlier.length)
+ok(check.earlier[0].status === 'blocked', 'oldingi ariza statusi xato')
+ok(check.earlier[0].tx === 2, 'o‘tkazmalar soni: ' + check.earlier[0].tx)
+ok(check.earlier[0].time.startsWith('03.08.2026'), 'vaqt: ' + check.earlier[0].time)
+
+/* oldingi arizalar bo'lmasa ham yiqilmasin */
+ok(numberCheck({}).earlier.length === 0, 'bo‘sh tekshiruv xato')
+ok(numberCheck(null).count === 0, 'null tekshiruv xato')
+
+/* ---------- karta aniqlash ---------- */
+const idn = cardIdentity({
+  matched: true, prefix: '860006', processing: 'uzcard',
+  processing_display: 'UzCard', bank: 4, bank_name: 'Kapital bank',
+  bank_short_name: 'Kapitalbank', is_bank: true, number_type: 'card'
+})
+ok(idn.bankName === 'Kapitalbank', 'qisqa nom afzal: ' + idn.bankName)
+ok(idn.system === 'UzCard', 'tizim: ' + idn.system)
+ok(cardIdentity({ matched: false }) === null, "mos kelmasa null bo'lishi kerak")
+
 await vite.close()
 console.log(`adapter: ${Object.keys(pairs).length} status, qator va sahifa tekshirildi`)
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'adapter: barcha tekshiruvlar o\'tdi')

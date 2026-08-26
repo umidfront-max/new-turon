@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -13,6 +13,7 @@ import {
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
+import { useNumberCheck } from '@/composables/useNumberCheck'
 
 const route = useRoute()
 const router = useRouter()
@@ -101,7 +102,15 @@ function onFio(e) {
 // rekvizit panelida kiritilayotgan raqam — ogohlantirish shu asosda chiqadi
 const typedCard = ref('')
 
+// Serverdagi tekshiruv: raqam to'liq yig'ilgach /complaints/check-number/ ga
+// so'rov ketadi. Javob bo'lmasa namuna ro'yxatidan qidiriladi.
+const numberCheck = useNumberCheck()
+
+watch(typedCard, (value) => numberCheck.check(value))
+
 const duplicates = computed(() => {
+  if (numberCheck.live.value) return numberCheck.earlier.value
+
   const digits = digitsOnly(typedCard.value)
   if (digits.length < 16) return []
   return items.value.filter((a) => digitsOnly(a.card) === digits)
@@ -435,7 +444,7 @@ function cancelAll() {
       </div>
 
       <!-- ---------- o'ng ustun ---------- -->
-      <RequisitePanel v-model="requisites" @card="typedCard = $event" />
+      <RequisitePanel v-model="requisites" :bank-label="numberCheck.bankLabel.value" @card="typedCard = $event" />
 
     </div>
   </div>
