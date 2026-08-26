@@ -60,6 +60,25 @@ try {
   }
 }
 
+
+/* ---------- ma'lumotnomalar do'koni ---------- */
+const { useReferences } = await vite.ssrLoadModule('/src/stores/useReferences.js')
+const refsStore = useReferences()
+await refsStore.load()
+
+const counts = {
+  methods: refsStore.methods.value.length,
+  sources: refsStore.sources.value.length,
+  regions: refsStore.regions.value.length
+}
+console.log(`ma'lumotnomalar: usul ${counts.methods}, manba ${counts.sources}, hudud ${counts.regions}`)
+console.log('serverdan:', JSON.stringify(refsStore.live.value))
+
+/* server ro'yxati kichik bo'lsa dizayn buzilmasligi kerak */
+ok(counts.methods >= 8, `usullar ${counts.methods} ta (kamida 8 kutilgan)`)
+ok(counts.regions >= 14, `hududlar ${counts.regions} ta (kamida 14 kutilgan)`)
+ok(refsStore.methods.value.every((x) => x.label && x.value !== undefined), 'ma\'lumotnoma yozuvi to\'liq emas')
+
 await vite.close()
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'api klienti: tekshiruvlar o\'tdi')
 process.exit(problems.length ? 1 : 0)
