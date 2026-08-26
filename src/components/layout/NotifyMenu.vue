@@ -5,10 +5,13 @@ import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { TONE } from '@/data/notifications'
 import { useUi } from '@/stores/useUi'
+import { useNotifications } from '@/stores/useNotifications'
 
 const router = useRouter()
 const { t } = useI18n()
 const { state, unread, markRead, markAllRead, toggleNotify, toast } = useUi()
+
+const api = useNotifications()
 
 const TIME_KEY = { min: 'time.minAgo', hour: 'time.hourAgo', day: 'time.dayAgo' }
 
@@ -17,19 +20,42 @@ function ago(a) {
   return t(TIME_KEY[a.unit] || TIME_KEY.min, a.n)
 }
 
-const items = computed(() => state.notifications.map((n) => ({
+// Serverdagi ro'yxat bo'lsa — o'sha, aks holda namuna (useUi).
+// Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
+const source = computed(() => (api.live.value ? api.state.items : state.notifications))
+const unreadCount = computed(() => (api.live.value ? api.unread.value : unread.value))
+
+function label(n, part) {
+  if (n.title || n.text) return part === 'title' ? n.title : n.text
+  return part === 'title'
+    ? t(`notify.items.${n.key}.title`)
+    : t(`notify.items.${n.key}.text`, n.params || {})
+}
+
+const items = computed(() => source.value.map((n) => ({
   id: n.id,
   icon: n.icon,
   read: n.read,
   appId: n.appId,
-  title: t(`notify.items.${n.key}.title`),
-  text: t(`notify.items.${n.key}.text`, n.params || {}),
+  title: label(n, 'title'),
+  text: label(n, 'text'),
   when: ago(n.ago),
   tone: TONE[n.tone] || TONE.info
 })))
 
+// o'qilgan deb belgilash: serverdagi ro'yxat bo'lsa u orqali, aks holda namunada
+function setRead(id) {
+  if (api.live.value) api.markRead(id)
+  else markRead(id)
+}
+
+function setAllRead() {
+  if (api.live.value) api.markAllRead()
+  else markAllRead()
+}
+
 function open(item) {
-  markRead(item.id)
+  setRead(item.id)
   toggleNotify(false)
   if (item.appId) router.push({ path: '/application', query: { id: item.appId } })
 }
@@ -40,8 +66,8 @@ function openAll() {
 }
 
 function readAll() {
-  if (!unread.value) return
-  markAllRead()
+  if (!unreadCount.value) return
+  setAllRead()
   toast(t('notify.allRead'))
 }
 </script>
@@ -50,9 +76,9 @@ function readAll() {
   <div class="notify-menu">
     <div class="menu-head">
       <span class="head-title">{{ $t('notify.title') }}</span>
-      <span v-if="unread" class="head-count mono">{{ $t('notify.unread', unread) }}</span>
+      <span v-if="unreadCount" class="head-count mono">{{ $t('notify.unread', unreadCount) }}</span>
       <div class="spacer" />
-      <button type="button" class="head-action" :disabled="!unread" @click="readAll">
+      <button type="button" class="head-action" :disabled="!unreadCount" @click="readAll">
         {{ $t('notify.markAll') }}
       </button>
     </div>

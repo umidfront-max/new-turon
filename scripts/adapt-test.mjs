@@ -87,6 +87,43 @@ ok(idOnly.bank === '', 'bank ID sifatida chiqib ketdi: ' + idOnly.bank)
 const empty = registryPage({}, 1, 10)
 ok(empty.rows.length === 0 && empty.total === 0, 'bo\'sh javob xato')
 
+/* ---------- bildirishnoma ---------- */
+const { notification, draftRow, agoOf } = await vite.ssrLoadModule('/src/utils/adapt.js')
+
+const n = notification({
+  id: 9, title: 'Bank arizani qaytardi', message: 'Karta raqamida xatolik',
+  type: 'crime_error', is_read: false,
+  payload: { complaint_number: 'M0126284/2026-10008' },
+  created_at: new Date(Date.now() - 8 * 60000).toISOString()
+})
+ok(n.title === 'Bank arizani qaytardi', 'sarlavha: ' + n.title)
+ok(n.tone === 'bad' && n.icon === 'warn', `crime_error rangi: ${n.tone}/${n.icon}`)
+ok(n.read === false, "o'qilgan holati xato")
+ok(n.appId === 'M0126284/2026-10008', 'ariza raqami: ' + n.appId)
+ok(n.ago.unit === 'min' && n.ago.n === 8, `vaqt: ${n.ago.n} ${n.ago.unit}`)
+
+/* noma'lum tur ham yiqilmasligi kerak */
+const unknown = notification({ id: 1, type: 'boshqa_tur', created_at: null })
+ok(unknown.tone === 'info' && unknown.icon === 'bell', "noma'lum tur zaxira rangsiz")
+
+/* ---------- qoralama ---------- */
+const draft = draftRow({
+  id: 3, number: 'KJ-2026-004301', material_number: 'M0438715/2026-0000',
+  applicant_name: 'YUSUPOVA NARGIZA', method: 3, method_name: "Soxta qo'ng'iroq",
+  requisite: { number: '9860 12** **** 4922', bank_name: 'Uzum Bank', count: 2 },
+  completed_steps: 4, total_steps: 5,
+  steps: [{ key: 'app', done: true }, { key: 'fabula', done: false }],
+  updated_at: '2026-08-14T09:12:00+05:00'
+})
+ok(draft.done === 80, "to'ldirilgan foiz: " + draft.done)
+ok(draft.missing === 'fabula', 'qolgan qadam: ' + draft.missing)
+ok(draft.tx === 2, 'rekvizit soni: ' + draft.tx)
+ok(draft.time.startsWith('14.08.2026'), 'qoralama vaqti: ' + draft.time)
+
+/* qadamlar bo'lmasa ham ishlashi kerak */
+const bare = draftRow({ id: 4 })
+ok(bare.done === 0 && bare.missing === null, "bo'sh qoralama xato")
+
 await vite.close()
 console.log(`adapter: ${Object.keys(pairs).length} status, qator va sahifa tekshirildi`)
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'adapter: barcha tekshiruvlar o\'tdi')

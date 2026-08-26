@@ -111,3 +111,78 @@ export function registryPage(res, page = 1, perPage = 10) {
     facets: res?.facets || null
   }
 }
+
+/* ---------- bildirishnomalar ---------- */
+
+// server turi -> ekrandagi rang va ikonka
+const NOTIFY_TONE = {
+  sanction_created: { tone: 'ok', icon: 'shield' },
+  crime_created: { tone: 'info', icon: 'doc' },
+  crime_error: { tone: 'bad', icon: 'warn' },
+  user_not_logged: { tone: 'warn', icon: 'user' },
+  duty_handed_over: { tone: 'info', icon: 'swap' },
+  duty_accepted: { tone: 'ok', icon: 'check' },
+  duty_returned: { tone: 'warn', icon: 'back' }
+}
+
+/** "2026-08-26T09:12:00+05:00" -> { unit, n } ("8 daqiqa oldin" uchun) */
+export function agoOf(iso) {
+  const at = new Date(iso).getTime()
+  if (Number.isNaN(at)) return { unit: 'min', n: 0 }
+
+  const min = Math.max(0, Math.round((Date.now() - at) / 60000))
+  if (min < 60) return { unit: 'min', n: min }
+  const hours = Math.round(min / 60)
+  if (hours < 24) return { unit: 'hour', n: hours }
+  return { unit: 'day', n: Math.round(hours / 24) }
+}
+
+/**
+ * NotificationOutput -> ekran yozuvi.
+ * Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
+ */
+export function notification(row) {
+  const tone = NOTIFY_TONE[row.type] || { tone: 'info', icon: 'bell' }
+  const payload = row.payload || {}
+
+  return {
+    id: row.id,
+    // tayyor matn — komponentlar buni i18n kalitidan ustun ko'radi
+    title: row.title || '',
+    text: row.message || '',
+    type: row.type || null,
+    tone: tone.tone,
+    icon: tone.icon,
+    read: !!row.is_read,
+    ago: agoOf(row.created_at),
+    // arizaga o'tish uchun (payload tuzilmasi sxemada e'lon qilinmagan)
+    appId: payload.complaint_number || payload.number || payload.complaint_id || null
+  }
+}
+
+/* ---------- qoralamalar ---------- */
+
+/** ComplaintDraftRow -> qoralamalar jadvali qatori. */
+export function draftRow(row) {
+  const req = row.requisite || {}
+  const total = row.total_steps || 0
+  const done = row.completed_steps || 0
+
+  return {
+    apiId: row.id,
+    id: row.number || '—',
+    material: row.material_number || null,
+    name: row.applicant_name || '—',
+    method: row.method || null,
+    methodLabel: row.method_name || '',
+    card: textOf(req, CARD_KEYS) || '—',
+    bank: textOf(req, BANK_KEYS) || null,
+    tx: typeof req.count === 'number' ? req.count : null,
+    // to'ldirilganlik foizi
+    done: total ? Math.round((done / total) * 100) : 0,
+    // qaysi qadam qolgani — steps ichidagi birinchi tugallanmagani
+    missing: (row.steps || []).find((s) => !s.done)?.key || null,
+    time: dateTime(row.updated_at || row.created_at),
+    ago: agoOf(row.updated_at || row.created_at)
+  }
+}
