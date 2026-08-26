@@ -26,6 +26,11 @@ for (const lang of ['uz','uzk','ru']) {
     if (hidden.length !== 2) bad.push(`${lang}/${tab}: ${hidden.length} ta yashirin (2 kutilgan)`)
     if (!html.includes('class="forms"')) bad.push(`${lang}/${tab}: grid o'ram yo'q`)
     if ((html.match(/inert/g) || []).length < 2) bad.push(`${lang}/${tab}: inert yetarli emas`)
+    // e-imzo tabi alohida komponentda — ichi ham chizilishi kerak
+    if (!html.includes('signer-wait') && !html.includes('signer-off')) {
+      bad.push(`${lang}/${tab}: e-imzo tabi ichi chizilmadi`)
+    }
+    if (!html.includes('class="submit"')) bad.push(`${lang}/${tab}: yuborish tugmasi yo'q`)
   }
 }
 console.log(bad.length ? 'XATO:\n' + bad.join('\n') : "login tablari: uchalasi bir katakda, faqat bittasi ko'rinadi — balandlik doimiy")
