@@ -60,9 +60,20 @@ const activeSignerKey = computed(
 // ISigner ro'yxatidagi o'rin -> papkadagi fayl.
 // Tartib mos kelishiga ishonish uchun sonlar teng bo'lishi shart; teng bo'lmasa
 // fayl nomidagi JSHSHIR/STIR bo'yicha qidiriladi.
+// Qo'lda ko'rsatilgan fayllar: kalit seriyasi -> fayl.
+// Tartib bo'yicha topilmagan kalitlar uchun foydalanuvchi o'zi ko'rsatadi.
+const pinned = ref({})
+
+// keyingi tanlanadigan fayl qaysi kalitga biriktirilishi
+let pinTo = null
+
 const activeFile = computed(() => {
   const key = activeSignerKey.value
-  if (!key || !files.value.length) return null
+  if (!key) return null
+
+  // qo'lda biriktirilgani hammasidan ustun
+  if (pinned.value[key.serial]) return pinned.value[key.serial]
+  if (!files.value.length) return null
 
   if (files.value.length === signerTotal.value) {
     const hit = files.value[key.index]
@@ -145,19 +156,45 @@ async function onSignerPick() {
   delete errors.pfxPass
   delete errors.pfx
 
-  // fayl allaqachon bor bo'lsa — watch o'zi base64 qiladi
-  if (pfxFile.value || !activeSignerKey.value) return
+  /*
+    Papka allaqachon o'qilgan bo'lsa — boshqa hech narsa so'ralmaydi:
+    kalitga mos fayl `activeFile` orqali o'zi topiladi va watch uni
+    base64 ga o'giradi. Oyna faqat papka umuman ochilmagan bo'lsa chiqadi.
+  */
+  if (files.value.length || !activeSignerKey.value) return
 
   const granted = await requestFolder()
   if (granted) await prepareFile(pfxFile.value)
 }
 
-/** Kalit kartochkasidagi papka tugmasi — ruxsatni alohida so'rash. */
+/*
+  Kalit kartochkasidagi papka tugmasi.
+  Papka hali ochilmagan bo'lsa — papkani so'raydi.
+  Ochilgan, lekin shu kalitga mos fayl topilmagan bo'lsa — aynan o'sha
+  kalitning faylini ko'rsatishni so'raydi (papkani qayta so'rash foyda bermaydi).
+*/
 async function grantFolder() {
   eriError.value = ''
-  const granted = await requestFolder()
+
+  const granted = files.value.length ? await requestFile() : await requestFolder()
   if (granted) await prepareFile(pfxFile.value)
   else if (!pfxB64.value) eriError.value = t('login.eri.errors.noFile')
+}
+
+/** Bitta faylni tanlashni so'raydi va tanlanishini kutadi. */
+function requestFile() {
+  return new Promise((resolve) => {
+    // tanlangan fayl aynan shu kalitga biriktiriladi
+    pinTo = activeSignerKey.value?.serial || null
+    awaitingFiles = resolve
+    pickFile()
+    setTimeout(() => {
+      if (awaitingFiles === resolve) {
+        awaitingFiles = null
+        resolve(false)
+      }
+    }, 120000)
+  })
 }
 
 /* ---------- kalit fayllari ---------- */
@@ -231,7 +268,14 @@ function addFiles(list) {
 }
 
 function onFile(e) {
-  const ok = addFiles(e.target.files)
+  // bitta fayl aniq kalit uchun ko'rsatilgan bo'lsa — o'shanga bog'laymiz
+  const picked = e.target.files
+  if (pinTo && picked?.length === 1) {
+    pinned.value = { ...pinned.value, [pinTo]: picked[0] }
+    pinTo = null
+  }
+
+  const ok = addFiles(picked)
   e.target.value = '' // bir xil faylni qayta tanlash mumkin bo'lsin
   if (awaitingFiles) {
     const done = awaitingFiles
