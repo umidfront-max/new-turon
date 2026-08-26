@@ -12,9 +12,11 @@
     "test:render": "node scripts/render-check.mjs",
     "test:icons": "node scripts/icon-test.mjs",
     "test:login": "node scripts/login-test.mjs",
-    "test:panels": "node scripts/panels-test.mjs"
+    "test:panels": "node scripts/panels-test.mjs",
+    "test:api": "node scripts/api-test.mjs"
   },
   "dependencies": {
+    "axios": "^1.19.0",
     "vue": "^3.4.38",
     "vue-i18n": "^10.0.7",
     "vue-router": "^4.4.5",

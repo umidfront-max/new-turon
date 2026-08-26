@@ -6,6 +6,22 @@ export default {
     defaultTitle: 'TURON CYBER · CardBlock'
   },
 
+  api: {
+    errors: {
+      network: "Serverga ulanib bo'lmadi. Tarmoqni tekshiring.",
+      timeout: "Server javob bermadi — qaytadan urinib ko'ring",
+      unauthorized: 'Sessiya tugagan — qaytadan kiring',
+      forbidden: "Bu amalga ruxsat yo'q",
+      notFound: 'Topilmadi',
+      conflict: "Ma'lumot boshqa joyda o'zgargan — sahifani yangilang",
+      validation: "Yuborilgan ma'lumotlar to'g'ri emas",
+      tooMany: "So'rovlar juda ko'p — biroz kuting",
+      server: 'Serverda xatolik',
+      cancelled: "So'rov bekor qilindi",
+      unknown: 'Kutilmagan xatolik'
+    }
+  },
+
   common: {
     search: 'Qidiruv',
     apply: "Qo'llash",

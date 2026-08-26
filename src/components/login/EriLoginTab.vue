@@ -133,13 +133,6 @@ async function loadSignerKeys() {
   }
 }
 
-// tab ochilganda ro'yxat va saqlangan papka yuklanadi
-watch(() => props.active, (on) => {
-  if (!on) return
-  if (signerState.value !== 'ready') loadSignerKeys()
-  if (!files.value.length) restoreKeys()
-}, { immediate: true })
-
 function onSignerPick() {
   eriError.value = ''
   pfxPass.value = ''
@@ -315,6 +308,14 @@ function onPass(e) {
   eriError.value = ''
   delete errors.pfxPass
 }
+
+// tab ochilganda ro'yxat va saqlangan papka yuklanadi
+// (kuzatuvchi shu yerda — chaqiradigan funksiyalari yuqorida e'lon qilingan)
+watch(() => props.active, (on) => {
+  if (!on) return
+  if (signerState.value !== 'ready') loadSignerKeys()
+  if (!files.value.length) restoreKeys()
+}, { immediate: true })
 </script>
 
 <template>

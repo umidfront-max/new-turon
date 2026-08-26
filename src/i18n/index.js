@@ -50,6 +50,9 @@ const i18n = createI18n({
 /** Komponentlardan tashqarida (store, router) tarjima olish uchun */
 export const t = (key, ...args) => i18n.global.t(key, ...args)
 
+/** Hozirgi til kodi — API so'rovlariga qo'shish uchun */
+export const i18nLang = () => i18n.global.locale.value
+
 export function setLang(lang) {
   const next = LANGS.some((l) => l.value === lang) ? lang : DEFAULT_LANG
   i18n.global.locale.value = next

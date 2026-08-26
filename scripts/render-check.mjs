@@ -2,14 +2,22 @@
 const mem = () => { const m = new Map(); return { getItem: k => m.has(k) ? m.get(k) : null, setItem: (k, v) => m.set(k, String(v)), removeItem: k => m.delete(k) } }
 globalThis.localStorage = mem(); globalThis.sessionStorage = mem()
 globalThis.document = {
-  body: { dataset: {} }, documentElement: {}, title: '',
+  body: { dataset: {} }, documentElement: { style: {} }, title: '',
   addEventListener() {}, removeEventListener() {},
   createElement: () => ({ webkitdirectory: false, innerHTML: '', content: {}, setAttribute() {}, style: {} }),
   createElementNS: () => ({ setAttribute() {}, style: {} }),
   createTextNode: () => ({}), createComment: () => ({}), querySelector: () => null
 }
 globalThis.location = { pathname: '/', search: '', hash: '', href: 'http://localhost/', origin: 'http://localhost' }
-globalThis.history = { state: {}, pushState() {}, replaceState() {}, scrollRestoration: 'auto', go() {} }
+// vue-router history.state ni o'qiydi va almashtiradi — u hech qachon undefined bo'lmasligi kerak
+let _historyState = {}
+globalThis.history = {
+  get state() { return _historyState },
+  pushState(s) { _historyState = s || {} },
+  replaceState(s) { _historyState = s || {} },
+  scrollRestoration: 'auto',
+  go() {}
+}
 globalThis.addEventListener = () => {}; globalThis.removeEventListener = () => {}; globalThis.scrollTo = () => {}
 globalThis.window = globalThis
 
