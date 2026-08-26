@@ -4,12 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import VoiceRecorder from '@/components/form/VoiceRecorder.vue'
+import RequisitePanel from '@/components/form/RequisitePanel.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import CardHistory from '@/components/form/CardHistory.vue'
 import {
   METHOD_OPTIONS, SOURCE_OPTIONS, REGION_OPTIONS,
-  maskCard, maskAccount, maskAmount, maskPhone, maskDateTime,
-  digitsOnly, cardSystem, isValidDateTime
+  maskPhone, digitsOnly
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
@@ -35,8 +35,6 @@ const form = reactive({
 })
 
 const requisites = ref([])
-
-const draft = reactive({ kind: 'card', number: '', amount: '', time: '' })
 
 // tekshirilgan bloklar
 const checked = reactive({ app: false, applicant: false })
@@ -81,24 +79,6 @@ onBeforeUnmount(() => {
 })
 
 /* ---------- maskalar ---------- */
-function onCard(e) {
-  draft.number = draft.kind === 'card' ? maskCard(e.target.value) : maskAccount(e.target.value)
-  delete errors.number
-  verified.value = false
-}
-
-function onAmount(e) {
-  draft.amount = maskAmount(e.target.value)
-  delete errors.amount
-  verified.value = false
-}
-
-function onTime(e) {
-  draft.time = maskDateTime(e.target.value)
-  delete errors.time
-  verified.value = false
-}
-
 function onPhone(e) {
   form.phone = maskPhone(e.target.value)
   delete errors.phone
@@ -117,12 +97,12 @@ function onFio(e) {
   delete errors.fio
 }
 
-const system = computed(() => (draft.kind === 'card' ? cardSystem(draft.number) : null))
-
 /* ---------- karta takroriyligi ---------- */
-// kiritilayotgan raqam ro'yxatdagi arizalarda uchrasa — ogohlantiramiz
+// rekvizit panelida kiritilayotgan raqam — ogohlantirish shu asosda chiqadi
+const typedCard = ref('')
+
 const duplicates = computed(() => {
-  const digits = digitsOnly(draft.number)
+  const digits = digitsOnly(typedCard.value)
   if (digits.length < 16) return []
   return items.value.filter((a) => digitsOnly(a.card) === digits)
 })
@@ -164,143 +144,6 @@ function clearBlock(block) {
   })
   checked[block] = false
 }
-
-/* ---------- rekvizit ---------- */
-const requiredLength = computed(() => (draft.kind === 'card' ? 16 : 20))
-
-const canAdd = computed(() =>
-  digitsOnly(draft.number).length === requiredLength.value
-  && digitsOnly(draft.amount).length > 0
-  && isValidDateTime(draft.time))
-
-let seq = 0
-
-// dizayndagi ikki bosqich: avval «Tekshirish», so'ng «Briktirish»
-const verified = ref(false)
-
-function markErrorsRequisite() {
-  if (digitsOnly(draft.number).length !== requiredLength.value) errors.number = true
-  else delete errors.number
-  if (!digitsOnly(draft.amount)) errors.amount = true
-  else delete errors.amount
-  if (!isValidDateTime(draft.time)) errors.time = true
-  else delete errors.time
-
-  return !(errors.number || errors.amount || errors.time)
-}
-
-function checkRequisite() {
-  if (!markErrorsRequisite()) {
-    toast(t('form.invalid'), 'bad')
-    return
-  }
-  verified.value = true
-  toast(t('form.requisite.checked', { bank: system.value || t('form.requisite.bank') }))
-}
-
-// bitta rekvizitga bir nechta tranzaksiya biriktiriladi
-function addRequisite() {
-  if (!markErrorsRequisite()) {
-    toast(t('form.invalid'), 'bad')
-    return
-  }
-
-  seq += 1
-  const exists = requisites.value.find((r) => digitsOnly(r.number) === digitsOnly(draft.number))
-
-  if (exists) {
-    // shu raqam allaqachon bor — tranzaksiya sifatida qo'shiladi
-    exists.txs = [...exists.txs, { id: `t${seq}`, amount: draft.amount, time: draft.time }]
-    toast(t('form.requisite.txAdded'))
-  } else {
-    requisites.value = [...requisites.value, {
-      id: `r${seq}`,
-      kind: draft.kind,
-      number: draft.number,
-      system: system.value,
-      open: true,
-      txs: [{ id: `t${seq}`, amount: draft.amount, time: draft.time }]
-    }]
-    toast(t('form.requisite.addedToast'))
-  }
-
-  clearRequisite()
-}
-
-function clearRequisite() {
-  draft.number = ''
-  draft.amount = ''
-  draft.time = ''
-  verified.value = false
-  Object.keys(errors).forEach((k) => { if (['number', 'amount', 'time'].includes(k)) delete errors[k] })
-}
-
-function removeRequisite(id) {
-  requisites.value = requisites.value.filter((r) => r.id !== id)
-}
-
-function toggleRequisite(r) {
-  r.open = !r.open
-}
-
-const sumOf = (r) => maskAmount(String(r.txs.reduce((acc, x) => acc + Number(digitsOnly(x.amount)), 0)))
-
-/* ---------- rekvizit ichidagi tranzaksiya ---------- */
-// { reqId, txId | null } — yangi qo'shish yoki tahrirlash
-const txForm = reactive({ reqId: null, txId: null, amount: '', time: '' })
-
-function openTxForm(r, tx = null) {
-  txForm.reqId = r.id
-  txForm.txId = tx ? tx.id : null
-  txForm.amount = tx ? tx.amount : ''
-  txForm.time = tx ? tx.time : ''
-}
-
-function closeTxForm() {
-  txForm.reqId = null
-  txForm.txId = null
-  txForm.amount = ''
-  txForm.time = ''
-}
-
-const canSaveTx = computed(() => digitsOnly(txForm.amount).length > 0 && isValidDateTime(txForm.time))
-
-function saveTx() {
-  if (!canSaveTx.value) {
-    toast(t('form.invalid'), 'bad')
-    return
-  }
-  const r = requisites.value.find((x) => x.id === txForm.reqId)
-  if (!r) return
-  if (txForm.txId) {
-    r.txs = r.txs.map((x) => (x.id === txForm.txId ? { ...x, amount: txForm.amount, time: txForm.time } : x))
-    toast(t('form.requisite.txUpdated'))
-  } else {
-    seq += 1
-    r.txs = [...r.txs, { id: `t${seq}`, amount: txForm.amount, time: txForm.time }]
-    toast(t('form.requisite.txAdded'))
-  }
-  closeTxForm()
-}
-
-function removeTx(r, txId) {
-  if (r.txs.length === 1) {
-    removeRequisite(r.id)
-    toast(t('form.requisite.removed'))
-    return
-  }
-  r.txs = r.txs.filter((x) => x.id !== txId)
-  toast(t('form.requisite.txRemoved'))
-}
-
-const txCount = computed(() => requisites.value.reduce((n, r) => n + r.txs.length, 0))
-
-const total = computed(() => {
-  const sum = requisites.value.reduce(
-    (acc, r) => acc + r.txs.reduce((a, x) => a + Number(digitsOnly(x.amount)), 0), 0
-  )
-  return maskAmount(String(sum))
-})
 
 /* ---------- fabula ---------- */
 const HINTS = ['asked', 'transfer', 'noticed', 'contact']
@@ -399,7 +242,7 @@ function cancelAll() {
               <div class="dup-body">
                 <div class="dup-head">
                   <span class="dup-title">{{ $t('form.dup.title') }}</span>
-                  <span class="dup-card mono">{{ draft.number }}</span>
+                  <span class="dup-card mono">{{ typedCard }}</span>
                   <div class="spacer" />
                   <button type="button" class="dup-more" @click="historyOpen = true">
                     <AppIcon name="history" :size="15" />
@@ -428,7 +271,7 @@ function cancelAll() {
 
             <CardHistory
               v-if="historyOpen && duplicates.length"
-              :card="draft.number"
+              :card="typedCard"
               :rows="duplicates"
               @close="historyOpen = false"
               @open="historyOpen = false; openApplication($event)"
@@ -592,190 +435,13 @@ function cancelAll() {
       </div>
 
       <!-- ---------- o'ng ustun ---------- -->
-      <div class="col side">
-        <section class="card-surface block">
-          <header class="block-head dark-bar">
-            <AppIcon name="card" :size="18" />
-            <span class="block-title">{{ $t('form.requisite.title') }}</span>
-          </header>
+      <RequisitePanel v-model="requisites" @card="typedCard = $event" />
 
-          <div class="block-body">
-            <div class="seg">
-              <button
-                v-for="k in ['card', 'account']"
-                :key="k"
-                type="button"
-                class="seg-btn"
-                :class="{ on: draft.kind === k }"
-                @click="draft.kind = k; clearRequisite()"
-              >
-                <AppIcon :name="k === 'card' ? 'card' : 'bank'" :size="16" />
-                {{ $t(`form.requisite.${k}`) }}
-              </button>
-            </div>
-
-            <label class="field">
-              <span class="label">
-                {{ draft.kind === 'card' ? $t('form.requisite.cardNumber') : $t('form.requisite.accountNumber') }}
-                <i class="req">*</i>
-                <span class="spacer" />
-                <i class="hint-text">{{ $t('form.requisite.digits', { n: requiredLength }) }}</i>
-              </span>
-              <span class="input-wrap" :class="{ bad: errors.number }">
-                <AppIcon :name="draft.kind === 'card' ? 'card' : 'bank'" :size="17" class="input-ico" />
-                <input
-                  :value="draft.number"
-                  class="input bare mono"
-                  :placeholder="draft.kind === 'card' ? '0000 0000 0000 0000' : '0000 0000 0000 0000 0000'"
-                  @input="onCard"
-                />
-                <span class="sys" :class="{ on: system }">
-                  <span class="sys-dot" />{{ system || $t('form.requisite.bank') }}
-                </span>
-              </span>
-            </label>
-
-            <div class="grid-2">
-              <label class="field">
-                <span class="label">{{ $t('form.requisite.amount') }} <i class="req">*</i></span>
-                <span class="input-wrap" :class="{ bad: errors.amount }">
-                  <input
-                    :value="draft.amount"
-                    class="input bare mono"
-                    placeholder="0"
-                    @input="onAmount"
-                  />
-                  <span class="unit">{{ $t('form.requisite.sum') }}</span>
-                </span>
-              </label>
-
-              <label class="field">
-                <span class="label">{{ $t('form.requisite.time') }} <i class="req">*</i></span>
-                <span class="input-wrap" :class="{ bad: errors.time }">
-                  <input
-                    :value="draft.time"
-                    class="input bare mono"
-                    :placeholder="$t('form.requisite.timePh')"
-                    @input="onTime"
-                  />
-                  <AppIcon name="clock" :size="16" class="input-ico right" />
-                </span>
-              </label>
-            </div>
-
-            <div class="block-actions">
-              <button
-                v-if="!verified"
-                type="button"
-                class="btn-dark"
-                :disabled="!canAdd"
-                @click="checkRequisite"
-              >
-                <AppIcon name="scan" :size="16" />
-                {{ $t('form.requisite.check') }}
-              </button>
-              <button v-else type="button" class="btn-dark" @click="addRequisite">
-                <AppIcon name="plus" :size="16" />
-                {{ $t('form.requisite.attach') }}
-              </button>
-              <button type="button" class="btn-light" @click="clearRequisite">{{ $t('common.cancel') }}</button>
-            </div>
-
-            <!-- qo'shilganlar -->
-            <div class="added">
-              <div class="added-head">
-                <span class="label">{{ $t('form.requisite.added') }}</span>
-                <div class="spacer" />
-                <span v-if="requisites.length" class="added-count mono">{{ $t('form.requisite.summary', { n: requisites.length, tx: txCount }) }}</span>
-              </div>
-
-              <div v-if="!requisites.length" class="added-empty">{{ $t('form.requisite.empty') }}</div>
-
-              <div v-for="r in requisites" :key="r.id" class="req-card">
-                <button type="button" class="req-head" @click="toggleRequisite(r)">
-                  <span class="added-ico">
-                    <AppIcon :name="r.kind === 'card' ? 'card' : 'accountBank'" :size="20" />
-                  </span>
-                  <span class="added-main">
-                    <span class="mono added-num">{{ r.number }}</span>
-                    <span class="added-meta">
-                      <span v-if="r.system" class="tag">{{ r.system }}</span>
-                      <span>{{ $t('form.requisite.txCount', r.txs.length) }}</span>
-                      <span class="mono">{{ sumOf(r) }} {{ $t('form.requisite.sum') }}</span>
-                    </span>
-                  </span>
-                  <AppIcon :name="r.open ? 'chevronUp' : 'chevronDown'" :size="20" class="req-chev" />
-                </button>
-
-                <div v-if="r.open" class="req-body">
-                  <div v-for="(tx, i) in r.txs" :key="tx.id" class="tx-row">
-                    <span class="tx-n mono">{{ i + 1 }}</span>
-                    <span class="tx-main">
-                      <span class="tx-amount mono">{{ tx.amount }} <span class="dim">{{ $t('form.requisite.sum') }}</span></span>
-                      <span class="tx-date mono">{{ tx.time }}</span>
-                    </span>
-                    <button type="button" class="icon-btn" :title="$t('admin.banks.edit')" @click="openTxForm(r, tx)">
-                      <AppIcon name="edit" :size="16" />
-                    </button>
-                    <button type="button" class="icon-btn danger" :title="$t('common.remove')" @click="removeTx(r, tx.id)">
-                      <AppIcon name="trash" :size="16" />
-                    </button>
-                  </div>
-
-                  <!-- tranzaksiya qo'shish / tahrirlash -->
-                  <div v-if="txForm.reqId === r.id" class="tx-form">
-                    <span class="input-wrap">
-                      <input
-                        :value="txForm.amount"
-                        class="input bare mono"
-                        placeholder="0"
-                        @input="txForm.amount = maskAmount($event.target.value)"
-                      />
-                      <span class="unit">{{ $t('form.requisite.sum') }}</span>
-                    </span>
-                    <span class="input-wrap">
-                      <input
-                        :value="txForm.time"
-                        class="input bare mono"
-                        :placeholder="$t('form.requisite.timePh')"
-                        @input="txForm.time = maskDateTime($event.target.value)"
-                      />
-                      <AppIcon name="clock" :size="16" class="input-ico" />
-                    </span>
-                    <button type="button" class="btn-dark sm" :disabled="!canSaveTx" @click="saveTx">
-                      <AppIcon name="check" :size="16" />
-                      {{ txForm.txId ? $t('form.requisite.save') : $t('form.requisite.add') }}
-                    </button>
-                    <button type="button" class="icon-btn" @click="closeTxForm">
-                      <AppIcon name="close" :size="16" />
-                    </button>
-                  </div>
-
-                  <button v-else type="button" class="tx-add" @click="openTxForm(r)">
-                    <AppIcon name="plus" :size="16" />
-                    {{ $t('form.requisite.addTx') }}
-                  </button>
-                </div>
-              </div>
-
-              <div v-if="requisites.length" class="added-total">
-                <span>{{ $t('form.requisite.total') }}</span>
-                <div class="spacer" />
-                <span class="mono total-value">{{ total }} <span class="dim">{{ $t('form.requisite.sum') }}</span></span>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-
-.dim {
-  color: var(--c8b95a6);
-}
 
 /* ---------- sarlavha ---------- */
 
@@ -824,7 +490,8 @@ function cancelAll() {
   min-width: 0;
 }
 
-.col.side {
+/* o'ng ustun — panel ildizining o'zi grid katagi */
+.cols > .block {
   position: sticky;
   top: 0;
 }
@@ -834,7 +501,7 @@ function cancelAll() {
   overflow: hidden;
 }
 
-.block-head {
+:deep(.block-head) {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -842,39 +509,39 @@ function cancelAll() {
   color: #fff;
 }
 
-.block-title {
+:deep(.block-title) {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: .09em;
   text-transform: uppercase;
 }
 
-.ok-mark {
+:deep(.ok-mark) {
   color: var(--c7fd3a8);
 }
 
-.block-body {
+:deep(.block-body) {
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.grid-2 {
+:deep(.grid-2) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 18px;
 }
 
 /* ---------- maydonlar ---------- */
-.field {
+:deep(.field) {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 
-.label {
+:deep(.label) {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -882,7 +549,7 @@ function cancelAll() {
   color: var(--c3d4d66);
 }
 
-.req {
+:deep(.req) {
   color: var(--ca52220);
   font-style: normal;
 }
@@ -893,13 +560,7 @@ function cancelAll() {
   font-size: 13.5px;
 }
 
-.hint-text {
-  font-style: normal;
-  font-size: 13px;
-  color: var(--c98a3b6);
-}
-
-.input {
+:deep(.input) {
   width: 100%;
   height: 44px;
   padding: 0 13px;
@@ -911,18 +572,18 @@ function cancelAll() {
   transition: border-color .16s ease, box-shadow .16s ease;
 }
 
-.input:focus {
+:deep(.input:focus) {
   outline: none;
   border-color: var(--c23568f);
   box-shadow: 0 0 0 3px var(--ce8eef7);
 }
 
-.input.bad {
+:deep(.input.bad) {
   border-color: var(--ca52220);
   background: var(--cfef7f6);
 }
 
-.input.area {
+:deep(.input.area) {
   height: auto;
   padding: 12px 13px;
   font-size: 16px;
@@ -931,22 +592,22 @@ function cancelAll() {
   min-height: 118px;
 }
 
-.select {
+:deep(.select) {
   appearance: none;
   cursor: pointer;
   padding-right: 34px;
 }
 
-.select.empty {
+:deep(.select.empty) {
   color: var(--ca3adbd);
 }
 
-.select-wrap {
+:deep(.select-wrap) {
   position: relative;
   display: block;
 }
 
-.select-caret {
+:deep(.select-caret) {
   position: absolute;
   right: 12px;
   top: 50%;
@@ -955,7 +616,7 @@ function cancelAll() {
   pointer-events: none;
 }
 
-.input-wrap {
+:deep(.input-wrap) {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -967,17 +628,17 @@ function cancelAll() {
   transition: border-color .16s ease, box-shadow .16s ease;
 }
 
-.input-wrap:focus-within {
+:deep(.input-wrap:focus-within) {
   border-color: var(--c23568f);
   box-shadow: 0 0 0 3px var(--ce8eef7);
 }
 
-.input-wrap.bad {
+:deep(.input-wrap.bad) {
   border-color: var(--ca52220);
   background: var(--cfef7f6);
 }
 
-.input.bare {
+:deep(.input.bare) {
   height: auto;
   padding: 0;
   border: 0;
@@ -986,7 +647,7 @@ function cancelAll() {
   min-width: 0;
 }
 
-.input.bare:focus {
+:deep(.input.bare:focus) {
   box-shadow: none;
 }
 
@@ -995,30 +656,6 @@ function cancelAll() {
 }
 
 .unit,
-.sys {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  color: var(--c98a3b6);
-  white-space: nowrap;
-}
-
-.sys-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--cc8cdd6);
-}
-
-.sys.on {
-  color: var(--c23568f);
-  font-weight: 600;
-}
-
-.sys.on .sys-dot {
-  background: var(--c23568f);
-}
 
 /* ---------- takroriylik ogohlantirishi ---------- */
 .dup {
@@ -1172,15 +809,9 @@ function cancelAll() {
 }
 
 /* ---------- tugmalar ---------- */
-.block-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
 
-.btn-light,
-.btn-dark {
+:deep(.btn-light),
+:deep(.btn-dark) {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1194,28 +825,28 @@ function cancelAll() {
   transition: filter .16s ease, background .16s ease, transform .16s var(--ease);
 }
 
-.btn-light {
+:deep(.btn-light) {
   border: 1px solid var(--ce2e8f1);
   background: var(--s-card);
   color: var(--c3d4d66);
 }
 
-.btn-light:hover {
+:deep(.btn-light:hover) {
   background: var(--cf8fafc);
 }
 
-.btn-dark {
+:deep(.btn-dark) {
   border: 1px solid var(--btn);
   background: var(--btn);
   color: #fff;
 }
 
-.btn-dark:hover:not(:disabled) {
+:deep(.btn-dark:hover:not(:disabled)) {
   filter: brightness(1.14);
   transform: translateY(-1px);
 }
 
-.btn-dark:disabled {
+:deep(.btn-dark:disabled) {
   opacity: .45;
   cursor: not-allowed;
 }
@@ -1241,73 +872,8 @@ function cancelAll() {
 }
 
 /* ---------- segment ---------- */
-.seg {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 9px;
-  background: var(--cf0f3f8);
-}
-
-.seg-btn {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 38px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--c66748c);
-  font-size: 14.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
-}
-
-.seg-btn.on {
-  background: var(--s-card);
-  color: var(--c16233d);
-  box-shadow: 0 1px 3px rgba(5, 12, 28, .14);
-}
 
 /* ---------- qo'shilgan rekvizitlar ---------- */
-.added {
-  border-top: 1px solid var(--ceef1f6);
-  padding-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.added-head {
-  display: flex;
-  align-items: center;
-}
-
-.added-count {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
-  border-radius: 20px;
-  background: var(--ce8eef7);
-  color: var(--c23568f);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12.5px;
-  font-weight: 600;
-}
-
-.added-empty {
-  padding: 16px;
-  border: 1px dashed var(--cc8cdd6);
-  border-radius: 9px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--c98a3b6);
-}
 
 .added-row {
   display: flex;
@@ -1368,46 +934,7 @@ function cancelAll() {
   white-space: nowrap;
 }
 
-.added-total {
-  display: flex;
-  align-items: center;
-  padding: 11px 12px;
-  border-radius: 9px;
-  background: var(--cf8fafc);
-  border: 1px solid var(--ce2e8f1);
-  font-size: 14px;
-  color: var(--c3d4d66);
-}
-
-.total-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--c16233d);
-}
-
 /* ---------- rekvizit kartasi ---------- */
-.req-card {
-  border: 1px solid var(--ce2e8f1);
-  border-radius: 10px;
-  overflow: hidden;
-  animation: riseIn .26s var(--ease);
-}
-
-.req-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
-  border: 0;
-  background: var(--s-card);
-  cursor: pointer;
-  text-align: left;
-}
-
-.req-head:hover {
-  background: var(--cf8fafc);
-}
 
 .req-chev {
   color: var(--c8b95a6);
@@ -1422,29 +949,6 @@ function cancelAll() {
   gap: 8px;
 }
 
-.tx-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 9px;
-  border: 1px solid var(--ce2e8f1);
-  background: var(--s-card);
-}
-
-.tx-n {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  border-radius: 7px;
-  border: 1px solid var(--ce2e8f1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12.5px;
-  color: var(--c66748c);
-}
-
 .tx-main {
   flex: 1;
   min-width: 0;
@@ -1453,52 +957,12 @@ function cancelAll() {
   gap: 2px;
 }
 
-.tx-amount {
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--c16233d);
-}
-
 .tx-date {
   font-size: 12.5px;
   color: var(--c8b95a6);
 }
 
-.tx-form {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.tx-form .input-wrap {
-  flex: 1;
-  min-width: 150px;
-  height: 40px;
-}
-
-.tx-add {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 9px;
-  border: 1px dashed var(--cc8cdd6);
-  background: transparent;
-  color: var(--c23568f);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  align-self: flex-start;
-}
-
-.tx-add:hover {
-  background: var(--ce8eef7);
-  border-style: solid;
-}
-
-.btn-dark.sm {
+:deep(.btn-dark.sm) {
   height: 40px;
   padding: 0 14px;
 }
