@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PageHead from '@/components/ui/PageHead.vue'
 import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
 
@@ -47,24 +48,17 @@ function remove(id) {
 
 <template>
   <div class="screen">
-    <div class="head card-surface">
-      <div class="head-text">
-        <div class="crumbs">
-          <button type="button" class="crumb" @click="router.push('/')">{{ $t('modules.cardblock') }}</button>
-          <span>/</span>
-          <span class="crumb-now">{{ $t('drafts.title') }}</span>
-        </div>
-        <div class="head-row">
-          <span class="head-title">{{ $t('drafts.title') }}</span>
-          <span class="chip">{{ $t('drafts.chip', rows.length) }}</span>
-        </div>
-      </div>
-      <div class="spacer" />
-      <button type="button" class="btn-dark" @click="router.push('/application/new')">
-        <AppIcon name="plus" :size="16" />
-        {{ $t('drafts.newApplication') }}
-      </button>
-    </div>
+    <PageHead :title="$t('drafts.title')">
+      <template #chips>
+        <span class="chip">{{ $t('drafts.chip', rows.length) }}</span>
+      </template>
+      <template #actions>
+        <button type="button" class="btn-dark" @click="router.push('/application/new')">
+          <AppIcon name="plus" :size="16" />
+          {{ $t('drafts.newApplication') }}
+        </button>
+      </template>
+    </PageHead>
 
     <section class="card-surface list">
       <div class="list-head">
@@ -142,13 +136,6 @@ function remove(id) {
 </template>
 
 <style scoped>
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-}
 
 .crumb:hover {
   color: var(--c23568f);

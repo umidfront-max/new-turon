@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PageHead from '@/components/ui/PageHead.vue'
 import { BLOCK_REASONS } from '@/data/reasons'
 
 const router = useRouter()
@@ -23,26 +24,17 @@ const rows = computed(() => {
 
 <template>
   <div class="screen">
-    <div class="head card-surface">
-      <div class="head-text">
-        <div class="crumbs">
-          <button type="button" class="crumb" @click="router.push('/')">{{ $t('modules.cardblock') }}</button>
-          <span>/</span>
-          <span class="crumb-now">{{ $t('reasons.title') }}</span>
-        </div>
-        <div class="head-row">
-          <span class="head-title">{{ $t('reasons.title') }}</span>
-          <span class="chip">{{ $t('reasons.chip', BLOCK_REASONS.length) }}</span>
-        </div>
-      </div>
-
-      <div class="spacer" />
-
-      <span class="search">
-        <AppIcon name="search" :size="17" class="search-ico" />
-        <input v-model="search" class="search-input" :placeholder="$t('common.search')" />
-      </span>
-    </div>
+    <PageHead :title="$t('reasons.title')">
+      <template #chips>
+        <span class="chip">{{ $t('reasons.chip', BLOCK_REASONS.length) }}</span>
+      </template>
+      <template #actions>
+        <span class="search">
+          <AppIcon name="search" :size="17" class="search-ico" />
+          <input v-model="search" class="search-input" :placeholder="$t('common.search')" />
+        </span>
+      </template>
+    </PageHead>
 
     <section class="card-surface list">
       <div class="list-head">
@@ -96,14 +88,6 @@ const rows = computed(() => {
 </template>
 
 <style scoped>
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  flex-wrap: wrap;
-}
 
 .crumb:hover {
   color: var(--c23568f);

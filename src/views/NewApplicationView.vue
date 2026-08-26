@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PageHead from '@/components/ui/PageHead.vue'
 import CardHistory from '@/components/form/CardHistory.vue'
 import {
   METHOD_OPTIONS, SOURCE_OPTIONS, REGION_OPTIONS,
@@ -422,30 +423,21 @@ function cancelAll() {
 <template>
   <div class="screen">
     <!-- ---------- sarlavha ---------- -->
-    <div class="head card-surface">
-      <div class="head-text">
-        <div class="crumbs">
-          <button type="button" class="crumb" @click="router.push('/')">{{ $t('modules.cardblock') }}</button>
-          <span>/</span>
-          <span class="crumb-now">{{ $t('form.title') }}</span>
-        </div>
-        <div class="head-row">
-          <span class="head-title">{{ $t('form.title') }}</span>
-          <span class="chip draft">
-            <span class="draft-dot" />
-            {{ $t('form.draftSaved', { time: draftTime }) }}
-          </span>
-        </div>
-      </div>
-
-      <div class="spacer" />
-
-      <button type="button" class="btn-light" @click="cancelAll">{{ $t('common.cancel') }}</button>
-      <button type="button" class="btn-dark" :disabled="!ready" @click="submit">
-        {{ $t('form.submit') }}
-        <AppIcon name="chevronRight" :size="15" />
-      </button>
-    </div>
+    <PageHead :title="$t('form.title')">
+      <template #chips>
+        <span class="chip draft">
+          <span class="draft-dot" />
+          {{ $t('form.draftSaved', { time: draftTime }) }}
+        </span>
+      </template>
+      <template #actions>
+        <button type="button" class="btn-light" @click="cancelAll">{{ $t('common.cancel') }}</button>
+        <button type="button" class="btn-dark" :disabled="!ready" @click="submit">
+          {{ $t('form.submit') }}
+          <AppIcon name="chevronRight" :size="15" />
+        </button>
+      </template>
+    </PageHead>
 
     <div class="cols">
       <!-- ---------- chap ustun ---------- -->
@@ -885,13 +877,6 @@ function cancelAll() {
 }
 
 /* ---------- sarlavha ---------- */
-.head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  flex-wrap: wrap;
-}
 
 .crumb:hover {
   color: var(--c23568f);

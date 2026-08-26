@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PageHead from '@/components/ui/PageHead.vue'
 import { TONE } from '@/data/notifications'
 import { useUi } from '@/stores/useUi'
 
@@ -46,34 +47,25 @@ function readAll() {
 
 <template>
   <div class="screen">
-    <div class="head card-surface">
-      <div class="head-text">
-        <div class="crumbs">
-          <button type="button" class="crumb" @click="router.push('/')">{{ $t('modules.cardblock') }}</button>
-          <span>/</span>
-          <span class="crumb-now">{{ $t('notify.pageTitle') }}</span>
-        </div>
-        <div class="head-row">
-          <span class="head-title">{{ $t('notify.pageTitle') }}</span>
-          <span v-if="unread" class="chip unread mono">{{ $t('notify.unread', unread) }}</span>
-        </div>
-      </div>
+    <PageHead :title="$t('notify.pageTitle')">
+      <template #chips>
+        <span v-if="unread" class="chip unread mono">{{ $t('notify.unread', unread) }}</span>
+      </template>
+      <template #actions>
+        <label class="switch">
+          <input v-model="onlyUnread" type="checkbox" class="sr-only" />
+          <span class="box" :class="{ on: onlyUnread }">
+            <AppIcon v-if="onlyUnread" name="check" :size="13" />
+          </span>
+          {{ $t('notify.unreadOnly') }}
+        </label>
 
-      <div class="spacer" />
-
-      <label class="switch">
-        <input v-model="onlyUnread" type="checkbox" class="sr-only" />
-        <span class="box" :class="{ on: onlyUnread }">
-          <AppIcon v-if="onlyUnread" name="check" :size="13" />
-        </span>
-        {{ $t('notify.unreadOnly') }}
-      </label>
-
-      <button type="button" class="btn-light" :disabled="!unread" @click="readAll">
-        <AppIcon name="check" :size="16" />
-        {{ $t('notify.markAll') }}
-      </button>
-    </div>
+        <button type="button" class="btn-light" :disabled="!unread" @click="readAll">
+          <AppIcon name="check" :size="16" />
+          {{ $t('notify.markAll') }}
+        </button>
+      </template>
+    </PageHead>
 
     <section class="card-surface list">
       <div class="list-head">
@@ -117,14 +109,6 @@ function readAll() {
 </template>
 
 <style scoped>
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-  flex-wrap: wrap;
-}
 
 .crumb:hover {
   color: var(--c23568f);

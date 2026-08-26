@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import PageHead from '@/components/ui/PageHead.vue'
 
 defineProps({
   screen: { type: String, required: true },   // stub.<screen>.* i18n bo'limi
@@ -13,21 +14,14 @@ const router = useRouter()
 
 <template>
   <div class="screen">
-    <div class="head card-surface">
-      <div>
-        <div class="crumbs">
-          <button type="button" class="crumb" @click="router.push('/')">{{ $t('modules.cardblock') }}</button>
-          <span>/</span>
-          <span class="crumb-now">{{ $t(`stub.${screen}.title`) }}</span>
-        </div>
-        <div class="head-title">{{ $t(`stub.${screen}.title`) }}</div>
-      </div>
-      <div class="spacer" />
-      <button type="button" class="btn-light" @click="router.push('/')">
-        <AppIcon name="back" :size="16" />
-        {{ $t('common.backToList') }}
-      </button>
-    </div>
+    <PageHead :title="$t(`stub.${screen}.title`)">
+      <template #actions>
+        <button type="button" class="btn-light" @click="router.push('/')">
+          <AppIcon name="back" :size="16" />
+          {{ $t('common.backToList') }}
+        </button>
+      </template>
+    </PageHead>
 
     <section class="card-surface stub">
       <span class="stub-icon"><AppIcon :name="icon" :size="30" /></span>
@@ -45,13 +39,6 @@ const router = useRouter()
 </template>
 
 <style scoped>
-
-.head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
-}
 
 .crumb:hover {
   color: var(--c23568f);
