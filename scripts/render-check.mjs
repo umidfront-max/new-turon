@@ -36,6 +36,15 @@ async function render(path) {
 }
 
 const problems = []
+
+// Vue ogohlantirishlari (yo'q komponent, aniqlanmagan o'zgaruvchi) ham xato hisoblanadi
+const vueWarnings = new Set()
+const realWarn = console.warn
+console.warn = (...args) => {
+  const text = args.map(String).join(' ')
+  if (text.includes('[Vue warn]')) vueWarnings.add(text.split(String.fromCharCode(10))[0].trim())
+  else realWarn(...args)
+}
 let n = 0
 
 /* guard */
@@ -101,6 +110,9 @@ if (!missing.html.includes('not-found-title')) problems.push('ariza topilmadi ho
 /* 404 */
 const nf = await render('/qwerty')
 if (!nf.html.includes('404')) problems.push('404 sahifasi chiqmadi')
+
+console.warn = realWarn
+vueWarnings.forEach((w) => problems.push('vue: ' + w))
 
 console.log(`tekshirildi: ${n} ta sahifa (3 til x 4 rol x ${PATHS.length} yo'l)`)
 console.log(`bosh sahifa: ${rowCount} qator, ${pagerPages} sahifa raqami`)
