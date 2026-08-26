@@ -66,7 +66,7 @@ const COLS = [
 
           <td class="clip">
             <div class="name truncate">{{ r.name }}</div>
-            <div class="sub truncate">{{ $t(`methods.${r.method}`) }}</div>
+            <div class="sub truncate">{{ r.methodLabel || $t(`methods.${r.method}`) }}</div>
             <div class="more">{{ $t('common.details') }}</div>
           </td>
 
@@ -108,7 +108,7 @@ const COLS = [
         <StatusPill :status="r.status" size="sm" short />
       </div>
       <div class="name truncate">{{ r.name }}</div>
-      <div class="sub">{{ $t(`methods.${r.method}`) }}</div>
+      <div class="sub">{{ r.methodLabel || $t(`methods.${r.method}`) }}</div>
       <div class="mcard-grid">
         <div>
           <div class="mlabel">{{ $t('table.card') }}</div>

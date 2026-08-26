@@ -1,11 +1,29 @@
 <script setup>
+import { computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { KPI } from '@/data/applications'
 import { useApplications } from '@/stores/useApplications'
+import { useRegistry } from '@/stores/useRegistry'
+import { statusToUi } from '@/utils/adapt'
 
 const { counts } = useApplications()
+const registry = useRegistry()
 
 defineEmits(['pick'])
+
+// Sanoqlar serverdan (`by_status`) keladi; u yo'q bo'lsa namuna ma'lumotdan.
+const shown = computed(() => {
+  const raw = registry.state.byStatus
+  if (!raw) return counts.value
+
+  const out = { all: registry.state.total, overdue: 0 }
+  Object.entries(raw).forEach(([status, n]) => { out[statusToUi(status)] = n })
+
+  // muddati o'tganlar alohida kalitda kelishi mumkin
+  const tabs = registry.state.tabs
+  if (tabs && typeof tabs.overdue === 'number') out.overdue = tabs.overdue
+  return out
+})
 </script>
 
 <template>
@@ -24,7 +42,7 @@ defineEmits(['pick'])
       <span class="kpi-body">
         <span class="kpi-label">{{ $t(`kpi.${k.key}.label`) }}</span>
         <span class="kpi-row">
-          <span class="kpi-value mono" :style="{ color: k.tone }">{{ counts[k.key] || 0 }}</span>
+          <span class="kpi-value mono" :style="{ color: k.tone }">{{ shown[k.key] || 0 }}</span>
           <span class="kpi-note">{{ $t(`kpi.${k.key}.note`) }}</span>
         </span>
       </span>

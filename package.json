@@ -7,13 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node scripts/icon-test.mjs && node scripts/login-test.mjs && node scripts/table-test.mjs && node scripts/panels-test.mjs && node scripts/render-check.mjs",
+    "test": "node scripts/icon-test.mjs && node scripts/login-test.mjs && node scripts/table-test.mjs && node scripts/adapt-test.mjs && node scripts/panels-test.mjs && node scripts/render-check.mjs",
     "test:table": "node scripts/table-test.mjs",
     "test:render": "node scripts/render-check.mjs",
     "test:icons": "node scripts/icon-test.mjs",
     "test:login": "node scripts/login-test.mjs",
     "test:panels": "node scripts/panels-test.mjs",
-    "test:api": "node scripts/api-test.mjs"
+    "test:api": "node scripts/api-test.mjs",
+    "test:adapt": "node scripts/adapt-test.mjs"
   },
   "dependencies": {
     "axios": "^1.19.0",

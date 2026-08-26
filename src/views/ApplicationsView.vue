@@ -11,6 +11,7 @@ import ApplicationsTable from '@/components/applications/ApplicationsTable.vue'
 import TablePagination from '@/components/applications/TablePagination.vue'
 import { queueFromSlug, queuePath } from '@/data/queues'
 import { useApplications } from '@/stores/useApplications'
+import { useRegistry } from '@/stores/useRegistry'
 import { filterApplications, pageSlice } from '@/utils/table'
 import { exportApplications } from '@/utils/export'
 import { useUi } from '@/stores/useUi'
@@ -20,6 +21,10 @@ const route = useRoute()
 const { t } = useI18n()
 const { toast } = useUi()
 const { items, counts, duplicateCards } = useApplications()
+
+// Serverdagi reyestr. Javob bo'lmasa (masalan JWT hali sozlanmagan) —
+// quyidagi namuna ma'lumot ishlatiladi, ekran bir xil ko'rinadi.
+const registry = useRegistry()
 
 const filterOpen = ref(false)
 const page = ref(1)
@@ -46,6 +51,18 @@ function clearRegion() {
 // navbat yoki filtr o'zgarsa — birinchi sahifaga
 watch([queue, picked, perPage, query], () => { page.value = 1 }, { deep: true })
 
+// har qanday o'zgarishda serverdan qayta so'raymiz
+watch([queue, picked, perPage, query, page, region], () => {
+  registry.load({
+    queue: queue.value,
+    query: query.value,
+    region: region.value,
+    picked: picked.value,
+    page: page.value,
+    perPage: perPage.value
+  })
+}, { deep: true, immediate: true })
+
 const filtered = computed(() => filterApplications(items.value, {
   queue: queue.value,
   region: region.value,
@@ -58,9 +75,12 @@ const filtered = computed(() => filterApplications(items.value, {
   }
 }))
 
-const total = computed(() => filtered.value.length)
+// serverdan kelgan bo'lsa — o'sha, aks holda namuna ma'lumot
+const total = computed(() => (registry.live.value ? registry.state.total : filtered.value.length))
 
-const rows = computed(() => pageSlice(filtered.value, page.value, perPage.value))
+const rows = computed(() => (registry.live.value
+  ? registry.state.rows
+  : pageSlice(filtered.value, page.value, perPage.value)))
 
 const activeFilters = computed(() =>
   Object.values(picked.value).reduce((n, list) => n + list.length, 0)
