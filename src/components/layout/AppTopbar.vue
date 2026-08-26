@@ -6,12 +6,18 @@ import RoleMenu from './RoleMenu.vue'
 import NotifyMenu from './NotifyMenu.vue'
 import DutyReport from './DutyReport.vue'
 import { useUi } from '@/stores/useUi'
+import { useNotifications } from '@/stores/useNotifications'
 
 const { t } = useI18n()
 const {
   state, isExec, isAdmin, profile, duty, unread,
   toggleRoleMenu, toggleNotify, setMobileNav, ask, toast
 } = useUi()
+
+// O'qilmaganlar soni: serverdagi ro'yxat bo'lsa undan, aks holda namunadan.
+// Qo'ng'iroq menyusi ham xuddi shu manbadan oladi — sonlar bir-biriga mos turadi.
+const notifyApi = useNotifications()
+const unreadCount = computed(() => (notifyApi.live.value ? notifyApi.unread.value : unread.value))
 
 const clock = ref('09:41')
 const today = ref('14.08')
@@ -144,7 +150,7 @@ function onDutyClick() {
           @click="toggleNotify()"
         >
           <AppIcon name="bell" :size="20" />
-          <span v-if="unread" class="badge mono">{{ unread }}</span>
+          <span v-if="unreadCount" class="badge mono">{{ unreadCount }}</span>
         </button>
 
         <Transition name="fade">

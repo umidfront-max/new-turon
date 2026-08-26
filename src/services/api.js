@@ -18,7 +18,7 @@ export const TOKEN_KEY = 'turon-token'
 
 // Vaqtinchalik sinov tokeni — localStorage bo'sh bo'lsa shu ishlatiladi.
 // Haqiqiy token ERI kirishidan (user_ser) keladi.
-const FALLBACK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3NzI3NDI0LCJpYXQiOjE3ODc3MjU2MjQsImp0aSI6IjE4OTc4Mjc5YzJmYjQ1YTE5YTMwMjA0NmY2YTMyMGI3IiwidXNlcl9pZCI6NCwidXNlcm5hbWUiOiJ1bWlkam9uIiwiZnVsbF9uYW1lIjoiVW1pZGpvbiBUb3NoZXYiLCJwaG9uZV9udW1iZXIiOiIrOTk4OTAxMjM0NTY3Iiwicm9sZSI6InN0YWZmIn0.MctDYRg6Tc8Ag1H-hiycyj3UlIV42kcMNcR6IsVDMzM'
+const FALLBACK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3ODI0NzU5LCJpYXQiOjE3ODc3MzgzNTksImp0aSI6IjYyYjEzOGUzY2MwYjQ3MTA5NTdhMzA5Yjc2NGZmZDQ0IiwidXNlcl9pZCI6NCwidXNlcm5hbWUiOiJ1bWlkam9uIiwiZnVsbF9uYW1lIjoiVW1pZGpvbiBUb3NoZXYiLCJwaG9uZV9udW1iZXIiOiIrOTk4OTAxMjM0NTY3Iiwicm9sZSI6InN0YWZmIn0.wMQi5kNaBR3GFRrf5dWXmUb_Gi24vOoO18OvVs31s7A'
 
 /* ---------- token ---------- */
 

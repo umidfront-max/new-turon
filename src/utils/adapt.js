@@ -40,11 +40,9 @@ export function dateTime(iso) {
 }
 
 /*
-  DIQQAT — `requisite` ichidagi maydon nomlari Swagger'da e'lon qilinmagan
-  (`{type: object, additionalProperties: {}}`). Izohda faqat shunday deyilgan:
-  «the first card or account on the complaint, masked, with its bank — plus
-  `count`». Shuning uchun bir nechta ehtimoliy nom tekshiriladi.
-  Backenddan namuna javob kelgach bittasini qoldirish kerak.
+  `requisite` — Swagger'da tuzilmasi e'lon qilinmagan, lekin haqiqiy javobda:
+    { number, type, bank, bank_name, is_blocked, count }
+  Boshqa nomlar ham tekshiriladi — server o'zgarsa ekran buzilmasin uchun.
 */
 const CARD_KEYS = ['number', 'masked', 'masked_number', 'card', 'card_number', 'pan']
 const BANK_KEYS = ['bank_name', 'bank_title', 'bank_label']
@@ -82,8 +80,10 @@ export function registryRow(row, index = 0) {
     methodLabel: row.method_name || '',
     card: textOf(req, CARD_KEYS),
     bank: textOf(req, BANK_KEYS),
-    // ariza bo'yicha jami rekvizit soni (izohda `count` deb aytilgan)
+    // ariza bo'yicha jami rekvizit soni
     requisiteCount: typeof req.count === 'number' ? req.count : null,
+    requisiteType: req.type || null,
+    requisiteBlocked: !!req.is_blocked,
     amount: money(row.total_amount),
     cur: 'UZS',
     region: row.region || null,
@@ -104,8 +104,10 @@ export function registryPage(res, page = 1, perPage = 10) {
   return {
     rows: results.map((r, i) => registryRow(r, offset + i)),
     total: res?.count ?? results.length,
-    // Bu uchtasi Swagger sxemasida e'lon qilinmagan — faqat endpoint izohida
-    // tasvirlangan. Nomi boshqacha bo'lsa shu yerda tuzatiladi.
+    // Sxemada e'lon qilinmagan, lekin haqiqiy javobda bor:
+    //   tabs      { all, overdue, queued, in_execution, under_control, completed }
+    //   by_status { new, pending, auto_payment, error, blocked, done, canceled, duplicate }
+    //   facets    { <guruh>: [{ value, label, count }] }
     byStatus: res?.by_status || null,
     tabs: res?.tabs || null,
     facets: res?.facets || null
