@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import KpiCards from '@/components/applications/KpiCards.vue'
 import QueueTabs from '@/components/applications/QueueTabs.vue'
 import FilterPanel from '@/components/applications/FilterPanel.vue'
@@ -175,11 +176,12 @@ async function exportXlsx() {
 
       <ApplicationsTable :rows="rows" @open="openApplication" />
 
-      <div v-if="!rows.length" class="empty">
-        <span class="empty-icon"><AppIcon name="doc" :size="27" /></span>
-        <div class="empty-title">{{ $t('applications.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('applications.emptyText') }}</div>
-      </div>
+      <EmptyState
+        v-if="!rows.length"
+        icon="doc"
+        :title="$t('applications.emptyTitle')"
+        :text="$t('applications.emptyText')"
+      />
 
       <TablePagination
         v-if="total"
@@ -367,39 +369,6 @@ async function exportXlsx() {
 }
 
 /* bo'sh holat */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 13px;
-  padding: 56px 18px 60px;
-}
-
-.empty-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 14px;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ca3adbd);
-}
-
-.empty-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--c3d4d66);
-}
-
-.empty-text {
-  font-size: 14.5px;
-  color: var(--c8b95a6);
-  text-align: center;
-  max-width: 420px;
-  line-height: 1.6;
-}
 
 @media (max-width: 720px) {
   .card-head {

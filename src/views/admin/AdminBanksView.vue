@@ -2,6 +2,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { binSystem } from '@/data/banks'
 import { useAdmin } from '@/stores/useAdmin'
 import { useUi } from '@/stores/useUi'
@@ -172,31 +173,23 @@ function runImport() {
         </div>
       </div>
 
-      <div v-if="!rows.length" class="empty">
-        <span class="empty-icon">
-          <AppIcon :name="banks.length ? 'searchOff' : 'accountBank'" :size="28" />
-        </span>
-
-        <template v-if="banks.length">
-          <div class="empty-title">{{ $t('admin.banks.emptyTitle') }}</div>
-          <div class="empty-text">{{ $t('admin.banks.emptyText', { q: query }) }}</div>
-        </template>
-
-        <template v-else>
-          <div class="empty-title">{{ $t('admin.banks.noneTitle') }}</div>
-          <div class="empty-text">{{ $t('admin.banks.noneText') }}</div>
-          <div class="empty-actions">
-            <button type="button" class="btn-dark" @click="openAdd">
-              <AppIcon name="plus" :size="16" />
-              {{ $t('admin.banks.add') }}
-            </button>
-            <button type="button" class="btn-light" @click="importOpen = true">
-              <AppIcon name="upload" :size="16" />
-              {{ $t('admin.banks.import') }}
-            </button>
-          </div>
-        </template>
-      </div>
+      <EmptyState
+        v-if="!rows.length"
+        :icon="banks.length ? 'searchOff' : 'accountBank'"
+        :title="banks.length ? $t('admin.banks.emptyTitle') : $t('admin.banks.noneTitle')"
+        :text="banks.length ? $t('admin.banks.emptyText', { q: query }) : $t('admin.banks.noneText')"
+      >
+        <div v-if="!banks.length" class="empty-actions">
+          <button type="button" class="btn-dark" @click="openAdd">
+            <AppIcon name="plus" :size="16" />
+            {{ $t('admin.banks.add') }}
+          </button>
+          <button type="button" class="btn-light" @click="importOpen = true">
+            <AppIcon name="upload" :size="16" />
+            {{ $t('admin.banks.import') }}
+          </button>
+        </div>
+      </EmptyState>
 
       <div v-if="rows.length" class="pager">
         <div class="spacer" />
@@ -543,34 +536,6 @@ function runImport() {
 }
 
 /* ---------- bo'sh holat ---------- */
-.empty {
-  padding: 46px 20px;
-  text-align: center;
-}
-
-.empty-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  background: var(--cf0f3f8);
-  color: var(--c8b95a6);
-  margin-bottom: 12px;
-}
-
-.empty-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--c16233d);
-}
-
-.empty-text {
-  margin-top: 5px;
-  font-size: 14px;
-  color: var(--c8b95a6);
-}
 
 /* ---------- sahifalagich ---------- */
 .pager {

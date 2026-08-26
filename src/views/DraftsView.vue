@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
@@ -126,11 +127,12 @@ function remove(id) {
         </table>
       </div>
 
-      <div v-if="!rows.length" class="empty">
-        <span class="empty-icon"><AppIcon name="doc" :size="27" /></span>
-        <div class="empty-title">{{ $t('drafts.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('drafts.emptyText') }}</div>
-      </div>
+      <EmptyState
+        v-if="!rows.length"
+        icon="doc"
+        :title="$t('drafts.emptyTitle')"
+        :text="$t('drafts.emptyText')"
+      />
     </section>
   </div>
 </template>
@@ -312,40 +314,6 @@ th {
   background: var(--cfef7f6);
   border-color: var(--cf2cfcd);
   color: var(--ca52220);
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 13px;
-  padding: 64px 18px 70px;
-}
-
-.empty-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 14px;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ca3adbd);
-}
-
-.empty-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--c3d4d66);
-}
-
-.empty-text {
-  font-size: 14.5px;
-  color: var(--c8b95a6);
-  text-align: center;
-  max-width: 420px;
-  line-height: 1.6;
 }
 
 @media (max-width: 640px) {

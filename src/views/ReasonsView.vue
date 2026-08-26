@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import { BLOCK_REASONS } from '@/data/reasons'
 
@@ -78,11 +79,12 @@ const rows = computed(() => {
         </table>
       </div>
 
-      <div v-if="!rows.length" class="empty">
-        <span class="empty-icon"><AppIcon name="search" :size="26" /></span>
-        <div class="empty-title">{{ $t('reasons.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('reasons.emptyText') }}</div>
-      </div>
+      <EmptyState
+        v-if="!rows.length"
+        icon="search"
+        :title="$t('reasons.emptyTitle')"
+        :text="$t('reasons.emptyText')"
+      />
     </section>
   </div>
 </template>
@@ -244,35 +246,6 @@ th {
   font-size: 15px;
   font-weight: 600;
   color: var(--c3d4d66);
-}
-
-.empty {
-  padding: 44px 20px;
-  text-align: center;
-}
-
-.empty-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--cf0f3f8);
-  color: var(--c8b95a6);
-  margin-bottom: 12px;
-}
-
-.empty-title {
-  font-size: 15.5px;
-  font-weight: 600;
-  color: var(--c16233d);
-}
-
-.empty-text {
-  margin-top: 4px;
-  font-size: 14px;
-  color: var(--c8b95a6);
 }
 
 @media (max-width: 640px) {

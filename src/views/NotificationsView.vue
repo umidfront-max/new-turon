@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import { TONE } from '@/data/notifications'
 import { useUi } from '@/stores/useUi'
@@ -99,11 +100,12 @@ function readAll() {
         <span v-if="!n.read" class="n-dot" />
       </button>
 
-      <div v-if="!rows.length" class="empty">
-        <span class="empty-icon"><AppIcon name="bell" :size="26" /></span>
-        <div class="empty-title">{{ $t('notify.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('notify.emptyText') }}</div>
-      </div>
+      <EmptyState
+        v-if="!rows.length"
+        icon="bell"
+        :title="$t('notify.emptyTitle')"
+        :text="$t('notify.emptyText')"
+      />
     </section>
   </div>
 </template>
@@ -294,35 +296,6 @@ function readAll() {
   flex: 0 0 8px;
   border-radius: 50%;
   background: var(--c23568f);
-}
-
-.empty {
-  padding: 44px 20px;
-  text-align: center;
-}
-
-.empty-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--cf0f3f8);
-  color: var(--c8b95a6);
-  margin-bottom: 12px;
-}
-
-.empty-title {
-  font-size: 15.5px;
-  font-weight: 600;
-  color: var(--c16233d);
-}
-
-.empty-text {
-  margin-top: 4px;
-  font-size: 14px;
-  color: var(--c8b95a6);
 }
 
 @media (max-width: 720px) {
