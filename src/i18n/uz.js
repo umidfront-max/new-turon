@@ -482,6 +482,7 @@ export default {
     autopayment: "Avto to'lov",
     cancelled: 'Bekor qilingan',
     done: 'Yakunlangan',
+    duplicate: 'Takroriy',
     overdue: "Muddati o'tgan"
   },
 
@@ -529,6 +530,12 @@ export default {
       short: 'Bekor',
       plain: "Ariza bekor qilindi, bank bilan almashinuv to'xtatildi.",
       next: "Bekor qilish sababini ish jarayonidan ko'ring."
+    },
+    duplicate: {
+      label: 'Takroriy',
+      short: 'Takroriy',
+      plain: "Bu ariza shu karta bo'yicha avval kelgan murojaat bilan bir xil.",
+      next: "Asl arizani ochib, natijasini shu yerda ko'ring."
     },
     done: {
       label: "Mablag' qaytarilgan",

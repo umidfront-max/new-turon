@@ -6,7 +6,8 @@ export const QUEUE_STATUS = {
   blocked: ['blocked'],
   autopayment: ['autopayment'],
   cancelled: ['cancelled'],
-  done: ['done']
+  done: ['done'],
+  duplicate: ['duplicate']
 }
 
 // URL bo'lagi -> navbat kaliti
@@ -18,6 +19,7 @@ export const QUEUE_SLUG = {
   autopayment: 'autopayment',
   cancelled: 'cancelled',
   completed: 'done',
+  duplicate: 'duplicate',
   overdue: 'overdue'
 }
 

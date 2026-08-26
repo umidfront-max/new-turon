@@ -1,29 +1,43 @@
 <script setup>
+import { computed } from 'vue'
 import { QUEUES } from '@/data/applications'
 import { useApplications } from '@/stores/useApplications'
+import { useRegistry } from '@/stores/useRegistry'
 
 const { counts } = useApplications()
+const registry = useRegistry()
 
 defineProps({
   modelValue: { type: String, default: 'all' }
 })
 
 defineEmits(['update:modelValue'])
+
+/*
+  Chiplar serverdan keladi: `tabs` — status bo'yicha, har birida tayyor
+  yorliq va sanoq. Server javob bermasa loyihadagi ro'yxat va namuna sanoqlari.
+*/
+const tabs = computed(() => {
+  const fromApi = registry.state.tabs
+  if (fromApi.length) return fromApi
+
+  return QUEUES.map((key) => ({ key, label: null, count: counts.value[key] || 0 }))
+})
 </script>
 
 <template>
   <div class="queues thin-scroll">
     <button
-      v-for="(q, i) in QUEUES"
-      :key="q"
+      v-for="(q, i) in tabs"
+      :key="q.key"
       type="button"
       class="queue"
-      :class="{ on: q === modelValue }"
+      :class="{ on: q.key === modelValue }"
       :style="{ animationDelay: `${i * 35}ms` }"
-      @click="$emit('update:modelValue', q)"
+      @click="$emit('update:modelValue', q.key)"
     >
-      <span>{{ $t(`queues.${q}`) }}</span>
-      <span class="q-count mono">{{ counts[q] || 0 }}</span>
+      <span>{{ q.label || $t(`queues.${q.key}`) }}</span>
+      <span class="q-count mono">{{ q.count }}</span>
     </button>
   </div>
 </template>

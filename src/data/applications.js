@@ -10,7 +10,9 @@ export const STATUS = {
   blocked: { fg: 'var(--c1a6e4b)', bg: 'var(--ce3f2e9)', bd: 'var(--cbfe0ce)' },
   error: { fg: 'var(--ca52220)', bg: 'var(--cfceceb)', bd: 'var(--cf2cfcd)' },
   cancelled: { fg: 'var(--c4b5a73)', bg: 'var(--ceef1f6)', bd: 'var(--cdbe1e9)' },
-  done: { fg: 'var(--c0e6a6e)', bg: 'var(--ce5f2f2)', bd: 'var(--cc3e0e0)' }
+  done: { fg: 'var(--c0e6a6e)', bg: 'var(--ce5f2f2)', bd: 'var(--cc3e0e0)' },
+  // serverda takroriy arizalar alohida status bilan keladi
+  duplicate: { fg: 'var(--c5b3fa8)', bg: 'var(--cefeafa)', bd: 'var(--cd8cff2)' }
 }
 
 const BASE_APPLICATIONS = [

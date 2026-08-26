@@ -15,7 +15,8 @@ const state = reactive({
   rows: [],
   total: 0,
   byStatus: null,
-  tabs: null,
+  tabs: [],
+  processTabs: [],
   facets: null,
   loading: false,
   // 'api' — serverdan keldi, 'mock' — namuna, null — hali urinilmagan
@@ -61,13 +62,15 @@ async function load(filters) {
     state.total = page.total
     state.byStatus = page.byStatus
     state.tabs = page.tabs
+    state.processTabs = page.processTabs
     state.facets = page.facets
     state.source = 'api'
   } catch (e) {
     state.rows = []
     state.total = 0
     state.byStatus = null
-    state.tabs = null
+    state.tabs = []
+    state.processTabs = []
     state.facets = null
     state.source = 'mock'
     state.error = e

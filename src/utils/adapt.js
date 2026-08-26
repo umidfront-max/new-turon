@@ -97,6 +97,17 @@ export function registryRow(row, index = 0) {
   }
 }
 
+/** Navbat chipi: server kalitini ekrandagi kalitga o'giradi. */
+function queueTab(t) {
+  return {
+    // 'auto_payment' -> 'autopayment', 'canceled' -> 'cancelled'
+    key: t.key === 'all' ? 'all' : statusToUi(t.key),
+    apiKey: t.key,
+    label: t.label || '',
+    count: t.count ?? 0
+  }
+}
+
 /** Sahifa javobi -> { rows, total } */
 export function registryPage(res, page = 1, perPage = 10) {
   const results = res?.results || []
@@ -104,12 +115,16 @@ export function registryPage(res, page = 1, perPage = 10) {
   return {
     rows: results.map((r, i) => registryRow(r, offset + i)),
     total: res?.count ?? results.length,
-    // Sxemada e'lon qilinmagan, lekin haqiqiy javobda bor:
-    //   tabs      { all, overdue, queued, in_execution, under_control, completed }
-    //   by_status { new, pending, auto_payment, error, blocked, done, canceled, duplicate }
-    //   facets    { <guruh>: [{ value, label, count }] }
+    /*
+      Sxemada e'lon qilinmagan, lekin haqiqiy javobda bor:
+        tabs         [{ key, label, count }] — status bo'yicha (ekrandagi chiplar)
+        process_tabs [{ key, label, count }] — jarayon bo'yicha (all, overdue, …)
+        by_status    { new, pending, auto_payment, … }
+        facets       { <guruh>: [{ value, label, count }] }
+    */
     byStatus: res?.by_status || null,
-    tabs: res?.tabs || null,
+    tabs: (res?.tabs || []).map(queueTab),
+    processTabs: (res?.process_tabs || []).map(queueTab),
     facets: res?.facets || null
   }
 }

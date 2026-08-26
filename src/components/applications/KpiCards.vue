@@ -19,9 +19,9 @@ const shown = computed(() => {
   const out = { all: registry.state.total, overdue: 0 }
   Object.entries(raw).forEach(([status, n]) => { out[statusToUi(status)] = n })
 
-  // muddati o'tganlar alohida kalitda kelishi mumkin
-  const tabs = registry.state.tabs
-  if (tabs && typeof tabs.overdue === 'number') out.overdue = tabs.overdue
+  // muddati o'tganlar jarayon chiplarida keladi
+  const overdue = registry.state.processTabs.find((t) => t.apiKey === 'overdue')
+  if (overdue) out.overdue = overdue.count
   return out
 })
 </script>

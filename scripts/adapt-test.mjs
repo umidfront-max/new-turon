@@ -83,6 +83,26 @@ for (const req of variants) {
 const idOnly = registryRow({ ...sample, requisite: { number: '9860', bank: 7 } })
 ok(idOnly.bank === '', 'bank ID sifatida chiqib ketdi: ' + idOnly.bank)
 
+/* navbat chiplari: server kaliti ekran kalitiga o'giriladi */
+const withTabs = registryPage({
+  count: 4, results: [],
+  tabs: [
+    { key: 'all', label: 'Barchasi', count: 4 },
+    { key: 'auto_payment', label: "Avto to'lov", count: 1 },
+    { key: 'canceled', label: 'Bekor qilingan', count: 0 },
+    { key: 'duplicate', label: 'Takroriy', count: 2 }
+  ],
+  process_tabs: [{ key: 'overdue', label: "Muddati o'tgan", count: 3 }]
+}, 1, 10)
+const keys = withTabs.tabs.map((t) => t.key)
+ok(keys.join(',') === 'all,autopayment,cancelled,duplicate', 'chip kalitlari: ' + keys.join(','))
+ok(withTabs.tabs[1].label === "Avto to'lov", 'chip yorlig‘i yo‘qoldi')
+ok(withTabs.tabs[3].count === 2, 'chip sanog‘i xato')
+ok(withTabs.processTabs[0].apiKey === 'overdue', 'jarayon chipi xato')
+
+/* chiplar bo'lmasa bo'sh massiv */
+ok(registryPage({}, 1, 10).tabs.length === 0, 'chipsiz javob xato')
+
 /* bo'sh javob ham yiqilmasligi kerak */
 const empty = registryPage({}, 1, 10)
 ok(empty.rows.length === 0 && empty.total === 0, 'bo\'sh javob xato')
