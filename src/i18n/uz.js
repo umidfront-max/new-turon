@@ -966,6 +966,8 @@ export default {
       found: '{n} ta kalit topildi',
       change: 'Boshqa papka',
       ids: { pinfl: 'JSHSHIR', tin: 'STIR', id: 'ID' },
+      ready: 'Kalit fayli tayyor',
+      grant: "Kalit papkasiga ruxsat berish",
       password: 'Kalit paroli',
       passwordPh: 'Kalit parolini kiriting',
       checking: 'Kalit tekshirilmoqda...',

@@ -133,10 +133,31 @@ async function loadSignerKeys() {
   }
 }
 
-function onSignerPick() {
+/*
+  Kalit tanlanganda fayl darhol tayyorlanadi.
+  Papkaga ruxsat hali bo'lmasa — o'sha zahoti so'raladi: `select` o'zgarishi
+  foydalanuvchi harakati hisoblanadi, shuning uchun brauzer oynani ochishga
+  ruxsat beradi. Natijada «Kirish» bosilganda hech narsa so'ralmaydi.
+*/
+async function onSignerPick() {
   eriError.value = ''
   pfxPass.value = ''
   delete errors.pfxPass
+  delete errors.pfx
+
+  // fayl allaqachon bor bo'lsa — watch o'zi base64 qiladi
+  if (pfxFile.value || !activeSignerKey.value) return
+
+  const granted = await requestFolder()
+  if (granted) await prepareFile(pfxFile.value)
+}
+
+/** Kalit kartochkasidagi papka tugmasi — ruxsatni alohida so'rash. */
+async function grantFolder() {
+  eriError.value = ''
+  const granted = await requestFolder()
+  if (granted) await prepareFile(pfxFile.value)
+  else if (!pfxB64.value) eriError.value = t('login.eri.errors.noFile')
 }
 
 /* ---------- kalit fayllari ---------- */
@@ -367,11 +388,20 @@ watch(() => props.active, (on) => {
             · {{ $t('login.eimzo.expires', { date: activeSignerKey.validTo }) }}
           </span>
         </span>
-        <span class="key-state" :class="{ ok: keyReady }">
-          <span v-if="reading" class="spinner dark small" />
-          <AppIcon v-else-if="keyReady" name="check" :size="16" />
-          <AppIcon v-else name="folder" :size="16" />
+        <!-- fayl tayyor bo'lsa belgi, aks holda papkaga ruxsat tugmasi -->
+        <span v-if="reading" class="key-state"><span class="spinner dark small" /></span>
+        <span v-else-if="keyReady" class="key-state ok" :title="$t('login.eri.ready')">
+          <AppIcon name="check" :size="16" />
         </span>
+        <button
+          v-else
+          type="button"
+          class="key-state grant"
+          :title="$t('login.eri.grant')"
+          @click="grantFolder"
+        >
+          <AppIcon name="folder" :size="16" />
+        </button>
       </div>
     </template>
 
@@ -494,7 +524,6 @@ watch(() => props.active, (on) => {
   color: #3d4d66;
 }
 
-
 .status-dot {
   width: 9px;
   height: 9px;
@@ -503,7 +532,6 @@ watch(() => props.active, (on) => {
   animation: pulseDot 2.6s infinite;
 }
 
-
 .eri-lead {
   margin: 0;
   font-size: 13.5px;
@@ -511,11 +539,9 @@ watch(() => props.active, (on) => {
   color: #66748c;
 }
 
-
 .file-input {
   display: none;
 }
-
 
 .drop {
   display: flex;
@@ -531,19 +557,16 @@ watch(() => props.active, (on) => {
   transition: border-color .18s ease, background .18s ease;
 }
 
-
 .drop.over {
   border-color: #16233d;
   background: #f1f4f9;
 }
-
 
 .drop-acts {
   display: flex;
   gap: 8px;
   flex: 1 0 100%;
 }
-
 
 .drop-btn {
   flex: 1;
@@ -561,18 +584,15 @@ watch(() => props.active, (on) => {
   gap: 7px;
 }
 
-
 .drop-btn:hover {
   border-color: #16233d;
 }
-
 
 .drop-btn.primary {
   background: #16233d;
   border-color: #16233d;
   color: #fff;
 }
-
 
 .signer-wait {
   display: flex;
@@ -585,7 +605,6 @@ watch(() => props.active, (on) => {
   font-size: 14px;
   color: #3d4d66;
 }
-
 
 .signer-off {
   display: flex;
@@ -601,12 +620,10 @@ watch(() => props.active, (on) => {
   flex-wrap: wrap;
 }
 
-
 .select-wrap {
   position: relative;
   display: block;
 }
-
 
 .select {
   width: 100%;
@@ -614,7 +631,6 @@ watch(() => props.active, (on) => {
   padding-right: 38px;
   cursor: pointer;
 }
-
 
 .select-caret {
   position: absolute;
@@ -625,11 +641,9 @@ watch(() => props.active, (on) => {
   pointer-events: none;
 }
 
-
 .key.dim {
   opacity: .65;
 }
-
 
 .key-warn {
   flex: 0 0 auto;
@@ -642,7 +656,6 @@ watch(() => props.active, (on) => {
   color: #a52220;
 }
 
-
 .hint-text {
   margin-left: 7px;
   font-size: 12px;
@@ -651,7 +664,6 @@ watch(() => props.active, (on) => {
   color: #98a3b6;
 }
 
-
 .key-state {
   flex: 0 0 auto;
   display: flex;
@@ -659,11 +671,26 @@ watch(() => props.active, (on) => {
   color: #98a3b6;
 }
 
-
 .key-state.ok {
   color: #1a6e4b;
 }
 
+/* papkaga ruxsat tugmasi — bosiladigan ekani ko'rinib tursin */
+.key-state.grant {
+  width: 28px;
+  height: 28px;
+  justify-content: center;
+  border: 1px solid #e7ecf3;
+  border-radius: 8px;
+  background: #fff;
+  color: #b45309;
+  cursor: pointer;
+}
+
+.key-state.grant:hover {
+  border-color: #b45309;
+  background: #fff5e9;
+}
 
 .keys-head {
   display: flex;
@@ -671,13 +698,11 @@ watch(() => props.active, (on) => {
   gap: 10px;
 }
 
-
 .keys-count {
   font-size: 13px;
   font-weight: 600;
   color: #3d4d66;
 }
-
 
 .keys-link {
   border: 0;
@@ -688,11 +713,9 @@ watch(() => props.active, (on) => {
   cursor: pointer;
 }
 
-
 .keys-link:hover {
   text-decoration: underline;
 }
-
 
 .keys {
   display: flex;
@@ -703,11 +726,9 @@ watch(() => props.active, (on) => {
   padding-right: 2px;
 }
 
-
 .drop.bad {
   border-color: #d9483f;
 }
-
 
 .drop-ico {
   width: 38px;
@@ -721,7 +742,6 @@ watch(() => props.active, (on) => {
   color: #23568f;
 }
 
-
 .drop-text {
   min-width: 0;
   display: flex;
@@ -729,19 +749,16 @@ watch(() => props.active, (on) => {
   gap: 3px;
 }
 
-
 .drop-title {
   font-size: 14.5px;
   font-weight: 600;
   color: #16233d;
 }
 
-
 .drop-note {
   font-size: 12.5px;
   color: #8b95a6;
 }
-
 
 .key-clear {
   border: 0;
@@ -752,11 +769,9 @@ watch(() => props.active, (on) => {
   display: flex;
 }
 
-
 .key-clear:hover {
   color: #d9483f;
 }
-
 
 .eri-error {
   display: flex;
@@ -772,7 +787,6 @@ watch(() => props.active, (on) => {
   color: #a52220;
 }
 
-
 .key {
   display: flex;
   align-items: center;
@@ -786,16 +800,13 @@ watch(() => props.active, (on) => {
   transition: border-color .18s ease, background .18s ease;
 }
 
-
 .key:hover {
   background: #f8fafc;
 }
 
-
 .key.on {
   border-color: #16233d;
 }
-
 
 .key-ico {
   width: 38px;
@@ -809,12 +820,10 @@ watch(() => props.active, (on) => {
   color: #66748c;
 }
 
-
 .key.on .key-ico {
   background: #16233d;
   color: #fff;
 }
-
 
 .key-text {
   flex: 1;
@@ -824,19 +833,16 @@ watch(() => props.active, (on) => {
   gap: 3px;
 }
 
-
 .key-name {
   font-size: 15px;
   font-weight: 600;
   color: #16233d;
 }
 
-
 .key-meta {
   font-size: 12.5px;
   color: #8b95a6;
 }
-
 
 .radio {
   width: 20px;
@@ -849,11 +855,9 @@ watch(() => props.active, (on) => {
   justify-content: center;
 }
 
-
 .key.on .radio {
   border-color: #16233d;
 }
-
 
 .radio-dot {
   width: 10px;
@@ -863,7 +867,6 @@ watch(() => props.active, (on) => {
   transform: scale(.4);
   transition: transform .18s var(--ease), background .18s ease;
 }
-
 
 .key.on .radio-dot {
   background: #16233d;
