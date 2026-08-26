@@ -41,4 +41,8 @@ export const TARGETS = [
 ]
 
 /* ---------- rahbar qaytarish sabablari ---------- */
-export const REASONS = ['noNote', 'incomplete', 'unconfirmed']
+/*
+  Qaytarish sabablari — serverdagi DutyReturnReasonEnum qiymatlari.
+  Yorliqlar: t(`dutyReport.reasons.<qiymat>`)
+*/
+export const REASONS = ['incomplete_report', 'unfinished_work', 'wrong_successor', 'other']

@@ -451,3 +451,74 @@ export function workflowEvents(res) {
     children: []
   }))
 }
+
+/* ---------- navbatchilik ---------- */
+
+// server holati -> ekrandagi bosqich (useUi.dutyPhase)
+const DUTY_PHASE = {
+  active: 'on',
+  submitted: 'review',
+  returned: 'returned',
+  accepted: 'closed'
+}
+
+export const dutyPhaseOf = (status) => DUTY_PHASE[status] || 'on'
+
+/** DutyShift -> navbatchilik hisoboti oynasi kutadigan ko'rinish. */
+export function dutyShift(s) {
+  if (!s) return null
+
+  return {
+    id: s.id,
+    code: s.code || '',
+    phase: dutyPhaseOf(s.status),
+    statusLabel: s.status_display || '',
+    open: !!s.is_open,
+
+    officer: s.employee_name || '',
+    position: s.employee_position || '',
+    region: s.region_name || '',
+
+    startedAt: dateTime(s.started_at),
+    endedAt: dateTime(s.ended_at),
+    submittedAt: dateTime(s.submitted_at),
+    acceptedAt: dateTime(s.accepted_at),
+    returnedAt: dateTime(s.returned_at),
+
+    note: s.note || '',
+    successorId: s.successor_employee_id ?? null,
+    successor: s.successor_name || '',
+    successorPosition: s.successor_position || '',
+
+    returnReason: s.return_reason || null,
+    returnReasonLabel: s.return_reason_display || '',
+    returnComment: s.return_comment || '',
+
+    // topshirilgan arizalar soni
+    handedOver: s.handed_over_count ?? 0,
+    // smena davomiyligi (soat)
+    hours: hoursBetween(s.started_at, s.ended_at)
+  }
+}
+
+/** Ikki sana orasidagi soat — smena davomiyligi uchun. */
+function hoursBetween(from, to) {
+  const a = new Date(from).getTime()
+  const b = to ? new Date(to).getTime() : Date.now()
+  if (Number.isNaN(a) || Number.isNaN(b)) return null
+  return Math.max(0, Math.round((b - a) / 3600000))
+}
+
+/** Topshirish uchun nomzodlar. */
+export function dutyCandidates(res) {
+  return {
+    available: !!res?.available,
+    count: res?.count ?? 0,
+    items: (res?.candidates || []).map((c) => ({
+      id: c.employee_id ?? c.id,
+      name: c.employee_name || c.full_name || '',
+      position: c.employee_position || c.position || '',
+      region: c.region_name || ''
+    }))
+  }
+}

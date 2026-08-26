@@ -6,11 +6,12 @@
                review/closed -> faqat o'qish
     rahbar     review -> «Qaytarish» (sabab bilan) va «Tasdiqlash va yopish»
 */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { CODE, STATS, DONE, LEFT, TARGETS, REASONS, TAG_TONE } from '@/data/duty'
 import { useUi } from '@/stores/useUi'
+import { useDuty } from '@/stores/useDuty'
 
 const { t } = useI18n()
 const { state, isExec, toast } = useUi()
@@ -20,7 +21,30 @@ const note = ref('')
 const reason = ref(null)
 const returning = ref(false)
 
-const phase = computed(() => state.dutyPhase)
+// Serverdagi smena bo'lsa bosqich shundan; aks holda namuna holati.
+const duty = useDuty()
+const shift = computed(() => duty.state.shift || duty.state.report)
+
+// Kimga topshirish: serverdagi nomzodlar bo'lsa ulardan, aks holda namunadan.
+const targets = computed(() => {
+  const list = duty.state.candidates.items
+  if (!list.length) return TARGETS
+  return list.map((c) => ({
+    id: c.id,
+    ini: (c.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase(),
+    name: c.name,
+    note: c.position || c.region || ''
+  }))
+})
+
+// tanlangan nomzodning serverdagi identifikatori
+const handTo = computed(() => targets.value[target.value]?.id ?? null)
+const phase = computed(() => (duty.live.value && duty.phase.value ? duty.phase.value : state.dutyPhase))
+
+// oyna ochilganda topshirish uchun nomzodlar so'raladi
+watch(() => state.dutyModal, (open) => {
+  if (open && duty.live.value) duty.loadCandidates()
+})
 
 // navbatchi hisobotni faqat qoralama yoki qaytarilgan holatda tahrirlaydi
 const editable = computed(() => !isExec.value && (phase.value === 'on' || phase.value === 'returned'))
@@ -35,7 +59,7 @@ const meta = computed(() => [
   { k: 'officer', v: t('profile.staff.name') },
   { k: 'shift', v: '09:00 – 21:00' },
   { k: 'hours', v: t('dutyReport.hoursValue', { n: 12 }) },
-  { k: 'receiver', v: TARGETS[target.value].name }
+  { k: 'receiver', v: targets.value[target.value]?.name || '' }
 ])
 
 const mainAction = computed(() => {
@@ -58,21 +82,47 @@ function close() {
   returning.value = false
 }
 
-function runMain() {
+async function runMain() {
+  // rahbar tasdiqlaydi — smenani qabul qilish
   if (isExec.value) {
-    state.dutyPhase = 'closed'
+    if (duty.live.value && shift.value) {
+      try {
+        await duty.accept(shift.value.id)
+      } catch (e) {
+        toast(e.detail || t(`api.errors.${e.key || 'server'}`), 'bad')
+        return
+      }
+    } else {
+      state.dutyPhase = 'closed'
+    }
     close()
     toast(t('duty.toast.approved'))
     return
   }
-  state.dutyPhase = 'review'
+
+  // navbatchi hisobotni topshiradi
+  if (duty.live.value && shift.value) {
+    if (!handTo.value) {
+      toast(t('dutyReport.pickSuccessor'), 'bad')
+      return
+    }
+    try {
+      await duty.handOver(shift.value.id, handTo.value, note.value)
+    } catch (e) {
+      toast(e.detail || t(`api.errors.${e.key || 'server'}`), 'bad')
+      return
+    }
+  } else {
+    state.dutyPhase = 'review'
+  }
+
   close()
   toast(t('duty.toast.sent'))
 }
 
 const retNote = ref('')
 
-function runReturn() {
+async function runReturn() {
   if (!returning.value) {
     returning.value = true
     return
@@ -81,7 +131,18 @@ function runReturn() {
     toast(t('dutyReport.pickReason'), 'bad')
     return
   }
-  state.dutyPhase = 'returned'
+
+  if (duty.live.value && shift.value) {
+    try {
+      await duty.sendBack(shift.value.id, reason.value, retNote.value)
+    } catch (e) {
+      toast(e.detail || t(`api.errors.${e.key || 'server'}`), 'bad')
+      return
+    }
+  } else {
+    state.dutyPhase = 'returned'
+  }
+
   close()
   toast(t('dutyReport.returned'))
 }
@@ -96,7 +157,7 @@ function runReturn() {
           <span class="head-ico"><AppIcon name="doc" :size="28" /></span>
           <div class="head-text">
             <span class="title">{{ $t('dutyReport.title') }}</span>
-            <span class="code mono">{{ CODE }}</span>
+            <span class="code mono">{{ shift?.code || CODE }}</span>
           </div>
           <span class="tag">{{ $t(`dutyReport.phase.${phase}`) }}</span>
           <button type="button" class="close" :title="$t('common.close')" @click="close">
@@ -193,8 +254,8 @@ function runReturn() {
 
             <div v-if="editable" class="targets">
               <button
-                v-for="(tg, i) in TARGETS"
-                :key="tg.ini"
+                v-for="(tg, i) in targets"
+                :key="tg.id ?? tg.ini"
                 type="button"
                 class="target"
                 :class="{ on: i === target }"

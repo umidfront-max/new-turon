@@ -7,6 +7,7 @@ import NotifyMenu from './NotifyMenu.vue'
 import DutyReport from './DutyReport.vue'
 import { useUi } from '@/stores/useUi'
 import { useNotifications } from '@/stores/useNotifications'
+import { useDuty } from '@/stores/useDuty'
 
 const { t } = useI18n()
 const {
@@ -17,6 +18,10 @@ const {
 // O'qilmaganlar soni: serverdagi ro'yxat bo'lsa undan, aks holda namunadan.
 // Qo'ng'iroq menyusi ham xuddi shu manbadan oladi — sonlar bir-biriga mos turadi.
 const notifyApi = useNotifications()
+
+// Navbatchilik bosqichi ham serverdan (bo'lsa) — chip va tugma shunga qarab
+const dutyApi = useDuty()
+dutyApi.load()
 const unreadCount = computed(() => (notifyApi.live.value ? notifyApi.unread.value : unread.value))
 
 const clock = ref('09:41')

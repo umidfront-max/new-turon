@@ -161,6 +161,37 @@ ok(idn.bankName === 'Kapitalbank', 'qisqa nom afzal: ' + idn.bankName)
 ok(idn.system === 'UzCard', 'tizim: ' + idn.system)
 ok(cardIdentity({ matched: false }) === null, "mos kelmasa null bo'lishi kerak")
 
+/* ---------- navbatchilik ---------- */
+const { dutyShift, dutyPhaseOf, dutyCandidates } = await vite.ssrLoadModule('/src/utils/adapt.js')
+
+const phases = { active: 'on', submitted: 'review', returned: 'returned', accepted: 'closed' }
+for (const [api, ui] of Object.entries(phases)) {
+  ok(dutyPhaseOf(api) === ui, `${api} -> ${dutyPhaseOf(api)} (${ui} kutilgan)`)
+}
+ok(dutyPhaseOf('boshqa') === 'on', "noma'lum holat 'on' bo'lishi kerak")
+
+const sh = dutyShift({
+  id: 5, code: 'NV-2026-0041', status: 'submitted', status_display: 'Tekshiruvda',
+  is_open: true, employee_name: 'Suvonov Farrux', employee_position: 'Navbatchi',
+  region_name: 'Toshkent', started_at: '2026-08-26T09:00:00+05:00',
+  ended_at: '2026-08-26T21:00:00+05:00', note: 'Uch ish qoldi',
+  successor_employee_id: 9, successor_name: 'Ismoilov J.',
+  return_reason: null, handed_over_count: 3
+})
+ok(sh.phase === 'review', 'bosqich: ' + sh.phase)
+ok(sh.hours === 12, 'smena davomiyligi: ' + sh.hours)
+ok(sh.successorId === 9, 'qabul qiluvchi ID: ' + sh.successorId)
+ok(sh.handedOver === 3, 'topshirilgan ishlar: ' + sh.handedOver)
+ok(sh.startedAt.startsWith('26.08.2026'), 'boshlanish: ' + sh.startedAt)
+ok(dutyShift(null) === null, "bo'sh smena null bo'lishi kerak")
+
+const cand = dutyCandidates({
+  available: true, count: 2,
+  candidates: [{ employee_id: 9, employee_name: 'Ismoilov J.', employee_position: 'Navbatchi' }]
+})
+ok(cand.available && cand.items[0].id === 9, 'nomzodlar xato')
+ok(dutyCandidates(null).items.length === 0, "bo'sh nomzodlar xato")
+
 await vite.close()
 console.log(`adapter: ${Object.keys(pairs).length} status, qator va sahifa tekshirildi`)
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'adapter: barcha tekshiruvlar o\'tdi')

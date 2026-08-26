@@ -160,10 +160,12 @@ export default {
     passing: "Qolgan {n} ta ish o'tadi",
     reason: 'Qaytarish sababi',
     reasons: {
-      noNote: 'Qolgan ishlar izohsiz',
-      incomplete: "Rekvizit ma'lumotlari to'liq emas",
-      unconfirmed: 'Natijalar tasdiqlanmagan'
+      incomplete_report: "Hisobot to'liq emas",
+      unfinished_work: 'Qolgan ishlar yakunlanmagan',
+      wrong_successor: "Noto'g'ri xodimga topshirilgan",
+      other: 'Boshqa sabab'
     },
+    pickSuccessor: 'Avval kimga topshirishni tanlang',
     reasonPh: "Qaytarish sababini qo'shimcha izohlang (ixtiyoriy)…",
     pickReason: 'Qaytarish sababini tanlang',
     return: 'Qaytarish',
