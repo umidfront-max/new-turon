@@ -32,10 +32,6 @@ const BLOCKS = [
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-}
 
 .stub {
   padding: 54px 24px;

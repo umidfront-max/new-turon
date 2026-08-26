@@ -96,11 +96,6 @@ const rows = computed(() => {
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .head {
   display: flex;
@@ -110,43 +105,8 @@ const rows = computed(() => {
   flex-wrap: wrap;
 }
 
-.crumbs {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13.5px;
-  color: var(--c8b95a6);
-}
-
-.crumb {
-  border: 0;
-  background: none;
-  padding: 0;
-  color: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
 .crumb:hover {
   color: var(--c23568f);
-}
-
-.crumb-now {
-  color: var(--c3d4d66);
-}
-
-.head-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.head-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--c16233d);
 }
 
 .chip {
@@ -215,11 +175,6 @@ const rows = computed(() => {
 .list-note {
   font-size: 13.5px;
   color: var(--c8b95a6);
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
 }
 
 .grid {

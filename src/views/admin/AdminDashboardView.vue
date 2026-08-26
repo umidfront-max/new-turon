@@ -292,15 +292,6 @@ function exportReport() {
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.spacer {
-  flex: 1;
-}
 
 /* ---------- sarlavha ---------- */
 .head {
@@ -316,12 +307,6 @@ function exportReport() {
   align-items: baseline;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.head-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--c16233d);
 }
 
 .head-stamp {
@@ -493,11 +478,6 @@ function exportReport() {
 .head-btn:disabled {
   opacity: .6;
   cursor: default;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
 }
 
 .mtx {

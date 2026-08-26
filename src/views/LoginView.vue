@@ -1056,10 +1056,6 @@ function onPass(e) {
   border-color: #16233d;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .link {
   border: 0;
   background: transparent;

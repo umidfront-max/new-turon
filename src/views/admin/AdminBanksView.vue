@@ -341,11 +341,6 @@ function runImport() {
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .panel {
   overflow: hidden;
@@ -372,10 +367,6 @@ function runImport() {
 .panel-count {
   font-size: 13.5px;
   color: #8fa4c2;
-}
-
-.spacer {
-  flex: 1;
 }
 
 .search {
@@ -435,10 +426,6 @@ function runImport() {
 }
 
 /* ---------- jadval ---------- */
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
 
 .grid {
   min-width: 720px;

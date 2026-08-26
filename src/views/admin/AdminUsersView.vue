@@ -140,11 +140,6 @@ function toggle(user) {
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .kpi-grid {
   display: grid;
@@ -195,11 +190,6 @@ function toggle(user) {
 .panel-count {
   font-size: 13.5px;
   color: #8fa4c2;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
 }
 
 .grid {
@@ -338,10 +328,6 @@ function toggle(user) {
   gap: 8px;
   padding: 12px 16px;
   flex-wrap: wrap;
-}
-
-.spacer {
-  flex: 1;
 }
 
 .per-page,

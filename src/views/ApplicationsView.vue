@@ -298,12 +298,6 @@ async function exportXlsx() {
   background: var(--cd6e3f2);
 }
 
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
 .table-card {
   overflow: hidden;
 }

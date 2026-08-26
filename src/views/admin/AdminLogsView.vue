@@ -45,11 +45,6 @@ const rows = computed(() => logs.value.map((l) => ({ ...l, style: LOG_TONE[l.ton
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .panel {
   overflow: hidden;
@@ -75,11 +70,6 @@ const rows = computed(() => logs.value.map((l) => ({ ...l, style: LOG_TONE[l.ton
 .panel-count {
   font-size: 13.5px;
   color: #8fa4c2;
-}
-
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
 }
 
 .grid {

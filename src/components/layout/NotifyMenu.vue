@@ -141,10 +141,6 @@ function readAll() {
   white-space: nowrap;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .head-action {
   flex: 0 0 auto;
   border: 0;

@@ -20,10 +20,6 @@ const router = useRouter()
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-}
 
 .box {
   padding: 62px 24px;

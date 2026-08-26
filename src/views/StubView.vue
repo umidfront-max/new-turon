@@ -45,11 +45,6 @@ const router = useRouter()
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .head {
   display: flex;
@@ -58,29 +53,8 @@ const router = useRouter()
   padding: 14px 18px;
 }
 
-.crumbs {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13.5px;
-  color: var(--c8b95a6);
-}
-
-.crumb {
-  border: 0;
-  background: none;
-  padding: 0;
-  color: inherit;
-  font-size: inherit;
-  cursor: pointer;
-}
-
 .crumb:hover {
   color: var(--c23568f);
-}
-
-.crumb-now {
-  color: var(--c3d4d66);
 }
 
 .head-title {

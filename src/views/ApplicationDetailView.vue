@@ -836,11 +836,6 @@ function exportXlsx() {
 </template>
 
 <style scoped>
-.screen {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 
 .dim {
   color: var(--c8b95a6);

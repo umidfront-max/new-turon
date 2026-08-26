@@ -341,10 +341,6 @@ function runReturn() {
   white-space: nowrap;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .close {
   border: 0;
   background: transparent;

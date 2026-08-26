@@ -131,10 +131,6 @@ const COLS = [
 
 <style scoped>
 /* ---------- jadval ---------- */
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-}
 
 .grid {
   width: 100%;
@@ -149,18 +145,6 @@ th {
   color: var(--c3d4d66);
   border-bottom: 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 .cell-fake {
   display: flex;

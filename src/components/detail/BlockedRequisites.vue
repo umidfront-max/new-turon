@@ -183,10 +183,6 @@ function exportAll() {
   color: #e7ecf5;
 }
 
-.spacer {
-  flex: 1;
-}
-
 .head-btn {
   display: flex;
   align-items: center;
