@@ -67,6 +67,22 @@ ok(page.rows.length === 2, 'qatorlar: ' + page.rows.length)
 ok(page.rows[0].n === 11, '2-sahifaning birinchi tartib raqami: ' + page.rows[0].n)
 ok(page.byStatus.blocked === 20, 'by_status o\'tmadi')
 
+/* requisite ichidagi nom noaniq — bir nechta variant qo'llab-quvvatlanadi */
+const variants = [
+  { number: '9860 2703 6925 4910', bank_name: 'Kapitalbank' },
+  { masked: '9860 2703 6925 4910', bank_title: 'Kapitalbank' },
+  { card_number: '9860 2703 6925 4910', bank_label: 'Kapitalbank' }
+]
+for (const req of variants) {
+  const r = registryRow({ ...sample, requisite: req })
+  ok(r.card === '9860 2703 6925 4910', 'karta topilmadi: ' + JSON.stringify(req))
+  ok(r.bank === 'Kapitalbank', 'bank topilmadi: ' + JSON.stringify(req))
+}
+
+/* bank ID bo'lib kelsa ekranda raqam ko'rinmasligi kerak */
+const idOnly = registryRow({ ...sample, requisite: { number: '9860', bank: 7 } })
+ok(idOnly.bank === '', 'bank ID sifatida chiqib ketdi: ' + idOnly.bank)
+
 /* bo'sh javob ham yiqilmasligi kerak */
 const empty = registryPage({}, 1, 10)
 ok(empty.rows.length === 0 && empty.total === 0, 'bo\'sh javob xato')

@@ -39,6 +39,25 @@ export function dateTime(iso) {
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
+/*
+  DIQQAT — `requisite` ichidagi maydon nomlari Swagger'da e'lon qilinmagan
+  (`{type: object, additionalProperties: {}}`). Izohda faqat shunday deyilgan:
+  «the first card or account on the complaint, masked, with its bank — plus
+  `count`». Shuning uchun bir nechta ehtimoliy nom tekshiriladi.
+  Backenddan namuna javob kelgach bittasini qoldirish kerak.
+*/
+const CARD_KEYS = ['number', 'masked', 'masked_number', 'card', 'card_number', 'pan']
+const BANK_KEYS = ['bank_name', 'bank_title', 'bank_label']
+
+// faqat matnli qiymat olinadi: `bank` butun son (ID) bo'lishi mumkin
+function textOf(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k]
+    if (typeof v === 'string' && v.trim()) return v.trim()
+  }
+  return ''
+}
+
 /**
  * Reyestr qatori -> jadval qatori.
  * @param {object} row serverdagi RegistryRow
@@ -61,8 +80,10 @@ export function registryRow(row, index = 0) {
     // usul serverdan tayyor matn bo'lib keladi; kalit yo'q, shuning uchun label
     method: row.method || null,
     methodLabel: row.method_name || '',
-    card: req.number || req.card || '',
-    bank: req.bank_name || req.bank || '',
+    card: textOf(req, CARD_KEYS),
+    bank: textOf(req, BANK_KEYS),
+    // ariza bo'yicha jami rekvizit soni (izohda `count` deb aytilgan)
+    requisiteCount: typeof req.count === 'number' ? req.count : null,
     amount: money(row.total_amount),
     cur: 'UZS',
     region: row.region || null,
@@ -83,7 +104,8 @@ export function registryPage(res, page = 1, perPage = 10) {
   return {
     rows: results.map((r, i) => registryRow(r, offset + i)),
     total: res?.count ?? results.length,
-    // hujjatda tasvirlangan qo'shimcha kalitlar — bo'lmasa ham ishlaydi
+    // Bu uchtasi Swagger sxemasida e'lon qilinmagan — faqat endpoint izohida
+    // tasvirlangan. Nomi boshqacha bo'lsa shu yerda tuzatiladi.
     byStatus: res?.by_status || null,
     tabs: res?.tabs || null,
     facets: res?.facets || null
