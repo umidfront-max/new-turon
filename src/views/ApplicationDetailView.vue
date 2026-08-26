@@ -5,6 +5,9 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
 import BlockedRequisites from '@/components/detail/BlockedRequisites.vue'
+import WorkflowTab from '@/components/detail/WorkflowTab.vue'
+import SanctionsTab from '@/components/detail/SanctionsTab.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import TransactionPanel from '@/components/detail/TransactionPanel.vue'
 import { detailFor, formatAmount } from '@/data/detail'
 import { buildChain, chainStats, chainMatches } from '@/data/chain'
@@ -100,13 +103,6 @@ function stopPlayer() {
 watch(() => route.query.id, stopPlayer)
 onBeforeUnmount(() => clearInterval(ticker))
 
-/* ---------- sanksiyalar: qaror hujjati ---------- */
-// hujjat faqat bank rekvizitni bloklagach paydo bo'ladi
-const hasDecision = computed(() => ['blocked', 'done', 'autopayment'].includes(row.value.status))
-const docName = computed(() => `qaror_${row.value.id.replace(/\D/g, '').slice(-8)}.pdf`)
-const docPage = ref(1)
-const zoom = ref(92)
-
 /* ---------- tranzaksiyalar zanjiri ---------- */
 // zanjir bank javobidan keyin ko'rinadi
 const hasChain = computed(() => row.value.status !== 'new')
@@ -192,16 +188,6 @@ function onAction() {
 }
 
 // daraxtni tekis ro'yxatga yozamiz — chuqurlik chekinish uchun
-const workflowRows = computed(() => {
-  const out = []
-  const walk = (nodes, depth) => nodes.forEach((n) => {
-    out.push({ ...n, depth })
-    if (n.children && n.children.length) walk(n.children, depth + 1)
-  })
-  walk(data.value.workflow, 0)
-  return out
-})
-
 function exportXlsx() {
   toast(t('detail.exportToast'))
 }
@@ -564,100 +550,20 @@ function exportXlsx() {
           </div>
         </article>
 
-        <div v-if="!data.exchange.length" class="empty-box">
-          <span class="soon-icon"><AppIcon name="send" :size="24" /></span>
-          <div class="empty-title">{{ $t('detail.bank.emptyTitle') }}</div>
-          <div class="empty-text">{{ $t('detail.bank.emptyText') }}</div>
-        </div>
+        <EmptyState
+          v-if="!data.exchange.length"
+          icon="send"
+          :title="$t('detail.bank.emptyTitle')"
+          :text="$t('detail.bank.emptyText')"
+        />
       </div>
     </section>
 
     <!-- ---------- Ish jarayoni ---------- -->
-    <section v-else-if="tab === 'workflow'" class="card-surface panel">
-      <header class="panel-head dark-bar">
-        <AppIcon name="refresh" :size="18" />
-        <span class="panel-title">{{ $t('detail.workflow.title') }}</span>
-      </header>
-
-      <div class="panel-body">
-        <div
-          v-for="(n, i) in workflowRows"
-          :key="`${n.badge}-${i}`"
-          class="wf-row"
-          :style="{ marginLeft: `${n.depth * 26}px`, animationDelay: `${i * 60}ms` }"
-        >
-          <span class="wf-caret">▾</span>
-          <span class="wf-time mono">
-            <AppIcon name="clock" :size="13" />
-            {{ n.time || '—' }}
-          </span>
-          <span class="wf-actor">
-            {{ n.actor === 'bank' ? $t('detail.workflow.bank') : $t('detail.workflow.officer') }}
-          </span>
-          <span v-if="n.actor === 'staff' && !n.depth" class="wf-role">
-            ({{ $t('detail.workflow.staffRole') }})
-          </span>
-          <span class="wf-badge" :class="n.actor">{{ $t(`detail.workflow.badges.${n.badge}`) }}</span>
-          <span v-if="n.code" class="tag code mono">{{ n.code }}</span>
-        </div>
-      </div>
-    </section>
+    <WorkflowTab v-else-if="tab === 'workflow'" :tree="data.workflow" />
 
     <!-- ---------- Sanksiyalar ---------- -->
-    <section v-else-if="tab === 'sanctions'" class="card-surface panel">
-      <header class="panel-head dark-bar">
-        <AppIcon name="shield" :size="24" />
-        <span class="panel-title">{{ $t('detail.doc.title') }}</span>
-      </header>
-
-      <div v-if="!hasDecision" class="empty-box">
-        <span class="empty-ico"><AppIcon name="shield" :size="26" /></span>
-        <div class="empty-title">{{ $t('detail.doc.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('detail.doc.emptyText') }}</div>
-      </div>
-
-      <template v-else>
-        <div class="doc-bar">
-          <AppIcon name="swapVert" :size="20" />
-          <span class="doc-name mono">{{ docName }}</span>
-          <div class="spacer" />
-          <span class="doc-pages mono">{{ docPage }} / 2</span>
-          <span class="doc-sep" />
-          <button type="button" class="doc-zoom" @click="zoom = Math.max(50, zoom - 8)">−</button>
-          <span class="doc-scale mono">{{ zoom }}%</span>
-          <button type="button" class="doc-zoom" @click="zoom = Math.min(200, zoom + 8)">+</button>
-          <span class="doc-sep" />
-          <button type="button" class="doc-act" :title="$t('detail.doc.download')" @click="toast($t('detail.doc.downloaded', { file: docName }))">
-            <AppIcon name="download" :size="20" />
-          </button>
-          <button type="button" class="doc-act" :title="$t('detail.doc.print')" @click="toast($t('detail.doc.printing'))">
-            <AppIcon name="print" :size="20" />
-          </button>
-        </div>
-
-        <div class="doc-body">
-          <div class="doc-thumbs">
-            <button
-              v-for="n in 2"
-              :key="n"
-              type="button"
-              class="thumb"
-              :class="{ on: n === docPage }"
-              @click="docPage = n"
-            />
-            <span class="thumb-nums mono">
-              <span v-for="n in 2" :key="n" :class="{ on: n === docPage }">{{ n }}</span>
-            </span>
-          </div>
-          <div class="doc-page">
-            <div class="page-sheet" :style="{ transform: `scale(${zoom / 100})` }">
-              <div class="page-title mono">{{ $t('detail.doc.sheet') }}</div>
-              <div class="page-text">{{ $t('detail.doc.sheetText') }}</div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </section>
+    <SanctionsTab v-else-if="tab === 'sanctions'" :row="row" />
 
     <!-- ---------- Tranzaksiyalar ---------- -->
     <section v-else-if="tab === 'transactions'" class="card-surface panel">
@@ -666,11 +572,12 @@ function exportXlsx() {
         <span class="panel-title">{{ $t('detail.tx.title') }}</span>
       </header>
 
-      <div v-if="!hasChain" class="empty-box">
-        <span class="empty-ico"><AppIcon name="swap" :size="26" /></span>
-        <div class="empty-title">{{ $t('detail.tx.emptyTitle') }}</div>
-        <div class="empty-text">{{ $t('detail.tx.emptyText') }}</div>
-      </div>
+      <EmptyState
+        v-if="!hasChain"
+        icon="swap"
+        :title="$t('detail.tx.emptyTitle')"
+        :text="$t('detail.tx.emptyText')"
+      />
 
       <template v-else>
         <div class="tx-stats">
@@ -815,10 +722,12 @@ function exportXlsx() {
             </div>
           </div>
 
-          <div v-if="!chainRows.length" class="empty-box small">
-            <span class="empty-ico"><AppIcon name="searchOff" :size="24" /></span>
-            <div class="empty-title">{{ $t('detail.tx.noMatch') }}</div>
-          </div>
+          <EmptyState
+            v-if="!chainRows.length"
+            compact
+            icon="searchOff"
+            :title="$t('detail.tx.noMatch')"
+          />
         </div>
       </template>
     </section>
@@ -1909,92 +1818,8 @@ function exportXlsx() {
 }
 
 /* ---------- ish jarayoni daraxti ---------- */
-.wf-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 13px;
-  margin-bottom: 8px;
-  border: 1px solid var(--ce2e8f1);
-  border-radius: 9px;
-  background: var(--s-card);
-  flex-wrap: wrap;
-  animation: riseIn .28s var(--ease) backwards;
-}
-
-.wf-caret {
-  color: var(--c98a3b6);
-  font-size: 11px;
-}
-
-.wf-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 9px;
-  border-radius: 7px;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
-  font-size: 13.5px;
-  color: var(--c66748c);
-  white-space: nowrap;
-}
-
-.wf-actor {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--c16233d);
-}
-
-.wf-role {
-  font-size: 13.5px;
-  font-style: italic;
-  color: var(--c8b95a6);
-}
-
-.wf-badge {
-  padding: 5px 11px;
-  border-radius: 7px;
-  background: var(--brand-a);
-  color: #fff;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.wf-badge.bank {
-  background: var(--ce8eef7);
-  color: var(--c23568f);
-}
-
-.empty-box {
-  padding: 34px 20px;
-  text-align: center;
-}
 
 /* ---------- bo'sh holat ---------- */
-.empty-box {
-  padding: 60px 18px 66px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 13px;
-}
-
-.empty-box.small {
-  padding: 34px 18px;
-}
-
-.empty-ico {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: var(--cf0f3f8);
-  border: 1px solid var(--ce2e8f1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--c8b95a6);
-}
 
 .empty-title {
   font-size: 16px;
@@ -2011,140 +1836,10 @@ function exportXlsx() {
 }
 
 /* ---------- qaror hujjati ---------- */
-.doc-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 44px;
-  padding: 0 14px;
-  background: var(--c33373d);
-  color: var(--cc8cdd6);
-}
-
-.doc-name {
-  font-size: 14.5px;
-  color: var(--ce8ebf0);
-}
 
 .doc-pages,
-.doc-scale {
-  font-size: 14px;
-}
-
-.doc-scale {
-  color: var(--ce8ebf0);
-  padding: 2px 7px;
-  border: 1px solid var(--c4b5058);
-  border-radius: 4px;
-}
-
-.doc-sep {
-  width: 1px;
-  height: 20px;
-  background: var(--c4b5058);
-}
-
-.doc-zoom {
-  width: 24px;
-  height: 24px;
-  border: 0;
-  background: transparent;
-  color: var(--cc8cdd6);
-  font-size: 17px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.doc-act {
-  border: 0;
-  background: transparent;
-  color: var(--cc8cdd6);
-  cursor: pointer;
-  display: flex;
-}
 
 .doc-act:hover,
-.doc-zoom:hover {
-  color: #fff;
-}
-
-.doc-body {
-  display: flex;
-  height: 470px;
-}
-
-.doc-thumbs {
-  width: 150px;
-  flex: 0 0 150px;
-  background: var(--c3f444c);
-  padding: 14px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.thumb {
-  width: 96px;
-  height: 130px;
-  background: var(--s-card);
-  border: 1px solid var(--c5a6068);
-  border-radius: 2px;
-  cursor: pointer;
-  padding: 0;
-}
-
-.thumb.on {
-  border: 2px solid var(--k3d7cc0);
-}
-
-.thumb-nums {
-  display: flex;
-  gap: 84px;
-  font-size: 13px;
-  color: var(--c8b929c);
-  margin-top: -6px;
-}
-
-.thumb-nums .on {
-  color: var(--cc8cdd6);
-}
-
-.doc-page {
-  flex: 1;
-  background: var(--c54595f);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 22px;
-  overflow: hidden;
-}
-
-.page-sheet {
-  width: 520px;
-  height: 100%;
-  background: var(--s-card) repeating-linear-gradient(135deg, rgba(28, 43, 69, .04) 0 9px, transparent 9px 18px);
-  border-radius: 2px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  transition: transform .18s var(--ease);
-}
-
-.page-title {
-  font-size: 14px;
-  color: var(--c66748c);
-  letter-spacing: .05em;
-}
-
-.page-text {
-  font-size: 14.5px;
-  color: var(--c98a3b6);
-  text-align: center;
-  max-width: 330px;
-}
 
 /* ---------- tranzaksiyalar zanjiri ---------- */
 .tx-stats {
