@@ -239,3 +239,215 @@ export function cardIdentity(res) {
     numberType: res.number_type || 'card'
   }
 }
+
+/* ---------- ariza tafsiloti ---------- */
+
+// serverdagi qadam kaliti -> ekrandagi ikonka va rang
+const STEP_ICON = {
+  received: { icon: 'doc', tone: 'done' },
+  sent_to_bank: { icon: 'send', tone: 'done' },
+  awaiting: { icon: 'clock', tone: 'wait' },
+  blocked: { icon: 'lock', tone: 'ok' },
+  returned: { icon: 'back', tone: 'bad' },
+  autopayment: { icon: 'refresh', tone: 'ok' },
+  refunded: { icon: 'check', tone: 'ok' },
+  cancelled: { icon: 'close', tone: 'idle' }
+}
+
+/** "KARIMOV ALISHER BAXTIYOROVICH" -> "Karimov A. B." */
+function shortNameOf(full) {
+  const parts = String(full || '').trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return ''
+  const cap = (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()
+  return [cap(parts[0]), ...parts.slice(1).map((w) => `${w[0].toUpperCase()}.`)].join(' ')
+}
+
+/** Ma'lumotnoma obyektidan hozirgi tildagi nom. */
+function refName(obj, lang) {
+  if (!obj) return ''
+  const field = { uz: 'name_uz', uzk: 'name_uz_cyrl', ru: 'name_ru' }[lang] || 'name_uz'
+  return obj[field] || obj.name || ''
+}
+
+/**
+ * ComplaintOutput -> tafsilot ekrani kutadigan ko'rinish.
+ * detailFor() bilan bir xil maydonlar: row, requisites, steps, total ...
+ * @param {object} c serverdagi ariza
+ * @param {string} lang hozirgi til kodi (uz | uzk | ru)
+ */
+export function complaintDetail(c, lang = 'uz') {
+  const citizen = c.citizen || {}
+  const requisites = (c.requisites || []).map((r) => ({
+    card: r.number || '',
+    bank: r.bank_name || '',
+    system: r.number_type_display || '',
+    blocked: !!r.is_blocked,
+    frozen: r.frozen_amount ? money(r.frozen_amount) : null,
+    sum: money(r.total_amount),
+    tx: (r.transactions || []).map((t, i) => ({
+      n: i + 1,
+      amount: money(t.amount),
+      time: dateTime(t.withdrawn_at)
+    }))
+  }))
+
+  const row = {
+    apiId: c.id,
+    id: c.number || String(c.id),
+    material: c.material_number || null,
+    flow: c.intake_type === 'hotline_102' ? '102' : 'duty',
+    name: citizen.full_name || '',
+    method: c.method?.id ?? null,
+    methodLabel: refName(c.method, lang),
+    card: requisites[0]?.card || '',
+    bank: requisites[0]?.bank || '',
+    amount: money(c.total_amount),
+    cur: 'UZS',
+    region: c.region?.id ?? null,
+    regionLabel: refName(c.region, lang),
+    status: statusToUi(c.status),
+    // ariza sanasi va vaqti alohida maydonlarda keladi
+    time: c.date ? dateTime(`${c.date}T${c.time || '00:00:00'}`) : '',
+    overdue: false
+  }
+
+  const steps = (c.timeline || []).map((s) => {
+    const look = STEP_ICON[s.key] || { icon: 'doc', tone: s.is_done ? 'done' : 'idle' }
+    return {
+      key: s.key,
+      label: s.label || '',
+      icon: look.icon,
+      tone: s.is_done ? look.tone : 'idle',
+      time: s.at ? dateTime(s.at) : null
+    }
+  })
+
+  return {
+    row,
+    shortName: shortNameOf(citizen.full_name),
+    phone: citizen.phone_number || '',
+    phone2: citizen.additional_phone_number || '',
+    address: citizen.address || c.address || '',
+    pinfl: citizen.pinfl || '',
+    // manba va usul yorlig'i tayyor matn bo'lib keladi
+    sourceLabel: refName(c.source, lang),
+    regionLabel: refName(c.region, lang),
+    description: c.description || '',
+    total: money(c.total_amount),
+    requisites,
+    txTotal: requisites.reduce((n, r) => n + r.tx.length, 0),
+    steps,
+    executors: (c.executors || []).map((e) => ({
+      name: e.employee_name || '',
+      position: e.employee_position || '',
+      active: !!e.is_active,
+      at: dateTime(e.assigned_at)
+    })),
+    isDuplicate: !!c.is_duplicate,
+    duplicateOf: c.duplicate_of ?? null,
+    action: { new: 'send', error: 'fix' }[statusToUi(c.status)] || null,
+
+    // Quyidagilar shablon kutadigan maydonlar. Serverda hozircha mos
+    // ma'lumot yo'q, shuning uchun tayyor yorliqlar beriladi.
+    source: null,          // manba i18n kaliti o'rniga sourceLabel ishlatiladi
+    region: null,          // regionLabel ishlatiladi
+    deadline: null,        // muddat sanksiyadan keladi (hali bo'sh)
+    audio: null,           // ovozli fabula serverda yo'q
+    exchange: [],
+    blocked: [],
+    workflow: []
+  }
+}
+
+/** Bank amaliyotlari tabi. */
+export function bankOperations(res) {
+  const blocked = res?.blocked_requisites || {}
+  return {
+    exchange: (res?.exchange || []).map((e, i) => ({
+      id: e.id ?? `e${i}`,
+      kind: e.kind || e.method || 'sent',
+      label: e.label || '',
+      tone: e.is_error ? 'bad' : (e.tone || 'info'),
+      icon: e.is_error ? 'warn' : 'send',
+      time: dateTime(e.at || e.created_at),
+      code: e.code || null,
+      attempt: e.attempt ?? 1,
+      isError: !!e.is_error
+    })),
+    errors: (res?.errors || []).map((x) => ({
+      field: x.field || '',
+      message: x.message || x.text || '',
+      at: dateTime(x.at || x.created_at)
+    })),
+    blocked: (blocked.items || []).map((r, i) => ({
+      n: i + 1,
+      card: r.number || r.masked_number || '',
+      account: (r.number_type || r.type) === 'account',
+      bank: r.bank_name || '',
+      cur: r.currency || 'UZS',
+      raw: Number(String(r.frozen_amount ?? r.amount ?? 0).replace(/[^\d.]/g, '')) || 0,
+      sum: money(r.frozen_amount ?? r.amount)
+    })),
+    blockedTotal: money(blocked.total)
+  }
+}
+
+/** Sanksiyalar tabi. */
+export function sanctionList(res) {
+  const rows = Array.isArray(res) ? res : res?.results || []
+  return rows.map((s) => ({
+    id: s.id,
+    number: s.number || '',
+    label: s.status_display || s.type_display || '',
+    file: s.file_url || null,
+    sentAt: dateTime(s.sent_at),
+    fileSentAt: dateTime(s.file_sent_at),
+    deadline: s.deadline || null,
+    at: dateTime(s.created_at)
+  }))
+}
+
+/** Tranzaksiyalar zanjiri tabi. */
+export function transactionChain(res) {
+  const stats = res?.stats || {}
+
+  const node = (n, level) => ({
+    id: `n${level}-${n.id ?? Math.random().toString(36).slice(2)}`,
+    level,
+    card: n.card?.masked_number || n.number || '',
+    system: n.card?.number_type_display || '',
+    bank: n.card?.bank_name || n.bank_name || '',
+    amount: money(n.amount),
+    raw: Number(String(n.amount ?? 0).replace(/[^\d.]/g, '')) || 0,
+    op: n.operation || n.reference || '',
+    date: dateTime(n.withdrawn_at || n.at),
+    children: (n.children || []).map((c) => node(c, level + 1))
+  })
+
+  return {
+    stats: {
+      count: stats.transaction_count ?? 0,
+      sum: money(stats.total_amount),
+      cards: stats.card_count ?? 0
+    },
+    statement: res?.bank_statement || null,
+    level1: (res?.chain || []).map((n) => node(n, 1))
+  }
+}
+
+/** Ish jarayoni tabi — hodisalar tekis ro'yxatda, yangisi tepada. */
+export function workflowEvents(res) {
+  const events = res?.events || []
+  return events.map((e) => ({
+    kind: e.kind,
+    label: e.label || '',
+    actor: e.kind === 'status' ? 'bank' : 'staff',
+    badge: e.to_status || e.kind,
+    time: dateTime(e.at),
+    person: e.employee_name || '',
+    position: e.employee_position || '',
+    comment: e.comment || '',
+    depth: 0,
+    children: []
+  }))
+}

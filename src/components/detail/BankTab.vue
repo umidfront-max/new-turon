@@ -9,9 +9,15 @@ import { formatAmount } from '@/data/detail'
 import { useUi } from '@/stores/useUi'
 
 const props = defineProps({
-  // detailFor() natijasi
-  data: { type: Object, required: true }
+  // detailFor() natijasi (namuna)
+  data: { type: Object, required: true },
+  // serverdan: { exchange, errors, blocked, blockedTotal }
+  api: { type: Object, default: null }
 })
+
+// serverdagi javob bo'lsa — undan, aks holda namunadan
+const exchange = computed(() => props.api?.exchange ?? props.data.exchange ?? [])
+const blockedRows = computed(() => props.api?.blocked ?? props.data.blocked ?? [])
 
 const emit = defineEmits(['fix'])
 
@@ -27,14 +33,14 @@ const TONE = {
 
 /* ---------- bloklangan rekvizitlar ---------- */
 const blockedOpen = ref(false)
-const blockedTop = computed(() => props.data.blocked.slice(0, 5))
+const blockedTop = computed(() => blockedRows.value.slice(0, 5))
 const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) => s + r.raw, 0)))
 </script>
 
 <template>
   <DetailPanel icon="bank" :title="$t('detail.bank.title')">
     <article
-      v-for="(e, i) in data.exchange"
+      v-for="(e, i) in exchange"
       :key="e.id"
       class="event"
       :class="e.tone"
@@ -116,7 +122,7 @@ const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) 
 
           <div class="blk-foot">
             <button type="button" class="blk-all" @click="blockedOpen = true">
-              {{ $t('blocked.allCount', data.blocked.length) }}
+              {{ $t('blocked.allCount', blockedRows.length) }}
               <AppIcon name="chevronRight" :size="17" />
             </button>
             <div class="spacer" />
@@ -152,14 +158,14 @@ const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) 
     </article>
 
     <EmptyState
-      v-if="!data.exchange.length"
+      v-if="!exchange.length"
       icon="send"
       :title="$t('detail.bank.emptyTitle')"
       :text="$t('detail.bank.emptyText')"
     />
   </DetailPanel>
 
-  <BlockedRequisites v-if="blockedOpen" :rows="data.blocked" @close="blockedOpen = false" />
+  <BlockedRequisites v-if="blockedOpen" :rows="blockedRows" @close="blockedOpen = false" />
 </template>
 
 <style scoped>

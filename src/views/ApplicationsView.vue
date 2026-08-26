@@ -88,7 +88,8 @@ const activeFilters = computed(() =>
   + (region.value ? 1 : 0))
 
 function openApplication(row) {
-  router.push({ path: '/application', query: { id: row.id } })
+  // serverdagi yozuv bo'lsa raqamli identifikator ketadi — tafsilot shu bilan so'raladi
+  router.push({ path: '/application', query: { id: row.apiId ?? row.id } })
 }
 
 function pickQueue(key) {

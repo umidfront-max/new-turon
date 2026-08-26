@@ -12,6 +12,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import { detailFor } from '@/data/detail'
 import { useApplications } from '@/stores/useApplications'
 import { useUi } from '@/stores/useUi'
+import { useComplaint } from '@/stores/useComplaint'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +20,22 @@ const { t } = useI18n()
 const { toast } = useUi()
 const { byId } = useApplications()
 
-// manzilda id bo'lmasa yoki topilmasa — alohida holat ko'rsatamiz
-const found = computed(() => byId(route.query.id))
+/*
+  Ariza ikki manbadan kelishi mumkin:
+    - manzildagi id raqamli bo'lsa — serverdan (/complaints/<id>/)
+    - aks holda namuna ro'yxatidan (eski havolalar va oflayn ish uchun)
+*/
+const api = useComplaint()
+
+const routeId = computed(() => route.query.id)
+const isApiId = computed(() => /^\d+$/.test(String(routeId.value || '')))
+
+watch(routeId, (id) => {
+  if (isApiId.value) api.load(id)
+  else api.clear()
+}, { immediate: true })
+
+const found = computed(() => (api.live.value ? true : byId(routeId.value)))
 
 const TABS = [
   { key: 'complaint', icon: 'doc' },
@@ -41,7 +56,10 @@ function pickTab(key) {
 watch(() => route.query.tab, (next) => {
   tab.value = TABS.some((x) => x.key === next) ? next : 'complaint'
 })
-const data = computed(() => detailFor(found.value || route.query.id))
+// serverdan kelgan bo'lsa — o'sha, aks holda namuna generatori
+const data = computed(() => (api.live.value
+  ? api.state.detail
+  : detailFor(byId(routeId.value) || routeId.value)))
 const row = computed(() => data.value.row)
 
 /* ---------- rekvizitlar ochilishi ---------- */
@@ -94,7 +112,7 @@ const facts = computed(() => [
   { key: 'id', icon: null, value: row.value.id, mono: true },
   { key: 'material', icon: 'bookmark', value: row.value.material || t('table.noMaterial'), mono: true },
   { key: 'date', icon: 'calendar', value: row.value.time, mono: true },
-  { key: 'source', icon: 'phone', value: t(`sources.${data.value.source}`) },
+  { key: 'source', icon: 'phone', value: data.value.sourceLabel || t(`sources.${data.value.source}`) },
   { key: 'method', icon: null, value: t(`methods.${row.value.method}`) }
 ])
 
@@ -242,7 +260,7 @@ function exportXlsx() {
             </div>
             <div class="field">
               <div class="field-label">{{ $t('detail.applicant.region') }}</div>
-              <div class="field-value">{{ $t(`regions.${data.region}`) }}</div>
+              <div class="field-value">{{ data.regionLabel || $t(`regions.${data.region}`) }}</div>
             </div>
             <div class="field wide">
               <div class="field-label">{{ $t('detail.applicant.address') }}</div>
@@ -272,7 +290,7 @@ function exportXlsx() {
             </button>
             <span class="player-time mono">{{ clock(played) }}</span>
             <span class="player-sep mono">/</span>
-            <span class="player-time mono dim">{{ data.audio.length }}</span>
+            <span class="player-time mono dim">{{ data.audio?.length || clock(total) }}</span>
             <span class="player-track">
               <span class="player-fill" :style="{ width: `${(played / total) * 100}%` }" />
             </span>
@@ -344,16 +362,16 @@ function exportXlsx() {
     </template>
 
     <!-- ---------- Bank amaliyotlari ---------- -->
-    <BankTab v-else-if="tab === 'bank'" :data="data" @fix="onAction" />
+    <BankTab v-else-if="tab === 'bank'" :data="data" :api="api.state.bank" @fix="onAction" />
 
     <!-- ---------- Ish jarayoni ---------- -->
-    <WorkflowTab v-else-if="tab === 'workflow'" :tree="data.workflow" />
+    <WorkflowTab v-else-if="tab === 'workflow'" :tree="data.workflow" :events="api.state.workflow" />
 
     <!-- ---------- Sanksiyalar ---------- -->
-    <SanctionsTab v-else-if="tab === 'sanctions'" :row="row" />
+    <SanctionsTab v-else-if="tab === 'sanctions'" :row="row" :api="api.state.sanctions" />
 
     <!-- ---------- Tranzaksiyalar ---------- -->
-    <TransactionsTab v-else-if="tab === 'transactions'" :data="data" />
+    <TransactionsTab v-else-if="tab === 'transactions'" :data="data" :api="api.state.chain" />
 
     <!-- ---------- qolgan tablar ---------- -->
     <section v-else class="card-surface soon">

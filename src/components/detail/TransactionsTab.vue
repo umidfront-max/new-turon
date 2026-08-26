@@ -10,8 +10,10 @@ import { buildChain, chainStats, chainMatches } from '@/data/chain'
 import { useUi } from '@/stores/useUi'
 
 const props = defineProps({
-  // detailFor() natijasi
-  data: { type: Object, required: true }
+  // detailFor() natijasi (namuna)
+  data: { type: Object, required: true },
+  // serverdan: { stats, statement, level1 }
+  api: { type: Object, default: null }
 })
 
 const { t } = useI18n()
@@ -20,9 +22,12 @@ const { toast } = useUi()
 const row = computed(() => props.data.row)
 
 // zanjir bank javobidan keyin ko'rinadi
-const hasChain = computed(() => row.value.status !== 'new')
-const chain = computed(() => buildChain(props.data))
-const stats = computed(() => chainStats(chain.value))
+const hasChain = computed(() => (props.api
+  ? props.api.level1.length > 0
+  : row.value.status !== 'new'))
+// serverdagi zanjir bo'lsa — undan, aks holda namuna generatoridan
+const chain = computed(() => (props.api ? props.api : buildChain(props.data)))
+const stats = computed(() => (props.api ? props.api.stats : chainStats(chain.value)))
 
 const txQuery = ref('')
 const sortDesc = ref(true)

@@ -5,11 +5,15 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import DetailPanel from '@/components/detail/DetailPanel.vue'
 
 const props = defineProps({
-  // detailFor().workflow — ichma-ich joylashgan daraxt
-  tree: { type: Array, required: true }
+  // detailFor().workflow — ichma-ich joylashgan daraxt (namuna)
+  tree: { type: Array, default: () => [] },
+  // serverdan kelgan hodisalar — tekis ro'yxat, yangisi tepada
+  events: { type: Array, default: null }
 })
 
 const rows = computed(() => {
+  if (props.events) return props.events
+
   const out = []
   const walk = (nodes, depth) => nodes.forEach((n) => {
     out.push({ ...n, depth })
@@ -34,12 +38,12 @@ const rows = computed(() => {
         {{ n.time || '—' }}
       </span>
       <span class="wf-actor">
-        {{ n.actor === 'bank' ? $t('detail.workflow.bank') : $t('detail.workflow.officer') }}
+        {{ n.person || (n.actor === 'bank' ? $t('detail.workflow.bank') : $t('detail.workflow.officer')) }}
       </span>
       <span v-if="n.actor === 'staff' && !n.depth" class="wf-role">
         ({{ $t('detail.workflow.staffRole') }})
       </span>
-      <span class="wf-badge" :class="n.actor">{{ $t(`detail.workflow.badges.${n.badge}`) }}</span>
+      <span class="wf-badge" :class="n.actor">{{ n.label || $t(`detail.workflow.badges.${n.badge}`) }}</span>
       <span v-if="n.code" class="tag code mono">{{ n.code }}</span>
     </div>
   </DetailPanel>

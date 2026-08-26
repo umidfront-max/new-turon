@@ -8,15 +8,24 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import { useUi } from '@/stores/useUi'
 
 const props = defineProps({
-  row: { type: Object, required: true }
+  row: { type: Object, required: true },
+  // serverdan kelgan sanksiyalar ro'yxati
+  api: { type: Array, default: null }
 })
 
 const { t } = useI18n()
 const { toast } = useUi()
 
-// hujjat faqat rekvizit bloklangandan keyin bo'ladi
-const hasDecision = computed(() => ['blocked', 'done', 'autopayment'].includes(props.row.status))
-const docName = computed(() => `qaror_${props.row.id.replace(/\D/g, '').slice(-8)}.pdf`)
+// serverdagi ro'yxat bo'lsa — hujjat shunda bor-yo'qligiga qaraladi
+const hasDecision = computed(() => (props.api
+  ? props.api.some((s) => s.file)
+  : ['blocked', 'done', 'autopayment'].includes(props.row.status)))
+
+const docName = computed(() => {
+  const fromApi = props.api?.find((s) => s.file)?.file
+  if (fromApi) return String(fromApi).split('/').pop()
+  return `qaror_${String(props.row.id).replace(/\D/g, '').slice(-8)}.pdf`
+})
 
 const docPage = ref(1)
 const zoom = ref(92)
