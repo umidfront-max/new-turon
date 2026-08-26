@@ -419,6 +419,7 @@ export default {
 
   applications: {
     title: 'Заявки на блокировку',
+    search: 'Номер заявки, Ф.И.О., карта, банк',
     filters: 'Фильтры',
     export: 'Экспорт · XLSX',
     exportToast: 'Готовится экспорт · XLSX',
@@ -441,15 +442,7 @@ export default {
     amount: 'Ущерб',
     status: 'Статус',
     time: 'Время',
-    phId: 'Поиск',
-    phFlow: 'Поиск',
-    phApplicant: 'Ф.И.О. или способ',
-    phCard: 'Карта или банк',
     phAmount: 'от – до',
-    phStatus: 'Статус:',
-    from: 'от',
-    to: 'до',
-    phDate: 'Выберите',
     noMaterial: 'номер материала отсутствует'
   },
 

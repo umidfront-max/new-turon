@@ -419,6 +419,7 @@ export default {
 
   applications: {
     title: 'Bloklash arizalari',
+    search: "Ariza raqami, F.I.Sh., karta, bank",
     filters: 'Filtrlar',
     export: 'Eksport · XLSX',
     exportToast: 'Eksport tayyorlanmoqda · XLSX',
@@ -441,15 +442,7 @@ export default {
     amount: 'Zarar',
     status: 'Status',
     time: 'Vaqti',
-    phId: 'Qidiruv',
-    phFlow: 'Qidiruv',
-    phApplicant: 'F.I.Sh. yoki usul',
-    phCard: 'Karta yoki bank',
     phAmount: 'dan – gacha',
-    phStatus: 'Holati:',
-    from: 'dan',
-    to: 'gacha',
-    phDate: 'Tanlang',
     noMaterial: "material raqami yo'q"
   },
 

@@ -7,6 +7,36 @@ export const EMPTY_COLS = {
   id: '', flow: '', name: '', card: '', min: '', max: '', status: '', date: ''
 }
 
+/**
+ * Umumiy qidiruv: ariza raqami, material, F.I.Sh., usul, karta, bank va oqim
+ * bo'yicha bir vaqtda qidiradi. Bo'sh so'rov hammasini o'tkazadi.
+ */
+export function searchMatch(app, query, labels = {}) {
+  const q = String(query || '').trim().toLowerCase()
+  if (!q) return true
+
+  const flowLabel = labels.flow || ((a) => a.flow)
+  const methodLabel = labels.method || ((a) => a.method)
+
+  const haystack = [
+    app.id,
+    app.material || '',
+    app.name,
+    methodLabel(app),
+    app.card,
+    app.bank,
+    flowLabel(app),
+    app.amount
+  ].join(' ').toLowerCase()
+
+  // raqamlarni bo'shliqsiz ham topamiz: "9860 2703" -> "98602703"
+  if (haystack.includes(q)) return true
+  const digits = q.replace(/\D/g, '')
+  if (digits.length >= 3 && haystack.replace(/\D/g, '').includes(digits)) return true
+
+  return false
+}
+
 function textMatch(value, query) {
   return !query || String(value ?? '').toLowerCase().includes(String(query).trim().toLowerCase())
 }
@@ -23,7 +53,7 @@ export function isoDay(time) {
  * @param {object} opts { queue, picked, cols, dups, labels }
  *   labels — matn qidiruvida ishlatiladigan tarjimalar: { flow(a), method(a) }
  */
-export function filterApplications(items, { queue = 'all', region = '', picked = {}, cols = EMPTY_COLS, dups = new Set(), labels = {} } = {}) {
+export function filterApplications(items, { queue = 'all', region = '', picked = {}, cols = EMPTY_COLS, query = '', dups = new Set(), labels = {} } = {}) {
   const inQueue = queueFilter(queue)
   const groups = Object.entries(picked).filter(([, list]) => list && list.length)
   const min = toNumber(cols.min)
@@ -38,6 +68,8 @@ export function filterApplications(items, { queue = 'all', region = '', picked =
     for (const [group, list] of groups) {
       if (!list.includes(groupValue(a, group, dups))) return false
     }
+
+    if (!searchMatch(a, query, labels)) return false
 
     if (!textMatch(`${a.id} ${a.material || ''}`, cols.id)) return false
     if (!textMatch(flowLabel(a), cols.flow)) return false

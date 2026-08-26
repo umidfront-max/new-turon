@@ -1,26 +1,13 @@
 <script setup>
-import { computed } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import StatusPill from '@/components/ui/StatusPill.vue'
-import { flowStyle, STATUS } from '@/data/applications'
-import { EMPTY_COLS } from '@/utils/table'
+import { flowStyle } from '@/data/applications'
 
-const props = defineProps({
-  rows: { type: Array, required: true },
-  // ustun qidiruvlari: { id, flow, name, card, min, max, status, date }
-  filters: { type: Object, required: true }
+defineProps({
+  rows: { type: Array, required: true }
 })
 
-const emit = defineEmits(['open', 'update:filters'])
-
-const STATUS_KEYS = Object.keys(STATUS)
-
-// har bir maydonni alohida yangilaymiz — ota-komponentdagi obyekt almashadi
-function set(field, value) {
-  emit('update:filters', { ...props.filters, [field]: value })
-}
-
-const hasQuery = computed(() => Object.values(props.filters).some((v) => String(v).trim()))
+defineEmits(['open'])
 
 // label/ph — i18n kalitlari (table.*)
 const COLS = [
@@ -49,101 +36,6 @@ const COLS = [
           >
             {{ c.label ? $t(`table.${c.label}`) : '' }}
           </th>
-        </tr>
-        <tr class="filters">
-          <td />
-
-          <td>
-            <input
-              class="cell-input"
-              :value="filters.id"
-              :placeholder="$t('table.phId')"
-              @input="set('id', $event.target.value)"
-            />
-          </td>
-
-          <td>
-            <input
-              class="cell-input"
-              :value="filters.flow"
-              :placeholder="$t('table.phFlow')"
-              @input="set('flow', $event.target.value)"
-            />
-          </td>
-
-          <td>
-            <input
-              class="cell-input"
-              :value="filters.name"
-              :placeholder="$t('table.phApplicant')"
-              @input="set('name', $event.target.value)"
-            />
-          </td>
-
-          <td>
-            <input
-              class="cell-input"
-              :value="filters.card"
-              :placeholder="$t('table.phCard')"
-              @input="set('card', $event.target.value)"
-            />
-          </td>
-
-          <td>
-            <span class="range">
-              <input
-                class="cell-input right"
-                inputmode="numeric"
-                :value="filters.min"
-                :placeholder="$t('table.from')"
-                @input="set('min', $event.target.value)"
-              />
-              <span class="range-dash">–</span>
-              <input
-                class="cell-input right"
-                inputmode="numeric"
-                :value="filters.max"
-                :placeholder="$t('table.to')"
-                @input="set('max', $event.target.value)"
-              />
-            </span>
-          </td>
-
-          <td>
-            <span class="cell-select">
-              <select
-                class="cell-input select"
-                :value="filters.status"
-                @change="set('status', $event.target.value)"
-              >
-                <option value="">{{ $t('table.phStatus') }}</option>
-                <option v-for="k in STATUS_KEYS" :key="k" :value="k">{{ $t(`status.${k}.short`) }}</option>
-              </select>
-              <AppIcon name="chevronDown" :size="12" class="cell-caret" />
-            </span>
-          </td>
-
-          <td>
-            <input
-              type="date"
-              class="cell-input date"
-              :value="filters.date"
-              :title="$t('table.phDate')"
-              @input="set('date', $event.target.value)"
-            />
-          </td>
-
-          <td>
-            <button
-              v-if="hasQuery"
-              type="button"
-              class="cell-clear"
-              :title="$t('common.clear')"
-              @click="emit('update:filters', { ...EMPTY_COLS })"
-            >
-              <AppIcon name="close" :size="14" />
-            </button>
-          </td>
         </tr>
       </thead>
 
@@ -258,83 +150,17 @@ th {
   border-bottom: 0;
 }
 
-.filters td {
-  padding: 0 13px 12px;
-}
 
-.range {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 
-.range-dash {
-  color: var(--ca3adbd);
-  font-size: 12px;
-}
 
-.cell-select {
-  position: relative;
-  display: block;
-}
 
-.cell-input.select {
-  appearance: none;
-  cursor: pointer;
-  padding-right: 20px;
-}
 
-.cell-caret {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--c8b95a6);
-  pointer-events: none;
-}
 
-.cell-input.date {
-  cursor: pointer;
-}
 
-.cell-clear {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border: 1px solid var(--ce2e8f1);
-  background: var(--s-card);
-  color: var(--c66748c);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
 
-.cell-clear:hover {
-  background: var(--cfceceb);
-  color: var(--ca52220);
-}
 
-.cell-input {
-  width: 100%;
-  height: 34px;
-  border-radius: 6px;
-  border: 1px solid var(--ce2e8f1);
-  background: var(--cf8fafc);
-  padding: 0 9px;
-  font-size: 14px;
-  outline: none;
-  transition: border-color .16s ease, background .16s ease;
-}
 
-.cell-input:focus {
-  border-color: var(--c23568f);
-  background: var(--s-card);
-}
 
-.cell-input.right {
-  text-align: right;
-}
 
 .cell-fake {
   display: flex;

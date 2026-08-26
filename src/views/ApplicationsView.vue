@@ -10,7 +10,7 @@ import ApplicationsTable from '@/components/applications/ApplicationsTable.vue'
 import TablePagination from '@/components/applications/TablePagination.vue'
 import { queueFromSlug, queuePath } from '@/data/queues'
 import { useApplications } from '@/stores/useApplications'
-import { filterApplications, pageSlice, EMPTY_COLS } from '@/utils/table'
+import { filterApplications, pageSlice } from '@/utils/table'
 import { exportApplications } from '@/utils/export'
 import { useUi } from '@/stores/useUi'
 
@@ -25,7 +25,8 @@ const page = ref(1)
 const perPage = ref(10)
 
 // ustun qidiruvlari (jadval sarlavhasidagi qator)
-const cols = ref({ ...EMPTY_COLS })
+// jadval sarlavhasidagi umumiy qidiruv
+const query = ref('')
 
 // filtr panelidan qo'llangan tanlovlar: { guruh: [qiymat, ...] }
 const picked = ref({})
@@ -42,13 +43,13 @@ function clearRegion() {
 }
 
 // navbat yoki filtr o'zgarsa — birinchi sahifaga
-watch([queue, cols, picked, perPage], () => { page.value = 1 }, { deep: true })
+watch([queue, picked, perPage, query], () => { page.value = 1 }, { deep: true })
 
 const filtered = computed(() => filterApplications(items.value, {
   queue: queue.value,
   region: region.value,
   picked: picked.value,
-  cols: cols.value,
+  query: query.value,
   dups: duplicateCards.value,
   labels: {
     flow: (a) => (a.flow === '102' ? '102' : t('flow.duty')),
@@ -62,7 +63,7 @@ const rows = computed(() => pageSlice(filtered.value, page.value, perPage.value)
 
 const activeFilters = computed(() =>
   Object.values(picked.value).reduce((n, list) => n + list.length, 0)
-  + Object.values(cols.value).filter((v) => String(v).trim()).length
+  + (query.value.trim() ? 1 : 0)
   + (region.value ? 1 : 0))
 
 function openApplication(row) {
@@ -81,7 +82,7 @@ function onFilters(groups) {
 
 function clearFilters() {
   picked.value = {}
-  cols.value = { ...EMPTY_COLS }
+  query.value = ''
   if (region.value) clearRegion()
   toast(t('applications.filtersCleared'))
 }
@@ -108,7 +109,26 @@ async function exportXlsx() {
         <AppIcon name="list" :size="19" />
         <span class="card-title">{{ $t('applications.title') }}</span>
         <span class="card-count mono">{{ total }}</span>
-        <div class="spacer" />
+
+        <label class="search">
+          <AppIcon name="search" :size="18" />
+          <input
+            v-model="query"
+            type="search"
+            class="search-input"
+            :placeholder="$t('applications.search')"
+          />
+          <button
+            v-if="query"
+            type="button"
+            class="search-clear"
+            :title="$t('common.clear')"
+            @click="query = ''"
+          >
+            <AppIcon name="close" :size="15" />
+          </button>
+        </label>
+
         <button
           v-if="activeFilters"
           type="button"
@@ -153,7 +173,7 @@ async function exportXlsx() {
         />
       </Transition>
 
-      <ApplicationsTable v-model:filters="cols" :rows="rows" @open="openApplication" />
+      <ApplicationsTable :rows="rows" @open="openApplication" />
 
       <div v-if="!rows.length" class="empty">
         <span class="empty-icon"><AppIcon name="doc" :size="27" /></span>
@@ -172,6 +192,63 @@ async function exportXlsx() {
 </template>
 
 <style scoped>
+/* ---------- umumiy qidiruv ---------- */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 260px;
+  max-width: 520px;
+  height: 38px;
+  margin: 0 14px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .07);
+  color: #8fa4c2;
+  transition: border-color .16s ease, background .16s ease;
+}
+
+.search:focus-within {
+  border-color: rgba(255, 255, 255, .38);
+  background: rgba(255, 255, 255, .12);
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14.5px;
+  color: #fff;
+}
+
+.search-input::placeholder {
+  color: #8fa4c2;
+}
+
+/* brauzerning o'z tozalash tugmasi o'rniga o'zimizniki */
+.search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear {
+  display: flex;
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #8fa4c2;
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  color: #fff;
+}
+
 /* ---------- hudud filtri chizig'i ---------- */
 .region-bar {
   display: flex;

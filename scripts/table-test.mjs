@@ -28,6 +28,34 @@ ok(blocked.every((a) => a.status === 'blocked'), 'blocked navbatida boshqa statu
 const overdue = filterApplications(items, { queue: 'overdue', dups })
 ok(overdue.length === counts.overdue && overdue.every((a) => a.overdue), 'overdue navbati xato')
 
+/* ---------- umumiy qidiruv (jadval sarlavhasidagi) ---------- */
+const one = items[0]
+
+const byId = filterApplications(items, { query: one.id, dups })
+ok(byId.length === 1 && byId[0].id === one.id, "ariza raqami bo'yicha qidiruv xato")
+
+const byPerson = filterApplications(items, { query: 'karimova', dups })
+ok(byPerson.length > 0 && byPerson.every((a) => a.name.toLowerCase().includes('karimova')),
+  'umumiy qidiruv: F.I.Sh. xato')
+
+const byBank = filterApplications(items, { query: 'kapitalbank', dups })
+ok(byBank.length > 0 && byBank.every((a) => a.bank.toLowerCase().includes('kapitalbank')),
+  'umumiy qidiruv: bank xato')
+
+// bo'shliqsiz karta raqami ham topilishi kerak
+const spaced = one.card
+const packed = spaced.replace(/\s/g, '')
+const bySpaced = filterApplications(items, { query: spaced, dups })
+const byPacked = filterApplications(items, { query: packed, dups })
+ok(bySpaced.length > 0, "karta raqami (bo'shliq bilan) topilmadi")
+ok(byPacked.length === bySpaced.length, "karta raqami bo'shliqsiz yozilganda boshqacha natija")
+
+// bo'sh so'rov hech narsani kesmasligi kerak
+ok(filterApplications(items, { query: '   ', dups }).length === items.length, "bo'sh qidiruv ro'yxatni kesdi")
+
+// topilmasa — bo'sh
+ok(filterApplications(items, { query: 'zzzz-yoq-bunday', dups }).length === 0, "mos kelmaydigan so'rov natija qaytardi")
+
 /* ---------- ustun qidiruvlari ---------- */
 const byName = filterApplications(items, { cols: { ...EMPTY_COLS, name: 'karimova' }, dups })
 ok(byName.length > 0 && byName.every((a) => a.name.toLowerCase().includes('karimova')), 'F.I.Sh. qidiruvi xato')

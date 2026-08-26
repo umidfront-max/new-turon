@@ -7,7 +7,6 @@ import SidebarLink from './SidebarLink.vue'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
 import { useAdmin } from '@/stores/useAdmin'
-import { BLOCK_REASONS } from '@/data/reasons'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -202,7 +201,6 @@ function go() {
         <SidebarLink
           icon="book"
           :label="$t('nav.reasons')"
-          :count="BLOCK_REASONS.length"
           to="/reasons"
           :active="isActive('/reasons')"
           :compact="compact"

@@ -419,6 +419,7 @@ export default {
 
   applications: {
     title: 'Блоклаш аризалари',
+    search: 'Ариза рақами, Ф.И.Ш., карта, банк',
     filters: 'Филтрлар',
     export: 'Экспорт · XLSX',
     exportToast: 'Экспорт тайёрланмоқда · XLSX',
@@ -441,15 +442,7 @@ export default {
     amount: 'Зарар',
     status: 'Статус',
     time: 'Вақти',
-    phId: 'Қидирув',
-    phFlow: 'Қидирув',
-    phApplicant: 'Ф.И.Ш. ёки усул',
-    phCard: 'Карта ёки банк',
     phAmount: 'дан – гача',
-    phStatus: 'Ҳолати:',
-    from: 'дан',
-    to: 'гача',
-    phDate: 'Танланг',
     noMaterial: 'материал рақами йўқ'
   },
 
