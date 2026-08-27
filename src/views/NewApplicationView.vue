@@ -89,6 +89,9 @@ const AUTOSAVE_MS = 15000
 let lastSaved = ''
 let autosaveTimer = null
 
+// ketayotgan avtosaqlash — yuborishdan oldin uni kutib olamiz
+let savingPromise = null
+
 // yuborilgandan keyin chiqishda savol berilmasin
 let leaving = false
 
@@ -401,7 +404,7 @@ const saveDraftNow = () => storeDraft(false)
 /** Har 15 soniyada: forma bo'sh bo'lmasa va o'zgargan bo'lsa. */
 function autosave() {
   if (!unsaved.value) return
-  storeDraft(true)
+  savingPromise = storeDraft(true)
 }
 
 /** Serverdagi qoralamani o'chiradi (chiqishda «o'chirish» tanlansa). */
@@ -443,6 +446,15 @@ onBeforeRouteLeave((to) => {
 
 async function send() {
   if (sending.value) return
+
+  /*
+    Avtosaqlash ayni shu payt ketayotgan bo'lishi mumkin. Uni kutmasak
+    `savedDraft` hali bo'sh bo'lib, ariza /manual/ orqali yaratiladi va
+    keyin saqlanib bo'lgan qoralama ro'yxatda osilib qoladi.
+  */
+  clearInterval(autosaveTimer)
+  if (savingPromise) await savingPromise.catch(() => {})
+
   sending.value = true
 
   try {
