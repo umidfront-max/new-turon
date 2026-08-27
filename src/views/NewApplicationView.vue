@@ -374,7 +374,12 @@ function syncDraftQuery(id) {
  * Qoralamani serverga yozadi.
  * @param {boolean} [quiet] avtosaqlashda xabar chiqmaydi
  */
-async function storeDraft(quiet = false) {
+/**
+ * @param {boolean} [quiet] avtosaqlashda xabar chiqmaydi
+ * @param {boolean} [keepUrl] manzilga tegilmaydi — sahifadan chiqayotganda
+ *   `router.replace` yangi navigatsiya boshlab, chiqishni bekor qilib yuboradi
+ */
+async function storeDraft(quiet = false, keepUrl = false) {
   if (savingDraft.value || sending.value) return false
 
   savingDraft.value = true
@@ -385,7 +390,7 @@ async function storeDraft(quiet = false) {
     savedDraft.value = res?.id ?? savedDraft.value
     lastSaved = JSON.stringify(payload)
     elapsed.value = 0
-    syncDraftQuery(savedDraft.value)
+    if (!keepUrl) syncDraftQuery(savedDraft.value)
 
     if (!quiet) toast(t('form.draftStored'))
     return true
@@ -417,11 +422,22 @@ async function dropDraft() {
 }
 
 /** Tanlovdan keyin sahifadan chiqamiz. */
+/**
+ * Tasdiq oynasidagi tanlovdan keyin sahifadan chiqaradi.
+ *
+ * `leaving` eng boshida yoqiladi: aks holda saqlash paytidagi har qanday
+ * manzil o'zgarishi qo'riqchini qaytadan ishga tushirib, oyna yana chiqadi.
+ * Saqlash yiqilsa ham chiqaveramiz — foydalanuvchi ketishni tanlagan.
+ */
 async function leaveWith(target, mode) {
-  if (mode === 'save') await storeDraft(false)
-  else await dropDraft()
-
   leaving = true
+  clearInterval(autosaveTimer)
+
+  try {
+    if (mode === 'save') await storeDraft(false, true)
+    else await dropDraft()
+  } catch { /* xabar storeDraft ichida chiqadi */ }
+
   router.push(target.fullPath)
 }
 
@@ -502,8 +518,9 @@ function cancelAll() {
     ok: t('common.remove'),
     danger: true,
     run: async () => {
-      await dropDraft()
       leaving = true
+      clearInterval(autosaveTimer)
+      await dropDraft()
       toast(t('form.cancelled'), 'warn')
       router.push('/')
     }
