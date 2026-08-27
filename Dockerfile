@@ -7,10 +7,6 @@ RUN npm ci
 
 COPY . .
 
-# Vite build-time env vars (VITE_*) — qiymat build paytida ichiga yoziladi,
-# konteyner ishga tushganda o'zgartirib bo'lmaydi. Berilmasa src ichidagi
-# standart manzillar qoladi (.env.example ga qarang).
-#   docker build --build-arg VITE_API_URL=... --build-arg VITE_GATEWAY_URL=...
 ARG VITE_API_URL
 ARG VITE_GATEWAY_URL
 ARG VITE_ERI_URL
