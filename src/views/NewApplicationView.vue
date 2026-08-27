@@ -222,11 +222,16 @@ const REQUIRED_APP = ['id', 'method', 'source', 'fabula']
 // serverda `applicant.address` ham majburiy
 const REQUIRED_APPLICANT = ['fio', 'phone', 'region', 'address']
 
+// fabula shu belgidan qisqa bo'lsa qabul qilinmaydi
+const FABULA_MIN = 20
+
+const fabulaLength = computed(() => form.fabula.trim().length)
+
 function markErrors(fields) {
   const bad = []
   fields.forEach((f) => {
     const value = String(form[f] || '').trim()
-    const short = f === 'fabula' && value.length < 20
+    const short = f === 'fabula' && value.length < FABULA_MIN
     const phone = f === 'phone' && digitsOnly(value).length !== 12
     if (!value || short || phone) {
       errors[f] = true
@@ -242,7 +247,7 @@ function checkBlock(block) {
   const fields = block === 'app' ? REQUIRED_APP : REQUIRED_APPLICANT
   const bad = markErrors(fields)
   checked[block] = !bad.length
-  toast(bad.length ? t('form.invalid') : t('form.checked'), bad.length ? 'bad' : 'ok')
+  toast(bad.length ? problemOf(bad) : t('form.checked'), bad.length ? 'bad' : 'ok')
 }
 
 function clearBlock(block) {
@@ -252,6 +257,20 @@ function clearBlock(block) {
     delete errors[f]
   })
   checked[block] = false
+}
+
+/*
+  Nima yetishmayotganini aniq aytadi: maydon to'ldirilgan bo'lsa-yu «qizil»
+  bo'lib tursa, foydalanuvchi sababini bilmay qoladi.
+*/
+function problemOf(bad) {
+  if (bad.includes('fabula') && fabulaLength.value && fabulaLength.value < FABULA_MIN) {
+    return t('form.app.fabulaShort', { n: FABULA_MIN, has: fabulaLength.value })
+  }
+  if (bad.includes('phone') && digitsOnly(form.phone).length) {
+    return t('form.applicant.phoneShort')
+  }
+  return t('form.invalid')
 }
 
 /* ---------- fabula ---------- */
@@ -266,7 +285,7 @@ function addHint(key) {
 /* ---------- yuborish ---------- */
 const ready = computed(() =>
   REQUIRED_APP.every((f) => String(form[f] || '').trim())
-  && form.fabula.trim().length >= 20
+  && fabulaLength.value >= FABULA_MIN
   && REQUIRED_APPLICANT.every((f) => String(form[f] || '').trim())
   && digitsOnly(form.phone).length === 12
   && requisites.value.length > 0)
@@ -409,8 +428,7 @@ onBeforeRouteLeave((to) => {
     ok: t('form.draftStore'),
     run: () => leaveWith(to, 'save'),
     alt: t('form.leaveDrop'),
-    altRun: () => leaveWith(to, 'drop'),
-    cancel: t('form.leaveStay')
+    altRun: () => leaveWith(to, 'drop')
   })
 
   return false
@@ -447,7 +465,7 @@ async function send() {
 function submit() {
   const bad = [...markErrors(REQUIRED_APP), ...markErrors(REQUIRED_APPLICANT)]
   if (bad.length || !requisites.value.length) {
-    toast(requisites.value.length ? t('form.invalid') : t('form.requisite.needOne'), 'bad')
+    toast(bad.length ? problemOf(bad) : t('form.requisite.needOne'), 'bad')
     return
   }
   ask({
@@ -603,6 +621,9 @@ function cancelAll() {
 
             <div class="fabula-head">
               <span class="label">{{ $t('form.app.fabula') }} <i class="req">*</i></span>
+              <i class="fabula-count" :class="{ short: fabulaLength && fabulaLength < FABULA_MIN }">
+                {{ fabulaLength ? `${fabulaLength} / ${FABULA_MIN}` : $t('form.app.fabulaMin', { n: FABULA_MIN }) }}
+              </i>
               <div class="spacer" />
 
               <VoiceRecorder />
@@ -719,6 +740,19 @@ function cancelAll() {
 </template>
 
 <style scoped>
+/* fabula uzunligi: talab ko'rinib tursin, yetmasa ajralib chiqsin */
+.fabula-count {
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 13px;
+  color: var(--c98a3b6);
+}
+
+.fabula-count.short {
+  color: var(--cd9483f);
+  font-weight: 600;
+}
+
 
 /* ---------- sarlavha ---------- */
 

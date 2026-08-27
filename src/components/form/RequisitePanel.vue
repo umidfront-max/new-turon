@@ -182,13 +182,23 @@ function closeTxForm() {
   txForm.time = ''
 }
 
-const canSaveTx = computed(() => digitsOnly(txForm.amount).length > 0 && isValidDateTime(txForm.time))
+
+/** Tranzaksiya formasida nima yetishmayotgani. */
+function txProblem() {
+  if (!digitsOnly(txForm.amount)) return t('form.requisite.needAmount')
+  if (!isValidDateTime(txForm.time)) {
+    return t('form.requisite.needTime', { format: t('form.requisite.timePh') })
+  }
+  return ''
+}
 
 function saveTx() {
-  if (!canSaveTx.value) {
-    toast(t('form.invalid'), 'bad')
+  const problem = txProblem()
+  if (problem) {
+    toast(problem, 'bad')
     return
   }
+
   const r = requisites.value.find((x) => x.id === txForm.reqId)
   if (!r) return
   if (txForm.txId) {
@@ -376,7 +386,7 @@ const total = computed(() => {
                 />
                 <AppIcon name="clock" :size="16" class="input-ico" />
               </span>
-              <button type="button" class="btn-dark sm" :disabled="!canSaveTx" @click="saveTx">
+              <button type="button" class="btn-dark sm" @click="saveTx">
                 <AppIcon name="check" :size="16" />
                 {{ txForm.txId ? $t('form.requisite.save') : $t('form.requisite.add') }}
               </button>

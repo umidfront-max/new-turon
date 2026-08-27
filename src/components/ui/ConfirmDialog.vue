@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, onBeforeUnmount } from 'vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { useUi } from '@/stores/useUi'
 
 const { ui, closeConfirm, runConfirm, runConfirmAlt } = useUi()
@@ -17,16 +18,28 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     <div v-if="ui.confirm" class="ask-root">
       <div class="ask-backdrop" @click="closeConfirm" />
       <div class="ask" role="dialog" aria-modal="true">
+        <!-- yopish: «qolish» degani, shuning uchun alohida tugma kerak emas -->
+        <button type="button" class="ask-close" :title="$t('common.close')" @click="closeConfirm">
+          <AppIcon name="close" :size="18" />
+        </button>
+
         <div class="ask-title">{{ ui.confirm.title }}</div>
         <div class="ask-text">{{ ui.confirm.text }}</div>
+
         <div class="ask-actions">
-          <button type="button" class="btn-ghost" @click="closeConfirm">
+          <!--
+            Uchinchi amal bo'lsa (masalan «saqlamasdan chiqish») bekor qilish
+            tugmasi chiqmaydi — burchakdagi X uning o'rnini bosadi, aks holda
+            uchta tugma bir-biriga siqilib qoladi.
+          -->
+          <button v-if="!ui.confirm.alt" type="button" class="btn-ghost" @click="closeConfirm">
             {{ ui.confirm.cancel || $t('common.cancel') }}
           </button>
-          <!-- ixtiyoriy uchinchi amal: masalan «saqlamasdan chiqish» -->
-          <button v-if="ui.confirm.alt" type="button" class="btn-ghost alt" @click="runConfirmAlt">
+
+          <button v-else type="button" class="btn-ghost alt" @click="runConfirmAlt">
             {{ ui.confirm.alt }}
           </button>
+
           <button
             type="button"
             class="btn-main"
@@ -42,10 +55,36 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 </template>
 
 <style scoped>
-/* uchinchi amal asosiysidan sokinroq, lekin bekor qilishdan ajralib tursin */
+/* uchinchi amal — sokin, lekin xavfli ekani rangidan bilinadi */
 .btn-ghost.alt {
-  border-color: var(--cf2cfcd);
+  background: transparent;
   color: var(--ca52220);
+}
+
+.btn-ghost.alt:hover {
+  background: var(--cfceceb);
+}
+
+.ask-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--c98a3b6);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease;
+}
+
+.ask-close:hover {
+  background: var(--cf0f3f8);
+  color: var(--c16233d);
 }
 
 .ask-backdrop {
@@ -61,12 +100,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 151;
-  width: 466px;
+  width: 520px;
   max-width: calc(100vw - 40px);
   background: var(--s-card);
   border-radius: 18px;
   box-shadow: 0 20px 48px rgba(5, 12, 28, .30);
-  padding: 26px 28px 22px;
+  padding: 28px 30px 24px;
   display: flex;
   flex-direction: column;
   gap: 11px;
@@ -74,6 +113,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 }
 
 .ask-title {
+  padding-right: 34px;
   font-size: 25px;
   font-weight: 700;
   color: var(--c16233d);
@@ -90,9 +130,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
 .ask-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 16px;
+}
+
+/* tugma matni ikki qatorga bo'linib ketmasin */
+.ask-actions button {
+  white-space: nowrap;
 }
 
 .btn-ghost,
