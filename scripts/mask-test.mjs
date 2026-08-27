@@ -27,6 +27,22 @@ function field(value, caret = null) {
 
 const eq = (got, want, what) => { if (got !== want) fail.push(`${what}: "${got}" (kutilgan "${want}")`) }
 
+/**
+ * Brauzerdagidek belgilab-belgilab yozadi: har bir belgi kursor turgan joyga
+ * qo'yiladi va shundan keyin niqob qo'llanadi. Kursor xato tiklansa raqamlar
+ * aralashib ketadi — aynan shuni ushlaydi.
+ */
+function type(text, mask, start = '') {
+  const el = field(start)
+  for (const ch of text) {
+    const at = el.selectionStart
+    el.value = el.value.slice(0, at) + ch + el.value.slice(at)
+    el.selectionStart = at + 1
+    applyMask(el, mask)
+  }
+  return el
+}
+
 /* ---------- karta raqami ---------- */
 
 // 16 tadan ortiq raqam qabul qilinmaydi va maydonning o'zi ham tozalanadi
@@ -77,7 +93,42 @@ const eq = (got, want, what) => { if (got !== want) fail.push(`${what}: "${got}"
   const el = field('2312a 3123', 5)
   applyMask(el, maskCard)
   eq(el.value, '2312 3123', 'karta: harf tozalanmadi')
-  eq(el.selectionStart, 4, "kursor 4-raqamdan keyin turishi kerak")
+  // kursor o'zidan keyingi 4 ta raqam oldida qoladi
+  eq(el.selectionStart, 5, "kursor keyingi guruh oldida turishi kerak")
+}
+
+/* ---------- ketma-ket yozish (kursor to'g'ri tiklanishi) ---------- */
+
+// telefonda `+998 ` prefiksi niqobning o'zi tomonidan qo'shiladi — yozilgan
+// raqamlar tartibi buzilmasligi kerak
+{
+  const el = type('901234567', maskPhone)
+  eq(el.value, '+998 90 123 45 67', 'telefon: yozilgan raqamlar aralashib ketdi')
+  eq(el.selectionStart, el.value.length, 'telefon: kursor oxirida qolmadi')
+}
+
+/*
+  To'liq raqam bir marta joylashtirilsa (paste) mamlakat kodi tashlanadi.
+  Belgilab-belgilab yozilganda esa `+998 ` allaqachon turgani uchun har bir
+  raqam abonent raqami sifatida qabul qilinadi — bu kutilgan xatti-harakat.
+*/
+{
+  const el = field('998901234567')
+  eq(applyMask(el, maskPhone), '+998 90 123 45 67', 'telefon: joylashtirilganda kod tashlanmadi')
+}
+
+{
+  const el = type('8600123456789012', maskCard)
+  eq(el.value, '8600 1234 5678 9012', 'karta: ketma-ket yozishda tartib buzildi')
+  eq(el.selectionStart, el.value.length, 'karta: kursor oxirida qolmadi')
+}
+
+{
+  eq(type('1403202601', maskDateTime).value, '14.03.2026 01', 'sana: ketma-ket yozishda xato')
+}
+
+{
+  eq(type('123456', maskAmount).value, '123 456', 'summa: ketma-ket yozishda xato')
 }
 
 /* ---------- summa, telefon, sana ---------- */
@@ -103,6 +154,14 @@ const eq = (got, want, what) => { if (got !== want) fail.push(`${what}: "${got}"
   const el = field('8600 1234', 4)
   applyMask(el, maskCard)
   eq(el.selectionStart, 4, "toza qiymatda kursor qimirladi")
+}
+
+/* ---------- o'chirish ---------- */
+// oxiridan belgi o'chirilganda kursor oxirida qoladi
+{
+  const el = field('+998 90 123 45 6', 16)
+  applyMask(el, maskPhone)
+  eq(el.value, '+998 90 123 45 6', "telefon: o'chirishda qiymat o'zgardi")
 }
 
 console.log(fail.length

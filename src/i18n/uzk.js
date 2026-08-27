@@ -1126,6 +1126,7 @@ export default {
       fio: 'Ф.И.Ш. (лотин ҳарфларида)',
       fioPh: "ABDULLAYEV ULUG'BEK SAYDAMATOVICH",
       phone: 'Телефон рақами',
+      phone2: 'Қўшимча телефон',
       region: 'Ҳудуд',
       address: 'Яшаш манзили',
       addressPh: 'Туман, маҳалла, кўча, уй'

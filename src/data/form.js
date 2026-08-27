@@ -57,22 +57,28 @@ export function applyMask(el, mask) {
   const caret = el.selectionStart ?? typed.length
 
   /*
-    Kursor o'zidan oldingi "mazmunli" belgilar soni bo'yicha tiklanadi.
-    Niqob raqamli bo'lsa (karta, summa, telefon) faqat raqamlar sanaladi —
-    shunda tashlab yuborilgan harf kursorni o'nga surib yubormaydi.
+    Kursor o'zidan KEYINGI "mazmunli" belgilar soni bo'yicha tiklanadi.
+
+    Oldingilarini sanash mumkin emas edi: `+998 ` kabi qat'iy prefiks niqob
+    natijasiga qo'shiladi, ya'ni belgilar soni yozilganidan ko'p bo'lib qoladi
+    va kursor prefiksning o'rtasiga tushib, raqamlar aralashib ketardi.
+    Oxiridan sanaganda prefiks qancha uzun bo'lsa ham ahamiyati yo'q.
+
+    Niqob raqamli bo'lsa faqat raqamlar sanaladi — tashlab yuborilgan harf
+    kursorni surib yubormaydi.
   */
   const meaningful = /[A-Za-z]/.test(masked) ? /[0-9A-Za-z]/ : /\d/
-  const kept = [...typed.slice(0, caret)].filter((ch) => meaningful.test(ch)).length
+  const tail = [...typed.slice(caret)].filter((ch) => meaningful.test(ch)).length
 
   el.value = masked
 
-  let seen = 0
   let next = masked.length
-  if (kept === 0) next = 0
-  else {
-    for (let i = 0; i < masked.length; i += 1) {
-      if (meaningful.test(masked[i])) seen += 1
-      if (seen === kept) { next = i + 1; break }
+  if (tail > 0) {
+    let seen = 0
+    for (let i = masked.length - 1; i >= 0; i -= 1) {
+      if (!meaningful.test(masked[i])) continue
+      seen += 1
+      if (seen === tail) { next = i; break }
     }
   }
 
