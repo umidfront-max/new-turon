@@ -200,8 +200,14 @@ function exportXlsx() {
 </script>
 
 <template>
-  <!-- javob kelgunicha: sarlavha, qadamlar va tablar o'rnida skelet -->
-  <div v-if="pending" class="screen">
+  <!--
+    Yagona ildiz element. Ilgari har bir holat o'z <div class="screen"> i
+    bilan chizilardi: skeletdan kontentga o'tganda ildiz almashib, tashqi
+    <Transition mode="out-in"> eski elementga yopishib qolardi va sahifa
+    ko'rinmay qolardi.
+  -->
+  <div class="screen">
+  <template v-if="pending">
     <div class="bar card-surface sk-bar">
       <span class="sk" style="width: 190px; height: 20px" />
       <div class="spacer" />
@@ -224,9 +230,9 @@ function exportXlsx() {
     <section class="card-surface sk-block">
       <span v-for="n in 5" :key="n" class="sk" :style="{ width: `${[70, 45, 88, 60, 35][n - 1]}%`, height: '14px' }" />
     </section>
-  </div>
+  </template>
 
-  <div v-else-if="!found" class="screen">
+  <template v-else-if="!found">
     <section class="card-surface soon">
       <span class="soon-icon"><AppIcon name="search" :size="26" /></span>
       <div class="not-found-title">{{ $t('detail.notFound') }}</div>
@@ -237,9 +243,9 @@ function exportXlsx() {
         {{ $t('common.backToList') }}
       </button>
     </section>
-  </div>
+  </template>
 
-  <div v-else class="screen">
+  <template v-else>
     <!-- ---------- amal satri ---------- -->
     <div class="bar card-surface">
       <span class="bar-label">{{ $t('detail.label') }}</span>
@@ -503,6 +509,7 @@ function exportXlsx() {
       <p class="soon-text">{{ $t(`detail.soon.${tab}`) }}</p>
     </section>
 
+  </template>
   </div>
 </template>
 

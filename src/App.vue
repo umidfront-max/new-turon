@@ -14,9 +14,11 @@ useLangRefresh()
 <template>
   <!-- login kabi sahifalar layoutsiz ochiladi -->
   <RouterView v-if="route.meta.blank" v-slot="{ Component, route: current }">
-    <Transition name="screen" mode="out-in">
+    <div>
+      <Transition name="screen" mode="out-in">
       <component :is="Component" :key="current.path" />
     </Transition>
+    </div>
   </RouterView>
 
   <AppLayout v-else />
