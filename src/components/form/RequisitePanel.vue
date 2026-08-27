@@ -581,6 +581,52 @@ const total = computed(() => {
   background: var(--cf8fafc);
 }
 
+/*
+  Quyidagi uchtasi ota-komponentda `scoped` bo'lib yozilgan edi va bu yerga
+  yetib kelmasdi: tahrirlash/o'chirish tugmalari brauzerning standart
+  ko'rinishida chiqardi. Shu sababli panelning o'zida turadi.
+*/
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--c98a3b6);
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, transform .12s ease;
+}
+
+.icon-btn:hover {
+  background: var(--ce8eef7);
+  color: var(--c23568f);
+}
+
+.icon-btn:active {
+  transform: scale(.94);
+}
+
+.icon-btn.danger:hover {
+  background: var(--cfceceb);
+  color: var(--ca52220);
+}
+
+.input-ico {
+  flex: 0 0 auto;
+  color: var(--c98a3b6);
+}
+
+/* summa maydonidagi "so'm" */
+.unit {
+  flex: 0 0 auto;
+  font-size: 13.5px;
+  color: var(--c8b95a6);
+}
+
 .added-ico {
   width: 38px;
   height: 38px;
@@ -678,16 +724,17 @@ const total = computed(() => {
 
 
 .tx-n {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  border-radius: 7px;
-  border: 1px solid var(--ce2e8f1);
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 50%;
+  background: var(--cf0f3f8);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12.5px;
-  color: var(--c66748c);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c8b95a6);
 }
 
 
@@ -718,15 +765,21 @@ const total = computed(() => {
   align-items: center;
   gap: 7px;
   height: 36px;
-  padding: 0 12px;
+  padding: 0 14px;
   border-radius: 9px;
-  border: 1px dashed var(--cc8cdd6);
+  border: 1px dashed var(--cd5e0ee);
   background: transparent;
   color: var(--c23568f);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   align-self: flex-start;
+  transition: background .16s ease, border-color .16s ease;
+}
+
+.tx-add:hover {
+  border-color: var(--c23568f);
+  background: var(--ce8eef7);
 }
 
 

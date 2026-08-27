@@ -971,8 +971,6 @@ function cancelAll() {
   color: var(--c8b95a6);
 }
 
-.unit,
-
 /* ---------- takroriylik ogohlantirishi ---------- */
 .dup {
   display: flex;
