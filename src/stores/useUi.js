@@ -149,6 +149,13 @@ export function useUi() {
     if (box && typeof box.run === 'function') box.run()
   }
 
+  /** Ixtiyoriy uchinchi amal (`alt` yozuvi bo'lsa ko'rsatiladi). */
+  function runConfirmAlt() {
+    const box = state.confirm
+    state.confirm = null
+    if (box && typeof box.altRun === 'function') box.altRun()
+  }
+
   return {
     ui: readonly(state),
     state,
@@ -175,6 +182,7 @@ export function useUi() {
     closeToast,
     ask,
     closeConfirm,
-    runConfirm
+    runConfirm,
+    runConfirmAlt
   }
 }

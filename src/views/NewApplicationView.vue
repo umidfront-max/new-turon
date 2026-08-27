@@ -1,6 +1,6 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import VoiceRecorder from '@/components/form/VoiceRecorder.vue'
@@ -78,6 +78,28 @@ const apiDraftId = draftId && /^\d+$/.test(draftId) ? Number(draftId) : null
 const savedDraft = ref(apiDraftId)
 const savingDraft = ref(false)
 
+/*
+  Avtosaqlash: forma ochiq turganda har 15 soniyada qoralama serverga yoziladi.
+  Bo'sh formadan qoralama yasalmaydi va o'zgarmagan holat qayta yuborilmaydi —
+  aks holda server bekorga so'rov olaveradi.
+*/
+const AUTOSAVE_MS = 15000
+
+// oxirgi yuborilgan holat (JSON) — o'zgarganini shu bilan solishtiramiz
+let lastSaved = ''
+let autosaveTimer = null
+
+// yuborilgandan keyin chiqishda savol berilmasin
+let leaving = false
+
+const hasContent = computed(() => Boolean(
+  form.id.trim() || form.material.trim() || form.fabula.trim()
+  || form.fio.trim() || digitsOnly(form.phone) || form.address.trim()
+  || requisites.value.length
+))
+
+const unsaved = computed(() => hasContent.value && JSON.stringify(buildPayload()) !== lastSaved)
+
 /** Serverdagi payload'ni forma holatiga qaytaradi. */
 function fillFromPayload(payload) {
   if (!payload || typeof payload !== 'object') return
@@ -121,6 +143,7 @@ async function loadDraft() {
     try {
       const res = await drafts.one(apiDraftId)
       fillFromPayload(res?.payload)
+      lastSaved = JSON.stringify(buildPayload())
       toast(t('form.draftLoaded'))
     } catch (e) {
       toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
@@ -142,12 +165,14 @@ async function loadDraft() {
 
 onMounted(() => {
   timer = setInterval(() => { elapsed.value += 1 }, 1000)
+  autosaveTimer = setInterval(autosave, AUTOSAVE_MS)
   loadDraft()
 })
 onBeforeUnmount(() => {
   // ovoz yozish va tinglash taymerlari VoiceRecorder komponentining ichida —
-  // u o'zi tozalaydi, shu yerda faqat qoralama saqlash taymeri qoladi
+  // u o'zi tozalaydi, shu yerda faqat qoralama taymerlari qoladi
   clearInterval(timer)
+  clearInterval(autosaveTimer)
 })
 
 /* ---------- maskalar ---------- */
@@ -310,29 +335,86 @@ function buildPayload() {
   return body
 }
 
-/** Qoralamani serverga saqlaydi — forma to'liq bo'lmasa ham. */
-async function saveDraftNow() {
-  if (savingDraft.value) return
+/** Manzilga qoralama id'sini yozadi — sahifa yangilansa ham davom etadi. */
+function syncDraftQuery(id) {
+  if (!id || String(route.query.draft || '') === String(id)) return
+  router.replace({ path: '/application/new', query: { draft: String(id) } })
+}
+
+/**
+ * Qoralamani serverga yozadi.
+ * @param {boolean} [quiet] avtosaqlashda xabar chiqmaydi
+ */
+async function storeDraft(quiet = false) {
+  if (savingDraft.value || sending.value) return false
+
   savingDraft.value = true
-
   try {
-    const res = await drafts.save(buildPayload(), savedDraft.value)
-    const id = res?.id ?? savedDraft.value
+    const payload = buildPayload()
+    const res = await drafts.save(payload, savedDraft.value)
 
-    // manzilga yozamiz: sahifa yangilansa ham qoralama qayta ochiladi
-    if (id && String(route.query.draft || '') !== String(id)) {
-      router.replace({ path: '/application/new', query: { draft: String(id) } })
-    }
-
-    savedDraft.value = id
+    savedDraft.value = res?.id ?? savedDraft.value
+    lastSaved = JSON.stringify(payload)
     elapsed.value = 0
-    toast(t('form.draftStored'))
+    syncDraftQuery(savedDraft.value)
+
+    if (!quiet) toast(t('form.draftStored'))
+    return true
   } catch (e) {
-    toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+    // avtosaqlash jimgina o'tadi — keyingi urinishda qayta yoziladi
+    if (!quiet) toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+    return false
   } finally {
     savingDraft.value = false
   }
 }
+
+/** Qoralama saqlash tugmasi. */
+const saveDraftNow = () => storeDraft(false)
+
+/** Har 15 soniyada: forma bo'sh bo'lmasa va o'zgargan bo'lsa. */
+function autosave() {
+  if (!unsaved.value) return
+  storeDraft(true)
+}
+
+/** Serverdagi qoralamani o'chiradi (chiqishda «o'chirish» tanlansa). */
+async function dropDraft() {
+  if (!savedDraft.value) return
+  try {
+    await drafts.remove(savedDraft.value)
+    savedDraft.value = null
+  } catch { /* o'chirib bo'lmadi — qoralamalar sahifasidan o'chiriladi */ }
+}
+
+/** Tanlovdan keyin sahifadan chiqamiz. */
+async function leaveWith(target, mode) {
+  if (mode === 'save') await storeDraft(false)
+  else await dropDraft()
+
+  leaving = true
+  router.push(target.fullPath)
+}
+
+/*
+  Sahifadan chiqishda: saqlanmagan o'zgarish bo'lsa so'raymiz —
+  qoralamaga saqlash, o'chirish yoki formada qolish.
+*/
+onBeforeRouteLeave((to) => {
+  if (leaving || !unsaved.value) return true
+
+  ask({
+    title: t('form.leaveTitle'),
+    text: t('form.leaveText'),
+    ok: t('form.draftStore'),
+    run: () => leaveWith(to, 'save'),
+    alt: t('form.leaveDrop'),
+    altRun: () => leaveWith(to, 'drop'),
+    cancel: t('form.leaveStay')
+  })
+
+  return false
+})
 
 async function send() {
   if (sending.value) return
@@ -351,6 +433,7 @@ async function send() {
     // namuna ro'yxatidagi qoralama (serverdagisini `submit` o'zi olib tashlaydi)
     if (!savedDraft.value && draftId) removeDraft(draftId)
 
+    leaving = true
     toast(t('form.sent'))
     router.push({ path: '/application', query: { id: created.id } })
   } catch (e) {
@@ -381,7 +464,9 @@ function cancelAll() {
     text: t('form.cancelText'),
     ok: t('common.remove'),
     danger: true,
-    run: () => {
+    run: async () => {
+      await dropDraft()
+      leaving = true
       toast(t('form.cancelled'), 'warn')
       router.push('/')
     }

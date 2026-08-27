@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useUi } from '@/stores/useUi'
 
-const { ui, closeConfirm, runConfirm } = useUi()
+const { ui, closeConfirm, runConfirm, runConfirmAlt } = useUi()
 
 function onKey(e) {
   if (e.key === 'Escape' && ui.confirm) closeConfirm()
@@ -23,6 +23,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
           <button type="button" class="btn-ghost" @click="closeConfirm">
             {{ ui.confirm.cancel || $t('common.cancel') }}
           </button>
+          <!-- ixtiyoriy uchinchi amal: masalan «saqlamasdan chiqish» -->
+          <button v-if="ui.confirm.alt" type="button" class="btn-ghost alt" @click="runConfirmAlt">
+            {{ ui.confirm.alt }}
+          </button>
           <button
             type="button"
             class="btn-main"
@@ -38,6 +42,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 </template>
 
 <style scoped>
+/* uchinchi amal asosiysidan sokinroq, lekin bekor qilishdan ajralib tursin */
+.btn-ghost.alt {
+  border-color: var(--cf2cfcd);
+  color: var(--ca52220);
+}
+
 .ask-backdrop {
   position: fixed;
   inset: 0;
