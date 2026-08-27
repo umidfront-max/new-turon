@@ -1,7 +1,7 @@
 // O'zbekcha (lotin) — asosiy til. Boshqa fayllar shu tuzilmani takrorlaydi.
 export default {
   app: {
-    brand: 'TURON CYBER1',
+    brand: 'TURON CYBER',
     logoAlt: 'Kiberjinoyatlarga qarshi kurashish departamenti',
     defaultTitle: 'TURON CYBER · CardBlock'
   },
