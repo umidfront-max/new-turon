@@ -78,6 +78,14 @@ if (store.live.value) {
     ok(h.time && !h.time.includes('NaN'), 'tarix vaqti xato: ' + h.time)
   })
 
+  // tablar endi o'zi ochilganda so'raladi — har birini alohida yuklaymiz
+  ok(store.state.bank === null && store.state.workflow === null,
+    "ariza ochilishida tablar ham yuklanib ketdi (lazy bolishi kerak)")
+
+  for (const key of ['bank', 'sanctions', 'transactions', 'workflow']) {
+    await store.loadTab(key)
+  }
+
   // tablar yiqilmasligi kerak — bo'sh bo'lsa ham tuzilma to'g'ri
   ok(store.state.bank === null || Array.isArray(store.state.bank.exchange), 'bank tabi tuzilmasi xato')
   ok(store.state.chain === null || Array.isArray(store.state.chain.level1), 'zanjir tuzilmasi xato')

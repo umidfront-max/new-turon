@@ -68,6 +68,15 @@ function pickTab(key) {
 watch(() => route.query.tab, (next) => {
   tab.value = TABS.some((x) => x.key === next) ? next : 'complaint'
 })
+
+/*
+  Tab ma'lumoti aynan ochilganda so'raladi. «Murojaat» tabiga so'rov kerak
+  emas — u asosiy yozuvdan chiziladi.
+*/
+watch([tab, () => api.state.id], ([key]) => api.loadTab(key), { immediate: true })
+
+// shu tabning javobi kutilyapti
+const tabPending = computed(() => api.state.tabLoading === tab.value)
 // serverdan kelgan bo'lsa — o'sha, aks holda namuna generatori
 const data = computed(() => (api.live.value
   ? api.state.detail
@@ -200,13 +209,16 @@ function exportXlsx() {
 </script>
 
 <template>
-  <!--
-    Yagona ildiz element. Ilgari har bir holat o'z <div class="screen"> i
-    bilan chizilardi: skeletdan kontentga o'tganda ildiz almashib, tashqi
-    <Transition mode="out-in"> eski elementga yopishib qolardi va sahifa
-    ko'rinmay qolardi.
-  -->
   <div class="screen">
+    <!--
+      Ildiz element bitta va o'zgarmaydi, holatlar uning ichida almashadi.
+      Buning ikkita sababi bor:
+        1. tashqi <Transition mode="out-in"> ildiz elementni kuzatadi — u
+           almashsa eskisiga yopishib qoladi va sahifa ko'rinmay qoladi;
+        2. shablon izoh bilan boshlansa komponentda ikkita ildiz tugun
+           (izoh + element) bo'lib qoladi va Transition uni umuman
+           chiza olmaydi — <main> bo'sh qolardi.
+    -->
   <template v-if="pending">
     <div class="bar card-surface sk-bar">
       <span class="sk" style="width: 190px; height: 20px" />
@@ -487,6 +499,10 @@ function exportXlsx() {
     </template>
 
     <!-- ---------- Bank amaliyotlari ---------- -->
+    <section v-else-if="tabPending" class="card-surface sk-block">
+      <span v-for="n in 5" :key="n" class="sk" :style="{ width: `${[60, 80, 45, 70, 30][n - 1]}%`, height: '14px' }" />
+    </section>
+
     <BankTab v-else-if="tab === 'bank'" :data="data" :api="api.state.bank" @fix="onAction" />
 
     <!-- ---------- Ish jarayoni ---------- -->
