@@ -35,10 +35,12 @@ const routes = [
     meta: { titleKey: 'nav.all' }
   },
   {
-    // navbatlar: /queue/new, /queue/in-bank, /queue/blocked ...
+    // eski havolalar: /queue/new -> /?tab=new (reyestr bitta sahifa)
     path: '/queue/:queue',
-    name: 'queue',
-    component: ApplicationsView
+    redirect: (to) => {
+      const key = queueFromSlug(to.params.queue)
+      return { path: '/', query: key === 'all' ? {} : { tab: key } }
+    }
   },
   {
     path: '/application',
@@ -121,7 +123,9 @@ const router = createRouter({
 })
 
 function screenTitle(route) {
-  if (route?.name === 'queue') return t(`queues.${queueFromSlug(route.params.queue)}`)
+  // reyestrda sarlavha tanlangan navbatdan olinadi (?tab=blocked)
+  const tab = route?.name === 'applications' ? route.query?.tab : ''
+  if (tab) return t(`queues.${tab}`)
   return route?.meta?.titleKey ? t(route.meta.titleKey) : null
 }
 

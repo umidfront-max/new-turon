@@ -65,7 +65,11 @@ function place() {
 // qisqa ro'yxatda (status, takroriylik, muddat) qidiruv keraksiz
 const withSearch = computed(() => props.options.length >= props.searchFrom)
 
-const chosen = computed(() => new Set(props.modelValue))
+/*
+  Tanlangan qiymatlar manzildan qaytganda satr bo'lib keladi (usul, hudud va
+  bank id'lari son), shuning uchun solishtirish har doim satr ustidan boradi.
+*/
+const chosen = computed(() => new Set(props.modelValue.map(String)))
 
 const visible = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -79,25 +83,27 @@ const summary = computed(() => {
   const n = props.modelValue.length
   if (!n) return props.placeholder || t('filters.all')
   if (n === 1) {
-    const hit = props.options.find((o) => o.value === props.modelValue[0])
+    const hit = props.options.find((o) => String(o.value) === String(props.modelValue[0]))
     return hit ? hit.label : String(props.modelValue[0])
   }
   return t('filters.selected', { n })
 })
 
 function toggle(value) {
+  const key = String(value)
+  const next = new Set(chosen.value)
+
   if (props.single) {
     // qayta bosilsa tanlov olib tashlanadi, aks holda avvalgisi almashadi
-    emit('update:modelValue', props.modelValue.includes(value) ? [] : [value])
+    emit('update:modelValue', next.has(key) ? [] : [value])
     open.value = false
     return
   }
 
-  const next = new Set(props.modelValue)
-  if (next.has(value)) next.delete(value)
-  else next.add(value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
   // tartib options'dagidek qolsin — qayta tanlaganda sakrab ketmasin
-  emit('update:modelValue', props.options.filter((o) => next.has(o.value)).map((o) => o.value))
+  emit('update:modelValue', props.options.filter((o) => next.has(String(o.value))).map((o) => o.value))
 }
 
 function onDocument(e) {
@@ -173,10 +179,10 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
           <input
             type="checkbox"
             class="sr-only"
-            :checked="chosen.has(o.value)"
+            :checked="chosen.has(String(o.value))"
             @change="toggle(o.value)"
           />
-          <span class="box" :class="{ on: chosen.has(o.value), radio: single }" />
+          <span class="box" :class="{ on: chosen.has(String(o.value)), radio: single }" />
           <span class="truncate">{{ o.label }}</span>
           <span v-if="o.count !== undefined" class="ms-count mono">{{ o.count }}</span>
         </label>

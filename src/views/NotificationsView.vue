@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
@@ -16,6 +16,9 @@ const { state, unread, markRead, markAllRead, toast } = useUi()
 const onlyUnread = ref(false)
 
 const api = useNotifications()
+
+// sahifa ochilganda ro'yxat yangilanadi — qo'ng'iroq menyusidagi bilan bir manba
+onMounted(() => api.load())
 
 const TIME_KEY = { min: 'time.minAgo', hour: 'time.hourAgo', day: 'time.dayAgo' }
 

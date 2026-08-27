@@ -11,6 +11,8 @@ import { draftRow } from '@/utils/adapt'
 const state = reactive({
   items: [],
   total: 0,
+  // yon paneldagi sanoq — ro'yxat yuklanmagan sahifalarda ham to'g'ri tursin
+  count: null,
   loading: false,
   source: null, // 'api' | 'mock'
   error: null
@@ -27,6 +29,7 @@ async function load(params) {
     const res = await fetchDrafts(params)
     state.items = rows(res).map(draftRow)
     state.total = res?.count ?? state.items.length
+    state.count = state.total
     state.source = 'api'
   } catch (e) {
     state.items = []
@@ -47,18 +50,33 @@ async function remove(id) {
   if (index < 0) return
   const [taken] = state.items.splice(index, 1)
   state.total = Math.max(0, state.total - 1)
+  if (state.count !== null) state.count = Math.max(0, state.count - 1)
 
   try {
     await removeOnServer(id)
   } catch (e) {
     state.items.splice(index, 0, taken)
     state.total += 1
+    if (state.count !== null) state.count += 1
     throw e
   }
+}
+
+/*
+  Faqat sanoq — yon panel uchun. Ro'yxatga (`items`, `source`) tegmaydi,
+  shuning uchun qoralamalar sahifasi ochiq bo'lmasa ham xavfsiz chaqiriladi.
+*/
+async function loadCount() {
+  if (state.loading || state.count !== null) return
+
+  try {
+    const res = await fetchDrafts({ limit: 1 })
+    state.count = res?.count ?? rows(res).length
+  } catch { /* namuna ro'yxati qoladi */ }
 }
 
 const live = computed(() => state.source === 'api')
 
 export function useDrafts() {
-  return { state, load, remove, live }
+  return { state, load, loadCount, remove, live }
 }

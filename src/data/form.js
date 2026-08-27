@@ -36,6 +36,50 @@ export function maskPhone(value) {
   return d ? `+998 ${parts.join(' ')}` : ''
 }
 
+/*
+  Niqobni maydonga qo'llaydi va DOM ni tekislaydi.
+
+  Vue qiymat o'zgarmasa maydonni qayta chizmaydi. Shu sababli niqob tashlab
+  yuboradigan belgi (17-raqam, harf, ortiqcha bo'sh joy) ekranda qolib ketardi:
+  yozilgan matn bilan haqiqiy qiymat bir-biriga mos kelmasdi. Bu yerda qiymat
+  qo'lda qaytariladi, kursor esa o'zidan oldingi raqamlar soni bo'yicha
+  tiklanadi — matn o'rtasini tahrirlaganda oxiriga sakrab ketmaydi.
+
+  @param {HTMLInputElement} el maydon
+  @param {(value: string) => string} mask niqob funksiyasi
+  @returns {string} tozalangan qiymat
+*/
+export function applyMask(el, mask) {
+  const typed = String(el.value)
+  const masked = mask(typed)
+  if (typed === masked) return masked
+
+  const caret = el.selectionStart ?? typed.length
+
+  /*
+    Kursor o'zidan oldingi "mazmunli" belgilar soni bo'yicha tiklanadi.
+    Niqob raqamli bo'lsa (karta, summa, telefon) faqat raqamlar sanaladi —
+    shunda tashlab yuborilgan harf kursorni o'nga surib yubormaydi.
+  */
+  const meaningful = /[A-Za-z]/.test(masked) ? /[0-9A-Za-z]/ : /\d/
+  const kept = [...typed.slice(0, caret)].filter((ch) => meaningful.test(ch)).length
+
+  el.value = masked
+
+  let seen = 0
+  let next = masked.length
+  if (kept === 0) next = 0
+  else {
+    for (let i = 0; i < masked.length; i += 1) {
+      if (meaningful.test(masked[i])) seen += 1
+      if (seen === kept) { next = i + 1; break }
+    }
+  }
+
+  try { el.setSelectionRange(next, next) } catch { /* ba'zi turlarda mumkin emas */ }
+  return masked
+}
+
 export function digitsOnly(value) {
   return String(value).replace(/\D/g, '')
 }

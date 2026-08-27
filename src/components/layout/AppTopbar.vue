@@ -18,6 +18,7 @@ const {
 // O'qilmaganlar soni: serverdagi ro'yxat bo'lsa undan, aks holda namunadan.
 // Qo'ng'iroq menyusi ham xuddi shu manbadan oladi — sonlar bir-biriga mos turadi.
 const notifyApi = useNotifications()
+notifyApi.load()
 
 // Navbatchilik bosqichi ham serverdan (bo'lsa) — chip va tugma shunga qarab
 const dutyApi = useDuty()

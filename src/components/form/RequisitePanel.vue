@@ -8,7 +8,7 @@ import { ref, reactive, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import {
-  maskCard, maskAccount, maskAmount, maskDateTime,
+  maskCard, maskAccount, maskAmount, maskDateTime, applyMask,
   digitsOnly, cardSystem, isValidDateTime
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
@@ -36,23 +36,27 @@ const system = computed(() => {
 })
 
 function onCard(e) {
-  draft.number = draft.kind === 'card' ? maskCard(e.target.value) : maskAccount(e.target.value)
+  draft.number = applyMask(e.target, draft.kind === 'card' ? maskCard : maskAccount)
   delete errors.number
   verified.value = false
   emit('card', draft.number)
 }
 
 function onAmount(e) {
-  draft.amount = maskAmount(e.target.value)
+  draft.amount = applyMask(e.target, maskAmount)
   delete errors.amount
   verified.value = false
 }
 
 function onTime(e) {
-  draft.time = maskDateTime(e.target.value)
+  draft.time = applyMask(e.target, maskDateTime)
   delete errors.time
   verified.value = false
 }
+
+/* tranzaksiya formasi — o'sha niqoblar */
+function onTxAmount(e) { txForm.amount = applyMask(e.target, maskAmount) }
+function onTxTime(e) { txForm.time = applyMask(e.target, maskDateTime) }
 
 function pickKind(kind) {
   draft.kind = kind
@@ -335,7 +339,7 @@ const total = computed(() => {
                   :value="txForm.amount"
                   class="input bare mono"
                   placeholder="0"
-                  @input="txForm.amount = maskAmount($event.target.value)"
+                  @input="onTxAmount"
                 />
                 <span class="unit">{{ $t('form.requisite.sum') }}</span>
               </span>
@@ -344,7 +348,7 @@ const total = computed(() => {
                   :value="txForm.time"
                   class="input bare mono"
                   :placeholder="$t('form.requisite.timePh')"
-                  @input="txForm.time = maskDateTime($event.target.value)"
+                  @input="onTxTime"
                 />
                 <AppIcon name="clock" :size="16" class="input-ico" />
               </span>

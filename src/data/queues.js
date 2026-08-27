@@ -29,8 +29,12 @@ export function queueFromSlug(slug) {
   return QUEUE_SLUG[slug] || 'all'
 }
 
+/*
+  Navbat endi alohida sahifa emas — reyestrning `?tab=` parametri.
+  Shu sababli tabdan tabga o'tganda komponent qayta yuklanmaydi.
+*/
 export function queuePath(key) {
-  return KEY_SLUG[key] ? `/queue/${KEY_SLUG[key]}` : '/'
+  return key && key !== 'all' ? `/?tab=${key}` : '/'
 }
 
 /** Navbat bo'yicha tekshiruv: barchasi, status yoki muddati o'tganlar */

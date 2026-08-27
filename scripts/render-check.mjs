@@ -30,7 +30,7 @@ const { default: App } = await vite.ssrLoadModule('/src/App.vue')
 const { default: i18n, setLang } = await vite.ssrLoadModule('/src/i18n/index.js')
 const router = (await vite.ssrLoadModule('/src/router/index.js')).default
 const { useAuth } = await vite.ssrLoadModule('/src/stores/useAuth.js')
-const { useApplications } = await vite.ssrLoadModule('/src/stores/useApplications.js')
+const { useApplications, toNumber } = await vite.ssrLoadModule('/src/stores/useApplications.js')
 
 const auth = useAuth()
 const store = useApplications()
@@ -110,6 +110,38 @@ const blocked = await render('/queue/blocked')
 const blockedRows = (blocked.html.match(/class="num mono"/g) || []).length
 const expected = Math.min(10, store.counts.value.blocked)
 if (blockedRows !== expected) problems.push(`bloklangan navbatda ${blockedRows} qator (${expected} kutilgan)`)
+
+/*
+  Holat manzilda: reyestr bitta sahifa, tab/qidiruv/filtr/sahifa hammasi
+  `?...` da turadi. Sahifa yangilanganda shu qiymatlar tiklanishi kerak.
+*/
+const rows = (r) => (r.html.match(/class="num mono"/g) || []).length
+
+const byTab = await render('/?tab=blocked')
+if (rows(byTab) !== expected) problems.push(`?tab=blocked: ${rows(byTab)} qator (${expected} kutilgan)`)
+
+const wide = await render('/?tab=blocked&per=20')
+const wideExpected = Math.min(20, store.counts.value.blocked)
+if (rows(wide) !== wideExpected) problems.push(`?per=20: ${rows(wide)} qator (${wideExpected} kutilgan)`)
+
+const second = await render('/?page=2&per=5')
+if (rows(second) !== 5) problems.push(`?page=2&per=5: ${rows(second)} qator (5 kutilgan)`)
+if (!second.html.includes('6–10') && !second.html.includes('6&ndash;10')) {
+  problems.push('?page=2&per=5: oraliq 6-10 emas')
+}
+
+const searched = await render('/?q=karimova')
+if (!rows(searched)) problems.push('?q=karimova: hech narsa topilmadi')
+
+const byFilter = await render('/?f_status=blocked')
+if (rows(byFilter) !== expected) problems.push(`?f_status=blocked: ${rows(byFilter)} qator (${expected} kutilgan)`)
+
+// summa oralig'i ham manzildan: af — million so'mda
+const bigCount = store.items.value.filter((a) => toNumber(a.amount) >= 20 * 1000000).length
+const byAmount = await render('/?af=20')
+if (rows(byAmount) !== Math.min(10, bigCount)) {
+  problems.push(`?af=20: ${rows(byAmount)} qator (${Math.min(10, bigCount)} kutilgan)`)
+}
 
 /* topilmagan ariza */
 const missing = await render('/application?id=yoq')

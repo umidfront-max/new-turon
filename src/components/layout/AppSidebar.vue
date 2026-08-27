@@ -1,10 +1,11 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import SidebarLink from './SidebarLink.vue'
 import { useUi } from '@/stores/useUi'
+import { queuePath } from '@/data/queues'
 import { useApplications } from '@/stores/useApplications'
 import { useRegistry } from '@/stores/useRegistry'
 import { useDrafts } from '@/stores/useDrafts'
@@ -23,7 +24,18 @@ const registry = useRegistry()
 const drafted = useDrafts()
 
 const counts = computed(() => registry.counts.value || mockCounts.value)
-const draftCount = computed(() => (drafted.live.value ? drafted.state.total : drafts.value.length))
+const draftCount = computed(() => drafted.state.count ?? drafts.value.length)
+
+/*
+  Reyestr ochilmagan sahifada (ariza qo'shish, qoralamalar, sozlamalar...)
+  hech kim sanoqni so'ramaydi va sonlar namuna ma'lumotga tushib qolardi.
+  Shuning uchun yon panel ularni o'zi bir marta yuklaydi; reyestr sahifasi
+  ochiq bo'lsa chaqiruv o'z-o'zidan o'tkazib yuboriladi.
+*/
+onMounted(() => {
+  if (!registry.counts.value) registry.loadCounts()
+  drafted.loadCount()
+})
 const { banks } = useAdmin()
 
 function otherModule() {
@@ -36,6 +48,9 @@ const compact = computed(() => !state.sidebarOpen && !state.mobileNavOpen)
 const collapseTip = computed(() => (state.sidebarOpen ? t('nav.collapse') : t('nav.expand')))
 
 const isActive = (path) => route.path === path
+
+// navbat endi manzil bo'lagi emas, reyestrning `?tab=` parametri
+const isQueue = (key) => route.path === '/' && (route.query.tab || 'all') === key
 
 function go() {
   setMobileNav(false)
@@ -157,8 +172,8 @@ function go() {
         :label="$t('nav.newApps')"
         :count="counts.new || 0"
         count-tone="danger"
-        to="/queue/new"
-        :active="isActive('/queue/new')"
+        :to="queuePath('new')"
+        :active="isQueue('new')"
         :compact="compact"
         @click="go"
       />
@@ -167,8 +182,8 @@ function go() {
         :label="$t('nav.returned')"
         :count="counts.error || 0"
         count-tone="danger"
-        to="/queue/returned"
-        :active="isActive('/queue/returned')"
+        :to="queuePath('error')"
+        :active="isQueue('error')"
         :compact="compact"
         @click="go"
       />
@@ -180,8 +195,8 @@ function go() {
         icon="bank"
         :label="$t('nav.inBank')"
         :count="counts.pending || 0"
-        to="/queue/in-bank"
-        :active="isActive('/queue/in-bank')"
+        :to="queuePath('pending')"
+        :active="isQueue('pending')"
         :compact="compact"
         @click="go"
       />
@@ -190,8 +205,8 @@ function go() {
         :label="$t('nav.blocked')"
         :count="counts.blocked || 0"
         count-tone="success"
-        to="/queue/blocked"
-        :active="isActive('/queue/blocked')"
+        :to="queuePath('blocked')"
+        :active="isQueue('blocked')"
         :compact="compact"
         @click="go"
       />
@@ -199,8 +214,8 @@ function go() {
         icon="refresh"
         :label="$t('nav.autopayment')"
         :count="counts.autopayment || 0"
-        to="/queue/autopayment"
-        :active="isActive('/queue/autopayment')"
+        :to="queuePath('autopayment')"
+        :active="isQueue('autopayment')"
         :compact="compact"
         @click="go"
       />

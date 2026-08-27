@@ -9,7 +9,7 @@ import PageHead from '@/components/ui/PageHead.vue'
 import CardHistory from '@/components/form/CardHistory.vue'
 import {
   METHOD_OPTIONS, SOURCE_OPTIONS, REGION_OPTIONS,
-  maskPhone, digitsOnly
+  maskPhone, applyMask, digitsOnly
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
@@ -74,27 +74,30 @@ onMounted(() => {
   loadDraft()
 })
 onBeforeUnmount(() => {
+  // ovoz yozish va tinglash taymerlari VoiceRecorder komponentining ichida —
+  // u o'zi tozalaydi, shu yerda faqat qoralama saqlash taymeri qoladi
   clearInterval(timer)
-  clearInterval(recTimer)
-  clearInterval(playTimer)
 })
 
 /* ---------- maskalar ---------- */
 function onPhone(e) {
-  form.phone = maskPhone(e.target.value)
+  form.phone = applyMask(e.target, maskPhone)
   delete errors.phone
 }
 
 function onPhone2(e) {
-  form.phone2 = maskPhone(e.target.value)
+  form.phone2 = applyMask(e.target, maskPhone)
 }
 
 function openApplication(id) {
   router.push({ path: '/application', query: { id } })
 }
 
+// F.I.Sh. — faqat lotin harflari, apostrof, chiziqcha va bo'sh joy
+const maskFio = (value) => String(value).toUpperCase().replace(/[^A-Z'\s-]/g, '')
+
 function onFio(e) {
-  form.fio = e.target.value.toUpperCase().replace(/[^A-Z'\s-]/g, '')
+  form.fio = applyMask(e.target, maskFio)
   delete errors.fio
 }
 

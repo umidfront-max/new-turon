@@ -43,6 +43,7 @@ const state = reactive({
   processTabs: [],
   facets: null,
   loading: false,
+  countsLoading: false,
   // 'api' — serverdan keldi, 'mock' — namuna, null — hali urinilmagan
   source: null,
   error: null
@@ -127,6 +128,29 @@ async function load(filters) {
   }
 }
 
+/*
+  Faqat sanoqlar — yon panel va KPI uchun.
+
+  Reyestr ochilmagan sahifalarda (masalan «Ariza qo'shish») `load()` umuman
+  ishlamaydi, shuning uchun sonlar namuna ma'lumotga tushib qolardi. Bu chaqiruv
+  bitta qator so'raydi va faqat sanoq maydonlarini to'ldiradi: `rows`, `total`
+  va `source` ga tegmaydi, ya'ni ochiq jadvalni buzmaydi.
+*/
+async function loadCounts() {
+  if (state.loading || state.countsLoading) return
+  state.countsLoading = true
+
+  try {
+    const res = await fetchRegistry({ page: 1, perPage: 1 })
+    const page = registryPage(res, 1, 1)
+    state.byStatus = page.byStatus
+    state.tabs = page.tabs
+    state.processTabs = page.processTabs
+  } catch { /* namuna sanoqlari qoladi */ } finally {
+    state.countsLoading = false
+  }
+}
+
 /**
  * Eksport uchun joriy filtr bo'yicha barcha qatorlar — bitta so'rovda,
  * `state` ga tegmasdan (jadval ochiq sahifasida qolaveradi).
@@ -185,5 +209,5 @@ const facetGroups = computed(() => {
 })
 
 export function useRegistry() {
-  return { state, load, loadAll, live, counts, facetGroups, toParams }
+  return { state, load, loadCounts, loadAll, live, counts, facetGroups, toParams }
 }

@@ -1,4 +1,5 @@
 <script setup>
+import { applyMask } from '@/data/form'
 import { computed, ref, watch } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { pageList, lastPageOf } from '@/utils/table'
@@ -25,6 +26,11 @@ watch(() => props.modelValue, (p) => { jump.value = String(p) })
 watch(lastPage, (last) => {
   if (props.modelValue > last) emit('update:modelValue', last)
 })
+
+// maydonga faqat raqam kiritiladi (harf yozilsa DOM da qolib ketmasin)
+function onJump(e) {
+  jump.value = applyMask(e.target, (v) => String(v).replace(/\D/g, '').slice(0, 6))
+}
 
 function go(page) {
   const p = Math.min(Math.max(1, Number(page) || 1), lastPage.value)
@@ -83,7 +89,14 @@ function setPerPage(n) {
     </button>
 
     <span class="hint">{{ $t('pager.jump') }}</span>
-    <input v-model="jump" class="jump mono" inputmode="numeric" @keydown.enter="go(jump)" @blur="go(jump)" />
+    <input
+      :value="jump"
+      class="jump mono"
+      inputmode="numeric"
+      @input="onJump"
+      @keydown.enter="go(jump)"
+      @blur="go(jump)"
+    />
     <span class="hint">{{ $t('pager.total', { n: total }) }}</span>
   </div>
 </template>

@@ -9,7 +9,6 @@ import QueueTabs from '@/components/applications/QueueTabs.vue'
 import FilterPanel from '@/components/applications/FilterPanel.vue'
 import ApplicationsTable from '@/components/applications/ApplicationsTable.vue'
 import TablePagination from '@/components/applications/TablePagination.vue'
-import { queueFromSlug, queuePath } from '@/data/queues'
 import { useApplications } from '@/stores/useApplications'
 import { useRegistry } from '@/stores/useRegistry'
 import { filterApplications, pageSlice } from '@/utils/table'
@@ -28,20 +27,80 @@ const registry = useRegistry()
 
 const filterOpen = ref(false)
 const exporting = ref(false)
-const page = ref(1)
-const perPage = ref(10)
 
-// ustun qidiruvlari (jadval sarlavhasidagi qator)
+/*
+  Ekranning butun holati manzilda turadi — reyestr bitta sahifa:
+
+    /?tab=blocked&q=karimov&page=2&per=20&af=5&at=20&f_status=new,error&f_bank=1
+
+  Shu sababli tabdan tabga o'tganda komponent qayta yuklanmaydi, sahifa
+  yangilanganda holat o'zi tiklanadi va havolani ulashish mumkin.
+  Filtr guruhlari `f_` prefiksi bilan yoziladi — guruh kalitlari serverdan
+  keladi, shuning uchun ular boshqa parametrlar bilan chalkashmasligi kerak.
+*/
+const FILTER_PREFIX = 'f_'
+
+const asText = (v) => (typeof v === 'string' ? v : Array.isArray(v) ? v[0] || '' : '')
+const asList = (v) => asText(v).split(',').map((x) => x.trim()).filter(Boolean)
+
+/**
+ * Manzilni yangilaydi. Bo'sh qiymat parametrni butunlay olib tashlaydi.
+ * @param {object} patch o'zgaradigan parametrlar
+ * @param {boolean} [push] tarixga yangi yozuv (tab almashganda — «orqaga» ishlashi uchun)
+ */
+function setQuery(patch, push = false) {
+  const next = { ...route.query }
+
+  Object.entries(patch).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') delete next[key]
+    else next[key] = String(value)
+  })
+
+  // bir xil manzilga qayta o'tmaymiz
+  const same = Object.keys({ ...next, ...route.query })
+    .every((k) => String(next[k] ?? '') === String(route.query[k] ?? ''))
+  if (same) return
+
+  const to = { path: '/', query: next }
+  if (push) router.push(to)
+  else router.replace(to)
+}
+
+const queue = computed(() => asText(route.query.tab) || 'all')
+
+const page = computed({
+  get: () => Math.max(1, Number(asText(route.query.page)) || 1),
+  set: (value) => setQuery({ page: value > 1 ? value : undefined })
+})
+
+const perPage = computed({
+  get: () => Number(asText(route.query.per)) || 10,
+  // ro'yxat uzunligi o'zgarsa birinchi sahifaga qaytamiz
+  set: (value) => setQuery({ per: value === 10 ? undefined : value, page: undefined })
+})
+
 // jadval sarlavhasidagi umumiy qidiruv
-const query = ref('')
+const query = computed({
+  get: () => asText(route.query.q),
+  set: (value) => setQuery({ q: value, page: undefined })
+})
 
 // filtr panelidan qo'llangan tanlovlar: { guruh: [qiymat, ...] }
-const picked = ref({})
+const picked = computed(() => {
+  const out = {}
+  Object.entries(route.query).forEach(([key, value]) => {
+    if (!key.startsWith(FILTER_PREFIX)) return
+    const list = asList(value)
+    if (list.length) out[key.slice(FILTER_PREFIX.length)] = list
+  })
+  return out
+})
 
 // zarar summasi oralig'i (mln so'm) — ro'yxat emas, shuning uchun alohida
-const amount = ref({ from: '', to: '' })
-
-const queue = computed(() => queueFromSlug(route.params.queue))
+const amount = computed(() => ({
+  from: asText(route.query.af),
+  to: asText(route.query.at)
+}))
 
 // hudud filtri manzildan keladi: /?region=tashkentCity (admin panelidan o'tiladi)
 const region = computed(() => (typeof route.query.region === 'string' ? route.query.region : ''))
@@ -61,13 +120,8 @@ const regionLabel = computed(() => {
 })
 
 function clearRegion() {
-  const query = { ...route.query }
-  delete query.region
-  router.replace({ query })
+  setQuery({ region: undefined, page: undefined })
 }
-
-// navbat yoki filtr o'zgarsa — birinchi sahifaga
-watch([queue, picked, amount, perPage, query], () => { page.value = 1 }, { deep: true })
 
 // har qanday o'zgarishda serverdan qayta so'raymiz
 watch([queue, picked, amount, perPage, query, page, region], () => {
@@ -113,24 +167,42 @@ function openApplication(row) {
   router.push({ path: '/application', query: { id: row.apiId ?? row.id } })
 }
 
+// navbat almashuvi tarixga yoziladi — «orqaga» oldingi tabga qaytaradi
 function pickQueue(key) {
-  router.push(queuePath(key))
+  setQuery({ tab: key === 'all' ? undefined : key, page: undefined }, true)
+}
+
+/** Manzildagi barcha `f_*` parametrlarini o'chirish uchun bo'sh patch. */
+function filterPatch() {
+  const patch = {}
+  Object.keys(route.query).forEach((k) => {
+    if (k.startsWith(FILTER_PREFIX)) patch[k] = undefined
+  })
+  return patch
 }
 
 function onFilters({ groups, amount: range }) {
-  picked.value = Object.fromEntries(groups.map((g) => [g.key, g.values]))
-  amount.value = { ...range }
+  const patch = filterPatch()
+  groups.forEach((g) => { patch[FILTER_PREFIX + g.key] = g.values.join(',') })
+
+  patch.af = range.from
+  patch.at = range.to
+  patch.page = undefined
+
+  setQuery(patch)
   filterOpen.value = false
-  toast(activeFilters.value
-    ? t('applications.filtersApplied', { n: activeFilters.value })
-    : t('applications.filtersCleared'))
+
+  // activeFilters manzilga bog'liq — yangi qiymatni shu yerda sanaymiz
+  const n = groups.reduce((sum, g) => sum + g.values.length, 0)
+    + (range.from || range.to ? 1 : 0)
+    + (query.value.trim() ? 1 : 0)
+    + (region.value ? 1 : 0)
+
+  toast(n ? t('applications.filtersApplied', { n }) : t('applications.filtersCleared'))
 }
 
 function clearFilters() {
-  picked.value = {}
-  amount.value = { from: '', to: '' }
-  query.value = ''
-  if (region.value) clearRegion()
+  setQuery({ ...filterPatch(), af: undefined, at: undefined, q: undefined, region: undefined, page: undefined })
   toast(t('applications.filtersCleared'))
 }
 
@@ -212,32 +284,34 @@ async function exportXlsx() {
           </button>
         </label>
 
-        <button
-          v-if="activeFilters"
-          type="button"
-          class="head-btn"
-          @click="clearFilters"
-        >
-          <AppIcon name="close" :size="15" />
-          <span>{{ $t('common.clear') }}</span>
-        </button>
-        <button type="button" class="head-btn" :class="{ on: filterOpen }" @click="filterOpen = !filterOpen">
-          <AppIcon name="filter" :size="16" />
-          <span>{{ $t('applications.filters') }}</span>
-          <span v-if="activeFilters" class="head-badge mono">{{ activeFilters }}</span>
-        </button>
-        <button
-          type="button"
-          class="head-btn"
-          :disabled="exporting"
-          :title="$t('applications.exportTitle', { n: total })"
-          @click="exportXlsx"
-        >
-          <span v-if="exporting" class="head-spin" />
-          <AppIcon v-else name="download" :size="16" />
-          <span>{{ $t('applications.export') }}</span>
-          <span v-if="total" class="head-badge mono">{{ total }}</span>
-        </button>
+        <div class="head-acts">
+          <button
+            v-if="activeFilters"
+            type="button"
+            class="head-btn"
+            @click="clearFilters"
+          >
+            <AppIcon name="close" :size="15" />
+            <span>{{ $t('common.clear') }}</span>
+          </button>
+          <button type="button" class="head-btn" :class="{ on: filterOpen }" @click="filterOpen = !filterOpen">
+            <AppIcon name="filter" :size="16" />
+            <span>{{ $t('applications.filters') }}</span>
+            <span v-if="activeFilters" class="head-badge mono">{{ activeFilters }}</span>
+          </button>
+          <button
+            type="button"
+            class="head-btn"
+            :disabled="exporting"
+            :title="$t('applications.exportTitle', { n: total })"
+            @click="exportXlsx"
+          >
+            <span v-if="exporting" class="head-spin" />
+            <AppIcon v-else name="download" :size="16" />
+            <span>{{ $t('applications.export') }}</span>
+            <span v-if="total" class="head-badge mono">{{ total }}</span>
+          </button>
+        </div>
       </header>
 
       <div v-if="region" class="region-bar">
@@ -396,11 +470,13 @@ async function exportXlsx() {
 }
 
 .card-head {
-  height: 46px;
+  /* balandlik qat'iy emas: vertikal bo'shliq qidiruv va tugmalarga havo beradi */
+  min-height: 46px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  padding: 0 18px;
+  padding: 9px 18px;
   color: #c9d9ec;
 }
 
@@ -411,6 +487,14 @@ async function exportXlsx() {
   color: #fff;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* filtr va eksport tugmalari sarlavhaning o'ng chetida turadi */
+.head-acts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
 }
 
 .card-count {
@@ -517,7 +601,7 @@ async function exportXlsx() {
 
 @media (max-width: 720px) {
   .card-head {
-    padding: 0 12px;
+    padding: 9px 12px;
     gap: 8px;
   }
 

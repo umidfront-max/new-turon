@@ -17,6 +17,7 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MultiSelect from '@/components/ui/MultiSelect.vue'
 import { FILTER_GROUPS } from '@/data/applications'
+import { applyMask } from '@/data/form'
 import { useApplications } from '@/stores/useApplications'
 import { useRegistry } from '@/stores/useRegistry'
 
@@ -73,10 +74,7 @@ function pick(key, values) {
 
 /** Faqat musbat butun son qoladi — maydonlar million so'mda. */
 function onRange(side, e) {
-  const clean = e.target.value.replace(/[^\d]/g, '').slice(0, 9)
-  // faqat raqam qoladi; qiymat o'zgarmagan bo'lsa Vue qayta chizmaydi,
-  // shuning uchun maydonni o'zimiz tekislaymiz
-  if (e.target.value !== clean) e.target.value = clean
+  const clean = applyMask(e.target, (v) => String(v).replace(/\D/g, '').slice(0, 9))
   range.value = { ...range.value, [side]: clean }
 }
 
