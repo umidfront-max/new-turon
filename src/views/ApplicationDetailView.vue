@@ -35,7 +35,19 @@ watch(routeId, (id) => {
   else api.clear()
 }, { immediate: true })
 
-const found = computed(() => (api.live.value ? true : byId(routeId.value)))
+/*
+  Serverdan so'ralgan ariza javob kelgunicha skelet bilan ko'rsatiladi va
+  namuna ma'lumot umuman ishlatilmaydi: manzilda raqamli id turgan bo'lsa
+  ekranda soxta ariza chiqmasligi kerak.
+*/
+const pending = computed(() => isApiId.value && api.pending.value)
+
+const found = computed(() => {
+  if (api.live.value) return true
+  // serverdagi ariza topilmadi (yoki server javob bermadi)
+  if (isApiId.value) return false
+  return byId(routeId.value)
+})
 
 const TABS = [
   { key: 'complaint', icon: 'doc' },
@@ -188,11 +200,38 @@ function exportXlsx() {
 </script>
 
 <template>
-  <div v-if="!found" class="screen">
+  <!-- javob kelgunicha: sarlavha, qadamlar va tablar o'rnida skelet -->
+  <div v-if="pending" class="screen">
+    <div class="bar card-surface sk-bar">
+      <span class="sk" style="width: 190px; height: 20px" />
+      <div class="spacer" />
+      <span class="sk" style="width: 120px; height: 34px; border-radius: 9px" />
+      <span class="sk" style="width: 150px; height: 34px; border-radius: 9px" />
+    </div>
+
+    <section class="card-surface sk-head">
+      <span class="sk" style="width: 260px; height: 26px" />
+      <span class="sk" style="width: 340px; height: 15px" />
+      <div class="sk-steps">
+        <span v-for="n in 3" :key="n" class="sk" style="flex: 1; height: 46px; border-radius: 10px" />
+      </div>
+    </section>
+
+    <div class="sk-tabs card-surface">
+      <span v-for="n in 5" :key="n" class="sk" style="width: 116px; height: 30px; border-radius: 8px" />
+    </div>
+
+    <section class="card-surface sk-block">
+      <span v-for="n in 5" :key="n" class="sk" :style="{ width: `${[70, 45, 88, 60, 35][n - 1]}%`, height: '14px' }" />
+    </section>
+  </div>
+
+  <div v-else-if="!found" class="screen">
     <section class="card-surface soon">
       <span class="soon-icon"><AppIcon name="search" :size="26" /></span>
       <div class="not-found-title">{{ $t('detail.notFound') }}</div>
-      <p class="soon-text">{{ $t('detail.notFoundText') }}</p>
+      <!-- server o'z sababini aytgan bo'lsa — o'shani ko'rsatamiz -->
+      <p class="soon-text">{{ api.state.error?.detail || $t('detail.notFoundText') }}</p>
       <button type="button" class="btn-light back-btn" @click="close">
         <AppIcon name="back" :size="16" />
         {{ $t('common.backToList') }}
@@ -468,6 +507,41 @@ function exportXlsx() {
 </template>
 
 <style scoped>
+/* ---------- yuklanish skeleti ---------- */
+.sk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.sk-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
+.sk-steps {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.sk-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.sk-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+}
+
 /* serverda hali ma'lumot yo'q blok — ochiq ish sifatida belgilanadi */
 .pending {
   display: flex;

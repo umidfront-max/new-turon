@@ -30,6 +30,11 @@ const state = reactive({
 })
 
 function clear() {
+  // id va manba ham tozalanadi: aks holda `pending`/`live` eski arizadan
+  // qolgan qiymat bo'yicha hisoblanadi
+  state.id = null
+  state.source = null
+  state.error = null
   state.detail = null
   state.bank = null
   state.sanctions = null
@@ -119,8 +124,14 @@ function reload() {
   return state.id && state.source === 'api' ? load(state.id) : Promise.resolve()
 }
 
+/*
+  Ariza so'raldi, lekin javob hali kelmadi. Shu paytda ekranda namuna
+  ma'lumot emas, skelet ko'rsatiladi — aks holda soxta ariza chaqnab o'tadi.
+*/
+const pending = computed(() => state.loading || (!!state.id && state.source === null))
+
 const live = computed(() => state.source === 'api' && !!state.detail)
 
 export function useComplaint() {
-  return { state, load, clear, reload, setStatus, live }
+  return { state, load, clear, reload, setStatus, live, pending }
 }
