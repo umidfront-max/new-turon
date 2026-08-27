@@ -14,14 +14,6 @@ export function formatAmount(n) {
   return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 }
 
-export function amountBucket(amount) {
-  const n = toNumber(amount)
-  if (n < 5000000) return 'lt5'
-  if (n <= 20000000) return 'm5_20'
-  if (n <= 50000000) return 'm20_50'
-  return 'gt50'
-}
-
 // bir xil karta bir necha arizada uchrasa — takroriy rekvizit
 const duplicateCards = computed(() => {
   const seen = new Map()
@@ -37,7 +29,6 @@ export function groupValue(app, group, dups = duplicateCards.value) {
     case 'method': return app.method
     case 'source': return app.flow === '102' ? '102' : 'duty'
     case 'region': return app.region
-    case 'amount': return amountBucket(app.amount)
     case 'repeat': return dups.has(app.card) ? 'duplicate' : 'clean'
     case 'sla': return app.overdue ? 'breached' : 'inTime'
     default: return null

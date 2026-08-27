@@ -1,5 +1,6 @@
 import { reactive, computed, readonly } from 'vue'
 import { useUi } from './useUi'
+import { clearToken } from '@/services/api'
 
 const AUTH_KEY = 'turon-auth'
 
@@ -64,6 +65,8 @@ export function useAuth() {
   function signOut() {
     state.user = null
     forget()
+    // ERI kirishida olingan JWT ham qolmasin
+    clearToken()
   }
 
   // sahifa yangilanganda saqlangan rol tiklansin

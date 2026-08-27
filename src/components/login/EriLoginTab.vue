@@ -8,11 +8,13 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
-import { loginPfxB64, fileToBase64, maskId, EriError } from '@/services/eriLogin'
+import FaceCheck from './FaceCheck.vue'
+import { loginPfxB64, authPfxB64, authComplete, fileToBase64, maskId, EriError } from '@/services/eriLogin'
+import { setToken } from '@/services/api'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
 import { canRemember, restoreFolder, regrantFolder, chooseFolder } from '@/services/keyStore'
 import { listKeys as isignerKeys } from '@/services/isigner'
-import { logKey, logLogin } from '@/services/keyLog'
+import { logKey, logLogin, logChallenge, logJwt } from '@/services/keyLog'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
 
@@ -29,6 +31,13 @@ const { signIn } = useAuth()
 
 const errors = reactive({})
 const loading = ref(false)
+
+/*
+  Yuz bosqichi. Kalit tekshirilgach auth-gateway challenge va yuz chiptasini
+  beradi — o'shanda bu qiymat to'ladi va forma o'rniga kamera ko'rinadi.
+  { challengeId, ticket, wsUrl, name, login }
+*/
+const face = ref(null)
 
 /* ---------- e-imzo ---------- */
 // Kalitlar ro'yxati ISigner'dan olinadi, kirish esa /login-pfx orqali bo'ladi.
@@ -304,6 +313,55 @@ function clearKeys() {
   eriError.value = ''
 }
 
+/** Sessiyani ochadi va keyingi sahifaga o'tadi. */
+function finishLogin(name, shown) {
+  signIn({
+    name,
+    role: 'staff',
+    method: 'eimzo',
+    login: shown ? maskId(shown) : '',
+    remember: true
+  })
+
+  toast(t('login.welcome', { name }))
+  router.push(typeof route.query.next === 'string' ? route.query.next : '/')
+}
+
+/* ---------- yuz bosqichi ---------- */
+
+/** Kamera yuzni tasdiqladi: proof JWT ga almashtiriladi. */
+async function onFaceDone(proof) {
+  const step = face.value
+  if (!step || loading.value) return
+
+  loading.value = true
+  eriError.value = ''
+
+  try {
+    const data = await authComplete(step.challengeId, proof)
+    logJwt(data)
+
+    // keyingi API so'rovlari shu token bilan ketadi
+    setToken(data.access)
+
+    const name = data.user?.full_name || data.user?.name || step.name
+    face.value = null
+    finishLogin(name, step.login)
+  } catch (e) {
+    face.value = null
+    const code = e instanceof EriError ? e.key : 'server'
+    eriError.value = e instanceof EriError && e.detail ? e.detail : t(`login.eri.errors.${code}`)
+  } finally {
+    loading.value = false
+  }
+}
+
+/** Foydalanuvchi kamerani yopdi — kalit bosqichiga qaytamiz. */
+function onFaceCancel() {
+  face.value = null
+  eriError.value = t('login.faceCheck.errors.cancelled')
+}
+
 async function submitEimzo() {
   if (loading.value) return
 
@@ -348,16 +406,32 @@ async function submitEimzo() {
     const name = cert.name || key?.name || t('login.eri.unknownOwner')
     const shown = cert.pinfl || cert.tin || key?.pinfl || key?.tin
 
-    signIn({
-      name,
-      role: 'staff',
-      method: 'eimzo',
-      login: shown ? maskId(shown) : '',
-      remember: true
-    })
+    // Yuzi ro'yxatdan o'tmagan xodim uchun kalitning o'zi yetarli
+    if (!result.hasFace) {
+      finishLogin(name, shown)
+      return
+    }
 
-    toast(t('login.welcome', { name }))
-    router.push(typeof route.query.next === 'string' ? route.query.next : '/')
+    // 2-bosqich: darvozadan challenge va yuz chiptasi olinadi
+    const challenge = await authPfxB64(pfxB64.value, pfxPass.value)
+    logChallenge(challenge)
+
+    // Darvoza ham yuzni tanimasa — tekshirib bo'lmaydi, kalitning o'zi qoladi
+    if (!challenge.hasFace) {
+      finishLogin(name, shown)
+      return
+    }
+
+    // Yuz kutilyapti-yu, chipta yoki manzil kelmadi — xizmat nosoz
+    if (!challenge.faceWsUrl || !challenge.faceTicket) throw new EriError('faceOff')
+
+    face.value = {
+      challengeId: challenge.challengeId,
+      ticket: challenge.faceTicket,
+      wsUrl: challenge.faceWsUrl,
+      name: challenge.user.name || name,
+      login: shown
+    }
   } catch (e) {
     const code = e instanceof EriError ? e.key : 'server'
     // serverning o'z xabari bo'lsa — o'shani ko'rsatamiz
@@ -377,7 +451,11 @@ function onPass(e) {
 // tab ochilganda ro'yxat va saqlangan papka yuklanadi
 // (kuzatuvchi shu yerda — chaqiradigan funksiyalari yuqorida e'lon qilingan)
 watch(() => props.active, (on) => {
-  if (!on) return
+  if (!on) {
+    // boshqa tabga o'tilsa kamera ishlab turmasin — bosqich bekor qilinadi
+    face.value = null
+    return
+  }
   if (signerState.value !== 'ready') loadSignerKeys()
   if (!files.value.length) restoreKeys()
 }, { immediate: true })
@@ -395,166 +473,178 @@ watch(() => props.active, (on) => {
     />
     <input ref="folderInput" type="file" webkitdirectory class="file-input" @change="onFile" />
 
-    <!-- ISigner ulanmoqda -->
-    <div v-if="signerState === 'loading'" class="signer-wait">
-      <span class="spinner dark" />
-      {{ $t('login.eri.connecting') }}
-    </div>
+    <!-- 2-bosqich: yuz tekshiruvi. Kalit tasdiqlangach forma o'rniga kamera. -->
+    <FaceCheck
+      v-if="face"
+      :ws-url="face.wsUrl"
+      :ticket="face.ticket"
+      :owner="face.name"
+      @done="onFaceDone"
+      @cancel="onFaceCancel"
+    />
 
-    <!-- ISigner ishlayapti: kalitlar ro'yxati -->
-    <template v-else-if="signerState === 'ready'">
-      <div class="status">
-        <span class="status-dot" />
-        {{ $t('login.eri.connected', signerKeys.length) }}
-      </div>
-
-      <label class="field">
-        <span class="label">{{ $t('login.eri.selectKey') }}</span>
-        <span class="select-wrap">
-          <select v-model="signerPick" class="input select" @change="onSignerPick">
-            <option v-for="k in signerKeys" :key="k.serial" :value="k.serial">
-              {{ k.name }} ({{ k.validFrom }} - {{ k.validTo }})
-            </option>
-          </select>
-          <AppIcon name="chevronDown" :size="18" class="select-caret" />
-        </span>
-      </label>
-
-      <div v-if="activeSignerKey" class="key on">
-        <span class="key-ico">
-          <AppIcon :name="activeSignerKey.isOrg ? 'bank' : 'user'" :size="18" />
-        </span>
-        <span class="key-text">
-          <span class="key-name truncate">{{ activeSignerKey.name }}</span>
-          <span class="key-meta mono">
-            {{ $t(`login.eri.ids.${activeSignerKey.isOrg ? 'tin' : 'pinfl'}`) }}
-            {{ maskId(activeSignerKey.pinfl || activeSignerKey.tin) }}
-            · {{ $t('login.eimzo.expires', { date: activeSignerKey.validTo }) }}
-          </span>
-        </span>
-        <!-- fayl tayyor bo'lsa belgi, aks holda papkaga ruxsat tugmasi -->
-        <span v-if="reading" class="key-state"><span class="spinner dark small" /></span>
-        <span v-else-if="keyReady" class="key-state ok" :title="$t('login.eri.ready')">
-          <AppIcon name="check" :size="16" />
-        </span>
-        <button
-          v-else
-          type="button"
-          class="key-state grant"
-          :title="$t('login.eri.grant')"
-          @click="grantFolder"
-        >
-          <AppIcon name="folder" :size="16" />
-        </button>
-      </div>
-    </template>
-
-    <!-- ISigner yo'q: faylni qo'lda tanlash -->
     <template v-else>
-      <div class="signer-off">
-        <AppIcon name="warn" :size="16" />
-        <span>{{ $t('login.eri.signerOff') }}</span>
-        <button type="button" class="keys-link" @click="loadSignerKeys">
-          {{ $t('login.eri.retry') }}
-        </button>
+      <!-- ISigner ulanmoqda -->
+      <div v-if="signerState === 'loading'" class="signer-wait">
+        <span class="spinner dark" />
+        {{ $t('login.eri.connecting') }}
       </div>
 
-      <div
-        v-if="!files.length"
-        class="drop"
-        :class="{ over: dragOver, bad: errors.pfx }"
-        @dragover.prevent="dragOver = true"
-        @dragleave="dragOver = false"
-        @drop.prevent="onDrop"
-      >
-        <span class="drop-ico"><AppIcon name="key" :size="24" /></span>
-        <span class="drop-text">
-          <span class="drop-title">{{ $t('login.eri.pick') }}</span>
-          <span class="drop-note">{{ $t('login.eri.pickNote') }}</span>
-        </span>
-        <span class="drop-acts">
-          <button v-if="folderSupported" type="button" class="drop-btn primary" @click="pickFolder">
-            <AppIcon name="folder" :size="16" />
-            {{ $t('login.eri.openFolder') }}
-          </button>
-          <button type="button" class="drop-btn" @click="pickFile">
-            {{ $t('login.eri.openFile') }}
-          </button>
-        </span>
-      </div>
-
-      <template v-else>
-        <div class="keys-head">
-          <span class="keys-count">{{ $t('login.eri.found', files.length) }}</span>
-          <div class="spacer" />
-          <button type="button" class="keys-link" @click="folderSupported ? pickFolder() : pickFile()">
-            {{ $t('login.eri.change') }}
-          </button>
-          <button type="button" class="keys-link" @click="clearKeys">{{ $t('common.clear') }}</button>
+      <!-- ISigner ishlayapti: kalitlar ro'yxati -->
+      <template v-else-if="signerState === 'ready'">
+        <div class="status">
+          <span class="status-dot" />
+          {{ $t('login.eri.connected', signerKeys.length) }}
         </div>
 
-        <div class="keys thin-scroll">
+        <label class="field">
+          <span class="label">{{ $t('login.eri.selectKey') }}</span>
+          <span class="select-wrap">
+            <select v-model="signerPick" class="input select" @change="onSignerPick">
+              <option v-for="k in signerKeys" :key="k.serial" :value="k.serial">
+                {{ k.name }} ({{ k.validFrom }} - {{ k.validTo }})
+              </option>
+            </select>
+            <AppIcon name="chevronDown" :size="18" class="select-caret" />
+          </span>
+        </label>
+
+        <div v-if="activeSignerKey" class="key on">
+          <span class="key-ico">
+            <AppIcon :name="activeSignerKey.isOrg ? 'bank' : 'user'" :size="18" />
+          </span>
+          <span class="key-text">
+            <span class="key-name truncate">{{ activeSignerKey.name }}</span>
+            <span class="key-meta mono">
+              {{ $t(`login.eri.ids.${activeSignerKey.isOrg ? 'tin' : 'pinfl'}`) }}
+              {{ maskId(activeSignerKey.pinfl || activeSignerKey.tin) }}
+              · {{ $t('login.eimzo.expires', { date: activeSignerKey.validTo }) }}
+            </span>
+          </span>
+          <!-- fayl tayyor bo'lsa belgi, aks holda papkaga ruxsat tugmasi -->
+          <span v-if="reading" class="key-state"><span class="spinner dark small" /></span>
+          <span v-else-if="keyReady" class="key-state ok" :title="$t('login.eri.ready')">
+            <AppIcon name="check" :size="16" />
+          </span>
           <button
-            v-for="f in files"
-            :key="f.key"
+            v-else
             type="button"
-            class="key"
-            :class="{ on: selectedKey === f.key }"
-            @click="selectKey(f.key)"
+            class="key-state grant"
+            :title="$t('login.eri.grant')"
+            @click="grantFolder"
           >
-            <span class="key-ico">
-              <AppIcon :name="f.idKind === 'tin' ? 'bank' : 'user'" :size="18" />
-            </span>
-            <span class="key-text">
-              <span class="key-name truncate">{{ f.title }}</span>
-              <span class="key-meta mono">
-                <template v-if="f.idKind">
-                  {{ $t(`login.eri.ids.${f.idKind}`) }} {{ f.idValue }}<template v-if="f.idSeq"> · {{ f.idSeq }}</template>
-                </template>
-                <template v-else>{{ f.name }}</template>
-                · {{ f.size }}
-              </span>
-            </span>
-            <span class="radio"><span class="radio-dot" /></span>
+            <AppIcon name="folder" :size="16" />
           </button>
         </div>
       </template>
-    </template>
 
-    <label class="field">
-      <span class="label">{{ $t('login.eri.password') }}</span>
-      <span class="input-wrap" :class="{ bad: errors.pfxPass }">
-        <input
-          :value="pfxPass"
-          class="input bare"
-          :type="showPin ? 'text' : 'password'"
-          autocomplete="off"
-          :disabled="signerState === 'ready' ? !activeSignerKey : !pfxFile"
-          :placeholder="$t('login.eri.passwordPh')"
-          @keyup.enter="submitEimzo"
-          @input="onPass"
-        />
-        <button
-          type="button"
-          class="eye"
-          :title="$t(showPin ? 'login.hide' : 'login.show')"
-          @click="showPin = !showPin"
+      <!-- ISigner yo'q: faylni qo'lda tanlash -->
+      <template v-else>
+        <div class="signer-off">
+          <AppIcon name="warn" :size="16" />
+          <span>{{ $t('login.eri.signerOff') }}</span>
+          <button type="button" class="keys-link" @click="loadSignerKeys">
+            {{ $t('login.eri.retry') }}
+          </button>
+        </div>
+
+        <div
+          v-if="!files.length"
+          class="drop"
+          :class="{ over: dragOver, bad: errors.pfx }"
+          @dragover.prevent="dragOver = true"
+          @dragleave="dragOver = false"
+          @drop.prevent="onDrop"
         >
-          <AppIcon :name="showPin ? 'eye' : 'eyeOff'" :size="17" />
-        </button>
-      </span>
-    </label>
+          <span class="drop-ico"><AppIcon name="key" :size="24" /></span>
+          <span class="drop-text">
+            <span class="drop-title">{{ $t('login.eri.pick') }}</span>
+            <span class="drop-note">{{ $t('login.eri.pickNote') }}</span>
+          </span>
+          <span class="drop-acts">
+            <button v-if="folderSupported" type="button" class="drop-btn primary" @click="pickFolder">
+              <AppIcon name="folder" :size="16" />
+              {{ $t('login.eri.openFolder') }}
+            </button>
+            <button type="button" class="drop-btn" @click="pickFile">
+              {{ $t('login.eri.openFile') }}
+            </button>
+          </span>
+        </div>
 
-    <p v-if="eriError" class="eri-error">
-      <AppIcon name="warn" :size="16" />
-      {{ eriError }}
-    </p>
+        <template v-else>
+          <div class="keys-head">
+            <span class="keys-count">{{ $t('login.eri.found', files.length) }}</span>
+            <div class="spacer" />
+            <button type="button" class="keys-link" @click="folderSupported ? pickFolder() : pickFile()">
+              {{ $t('login.eri.change') }}
+            </button>
+            <button type="button" class="keys-link" @click="clearKeys">{{ $t('common.clear') }}</button>
+          </div>
 
-    <button type="submit" class="submit" :disabled="loading || signerState === 'loading'">
-      <span v-if="loading" class="spinner" />
-      {{ loading ? $t('login.eri.checking') : $t('login.submit') }}
-      <AppIcon v-if="!loading" name="arrowRight" :size="16" />
-    </button>
+          <div class="keys thin-scroll">
+            <button
+              v-for="f in files"
+              :key="f.key"
+              type="button"
+              class="key"
+              :class="{ on: selectedKey === f.key }"
+              @click="selectKey(f.key)"
+            >
+              <span class="key-ico">
+                <AppIcon :name="f.idKind === 'tin' ? 'bank' : 'user'" :size="18" />
+              </span>
+              <span class="key-text">
+                <span class="key-name truncate">{{ f.title }}</span>
+                <span class="key-meta mono">
+                  <template v-if="f.idKind">
+                    {{ $t(`login.eri.ids.${f.idKind}`) }} {{ f.idValue }}<template v-if="f.idSeq"> · {{ f.idSeq }}</template>
+                  </template>
+                  <template v-else>{{ f.name }}</template>
+                  · {{ f.size }}
+                </span>
+              </span>
+              <span class="radio"><span class="radio-dot" /></span>
+            </button>
+          </div>
+        </template>
+      </template>
+
+      <label class="field">
+        <span class="label">{{ $t('login.eri.password') }}</span>
+        <span class="input-wrap" :class="{ bad: errors.pfxPass }">
+          <input
+            :value="pfxPass"
+            class="input bare"
+            :type="showPin ? 'text' : 'password'"
+            autocomplete="off"
+            :disabled="signerState === 'ready' ? !activeSignerKey : !pfxFile"
+            :placeholder="$t('login.eri.passwordPh')"
+            @keyup.enter="submitEimzo"
+            @input="onPass"
+          />
+          <button
+            type="button"
+            class="eye"
+            :title="$t(showPin ? 'login.hide' : 'login.show')"
+            @click="showPin = !showPin"
+          >
+            <AppIcon :name="showPin ? 'eye' : 'eyeOff'" :size="17" />
+          </button>
+        </span>
+      </label>
+
+      <p v-if="eriError" class="eri-error">
+        <AppIcon name="warn" :size="16" />
+        {{ eriError }}
+      </p>
+
+      <button type="submit" class="submit" :disabled="loading || signerState === 'loading'">
+        <span v-if="loading" class="spinner" />
+        {{ loading ? $t('login.eri.checking') : $t('login.submit') }}
+        <AppIcon v-if="!loading" name="arrowRight" :size="16" />
+      </button>
+    </template>
   </form>
 </template>
 

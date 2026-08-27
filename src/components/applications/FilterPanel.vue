@@ -1,28 +1,44 @@
 <script setup>
-import { ref, watch } from 'vue'
+/*
+  Reyestr filtrlari.
+
+  Har bir guruh — checkbox'li dropdown (components/ui/MultiSelect.vue), ya'ni
+  bir guruhdan bir nechta qiymat tanlash mumkin. Zarar summasi esa ro'yxat emas,
+  million so'mdagi oraliq (dan – gacha).
+
+  Tanlovlar shu yerda saqlanadi va faqat "Qo'llash" bosilganda yuqoriga
+  uzatiladi — har bir belgilashda jadval qayta so'ralib ketmasin.
+*/
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import MultiSelect from '@/components/ui/MultiSelect.vue'
 import { FILTER_GROUPS } from '@/data/applications'
 import { useApplications } from '@/stores/useApplications'
 
 const props = defineProps({
-  // ota-komponentda qo'llangan tanlovlar: { guruh: [qiymat, ...] }
-  selected: { type: Object, default: () => ({}) }
+  // qo'llangan tanlovlar: { guruh: [qiymat, ...] }
+  selected: { type: Object, default: () => ({}) },
+  // qo'llangan summa oralig'i (mln): { from, to }
+  amount: { type: Object, default: () => ({ from: '', to: '' }) }
 })
+
+const emit = defineEmits(['apply', 'clear'])
 
 const { t } = useI18n()
 const { filterCounts } = useApplications()
-const emit = defineEmits(['apply', 'clear'])
 
 function fromProps() {
   return Object.fromEntries(
-    FILTER_GROUPS.map((g) => [g.key, new Set(props.selected[g.key] || g.checked || [])])
+    FILTER_GROUPS.map((g) => [g.key, [...(props.selected[g.key] || g.checked || [])]])
   )
 }
 
 const chosen = ref(fromProps())
+const range = ref({ from: props.amount.from ?? '', to: props.amount.to ?? '' })
 
 // panel qayta ochilganda tashqi holat bilan moslashadi
 watch(() => props.selected, () => { chosen.value = fromProps() }, { deep: true })
+watch(() => props.amount, (a) => { range.value = { from: a.from ?? '', to: a.to ?? '' } }, { deep: true })
 
 // qiymat matni: xom (bank nomlari) yoki i18n kaliti orqali
 function valueLabel(group, value) {
@@ -31,51 +47,87 @@ function valueLabel(group, value) {
   return t(`${group.i18n}.${value}${suffix}`)
 }
 
-function count(group, value) {
-  return filterCounts.value[group.key]?.[value] ?? 0
+// dropdown kutadigan ko'rinish: [{ value, label, count }]
+const groups = computed(() => FILTER_GROUPS.map((g) => ({
+  key: g.key,
+  searchFrom: g.searchFrom ?? 8,
+  options: g.values.map((value) => ({
+    value,
+    label: valueLabel(g, value),
+    count: filterCounts.value[g.key]?.[value] ?? 0
+  }))
+})))
+
+function pick(key, values) {
+  chosen.value = { ...chosen.value, [key]: values }
 }
 
-function toggle(groupKey, value) {
-  const set = new Set(chosen.value[groupKey])
-  if (set.has(value)) set.delete(value)
-  else set.add(value)
-  chosen.value = { ...chosen.value, [groupKey]: set }
+/** Faqat musbat butun son qoladi — maydonlar million so'mda. */
+function onRange(side, e) {
+  const clean = e.target.value.replace(/[^\d]/g, '').slice(0, 9)
+  // faqat raqam qoladi; qiymat o'zgarmagan bo'lsa Vue qayta chizmaydi,
+  // shuning uchun maydonni o'zimiz tekislaymiz
+  if (e.target.value !== clean) e.target.value = clean
+  range.value = { ...range.value, [side]: clean }
 }
 
 function clearAll() {
-  chosen.value = Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, new Set()]))
+  chosen.value = Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, []]))
+  range.value = { from: '', to: '' }
   emit('clear')
 }
 
 function apply() {
-  emit('apply', FILTER_GROUPS
-    .filter((g) => chosen.value[g.key].size)
-    .map((g) => ({ key: g.key, values: [...chosen.value[g.key]] })))
+  // "dan" "gacha" dan katta bo'lib qolsa — o'rin almashtiramiz
+  const { from, to } = range.value
+  const flip = from && to && Number(from) > Number(to)
+  const span = flip ? { from: to, to: from } : { from, to }
+  if (flip) range.value = span
+
+  emit('apply', {
+    groups: FILTER_GROUPS
+      .filter((g) => chosen.value[g.key].length)
+      .map((g) => ({ key: g.key, values: chosen.value[g.key] })),
+    amount: { ...span }
+  })
 }
 </script>
 
 <template>
   <div class="filter-panel">
     <div class="filter-grid">
-      <div v-for="(g, i) in FILTER_GROUPS" :key="g.key" class="fgroup" :style="{ animationDelay: `${i * 30}ms` }">
-        <div class="fgroup-head">{{ $t(`filters.groups.${g.key}`) }}</div>
-        <div class="fgroup-body thin-scroll">
-          <label
-            v-for="value in g.values"
-            :key="value"
-            class="fitem"
-            :class="{ zero: !count(g, value) }"
-          >
-            <input
-              type="checkbox"
-              class="sr-only"
-              :checked="chosen[g.key].has(value)"
-              @change="toggle(g.key, value)"
-            />
-            <span class="box" :class="{ on: chosen[g.key].has(value) }" />
-            <span class="truncate">{{ valueLabel(g, value) }}</span>
-            <span class="fcount mono">{{ count(g, value) }}</span>
-          </label>
+      <MultiSelect
+        v-for="g in groups"
+        :key="g.key"
+        :label="$t(`filters.groups.${g.key}`)"
+        :options="g.options"
+        :model-value="chosen[g.key]"
+        :search-from="g.searchFrom"
+        @update:model-value="pick(g.key, $event)"
+      />
+
+      <div class="famount">
+        <div class="famount-label">
+          {{ $t('filters.groups.amount') }} · {{ $t('filters.amountUnit') }}
+        </div>
+        <div class="famount-row">
+          <input
+            class="famount-input"
+            type="text"
+            inputmode="numeric"
+            :placeholder="$t('filters.from')"
+            :value="range.from"
+            @input="onRange('from', $event)"
+          />
+          <span class="famount-dash">—</span>
+          <input
+            class="famount-input"
+            type="text"
+            inputmode="numeric"
+            :placeholder="$t('filters.to')"
+            :value="range.to"
+            @input="onRange('to', $event)"
+          />
         </div>
       </div>
     </div>
@@ -89,117 +141,91 @@ function apply() {
 
 <style scoped>
 .filter-panel {
-  padding: 16px 18px;
+  padding: 18px;
   background: var(--cf8fafc);
   border-bottom: 1px solid var(--ceef1f6);
 }
 
 .filter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 16px;
+  align-items: start;
 }
 
-.fgroup {
-  background: var(--s-card);
-  border: 1px solid var(--ce2e8f1);
-  border-radius: 9px;
-  overflow: hidden;
-  animation: riseIn .3s var(--ease) backwards;
+/* ---------- zarar summasi oralig'i ---------- */
+.famount {
+  min-width: 0;
 }
 
-.fgroup-head {
-  padding: 9px 12px;
-  background: var(--cf4f7fb);
-  border-bottom: 1px solid var(--ceef1f6);
-  font-size: 13.5px;
+.famount-label {
+  margin-bottom: 6px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--c3d4d66);
-  letter-spacing: .03em;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--c8b95a6);
 }
 
-.fgroup-body {
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 170px;
-  overflow: auto;
-}
-
-.fitem {
+.famount-row {
   display: flex;
   align-items: center;
-  gap: 9px;
-  font-size: 14.5px;
-  color: var(--c3d4d66);
-  cursor: pointer;
+  gap: 8px;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.box {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
-  border-radius: 4px;
-  border: 1.5px solid var(--cc3cbd8);
+.famount-input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ce2e8f1);
+  border-radius: 10px;
   background: var(--s-card);
-  position: relative;
-  transition: background .16s ease, border-color .16s ease;
+  color: var(--c16233d);
+  font-size: 14.5px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
 
-.box.on {
-  background: var(--c23568f);
-  border-color: var(--c23568f);
-}
-
-.box.on::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: solid #fff;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.fitem:hover .box {
-  border-color: var(--c23568f);
-}
-
-.fcount {
-  font-size: 13px;
+.famount-input::placeholder {
   color: var(--ca3adbd);
 }
 
+.famount-input:hover {
+  border-color: var(--cc8cdd6);
+}
+
+.famount-input:focus {
+  border-color: var(--c23568f);
+  box-shadow: 0 0 0 3px var(--ce8eef7);
+}
+
+.famount-dash {
+  flex: 0 0 auto;
+  color: var(--ca3adbd);
+}
+
+/* ---------- amallar ---------- */
 .filter-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .btn-light,
 .btn-dark {
-  height: 34px;
-  border-radius: 7px;
+  height: 38px;
+  border-radius: 8px;
   font-size: 14.5px;
   cursor: pointer;
   transition: filter .16s ease, background .16s ease;
 }
 
 .btn-light {
-  padding: 0 15px;
+  padding: 0 17px;
   border: 1px solid var(--ce2e8f1);
   background: var(--s-card);
   color: var(--c66748c);
@@ -210,7 +236,7 @@ function apply() {
 }
 
 .btn-dark {
-  padding: 0 17px;
+  padding: 0 22px;
   border: 1px solid var(--btn);
   background: var(--btn);
   color: #fff;
@@ -219,9 +245,5 @@ function apply() {
 
 .btn-dark:hover {
   filter: brightness(1.15);
-}
-
-.fitem.zero {
-  opacity: .45;
 }
 </style>

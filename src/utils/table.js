@@ -7,6 +7,9 @@ export const EMPTY_COLS = {
   id: '', flow: '', name: '', card: '', min: '', max: '', status: '', date: ''
 }
 
+// zarar summasi oralig'i — filtr panelidan (mln so'm)
+export const EMPTY_AMOUNT = { from: '', to: '' }
+
 /**
  * Umumiy qidiruv: ariza raqami, material, F.I.Sh., usul, karta, bank va oqim
  * bo'yicha bir vaqtda qidiradi. Bo'sh so'rov hammasini o'tkazadi.
@@ -53,11 +56,16 @@ export function isoDay(time) {
  * @param {object} opts { queue, picked, cols, dups, labels }
  *   labels — matn qidiruvida ishlatiladigan tarjimalar: { flow(a), method(a) }
  */
-export function filterApplications(items, { queue = 'all', region = '', picked = {}, cols = EMPTY_COLS, query = '', dups = new Set(), labels = {} } = {}) {
+// summa oralig'i panelda million so'mda kiritiladi
+const MLN = 1000000
+
+export function filterApplications(items, { queue = 'all', region = '', picked = {}, amount = EMPTY_AMOUNT, cols = EMPTY_COLS, query = '', dups = new Set(), labels = {} } = {}) {
   const inQueue = queueFilter(queue)
   const groups = Object.entries(picked).filter(([, list]) => list && list.length)
   const min = toNumber(cols.min)
   const max = toNumber(cols.max)
+  const from = toNumber(amount.from) * MLN
+  const to = toNumber(amount.to) * MLN
   const flowLabel = labels.flow || ((a) => a.flow)
   const methodLabel = labels.method || ((a) => a.method)
 
@@ -81,6 +89,8 @@ export function filterApplications(items, { queue = 'all', region = '', picked =
     const sum = toNumber(a.amount)
     if (min && sum < min) return false
     if (max && sum > max) return false
+    if (from && sum < from) return false
+    if (to && sum > to) return false
 
     return true
   })

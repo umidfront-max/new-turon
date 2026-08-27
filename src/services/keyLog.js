@@ -89,3 +89,58 @@ export function logLogin(result) {
   console.log('%cto\'liq sertifikat:', 'color:#8b95a6', result.certificate)
   console.groupEnd()
 }
+
+/**
+ * /auth/pfx javobini chiqaradi — yuz bosqichi ma'lumotlari.
+ * @param {object} challenge authPfxB64() natijasi
+ */
+export function logChallenge(challenge) {
+  if (!debugOn() || !challenge) return
+
+  console.group('%c/auth/pfx javobi', 'color:#23568f;font-weight:600')
+  console.table({
+    'challenge_id': challenge.challengeId || '—',
+    'has_face': challenge.hasFace,
+    'face_ws_url': challenge.faceWsUrl || '—',
+    'face_ticket': challenge.faceTicket ? `${challenge.faceTicket.slice(0, 12)}…` : '—',
+    'F.I.Sh': challenge.user?.name || '—',
+    'JSHSHIR': challenge.user?.pinfl || '—'
+  })
+  console.log('%cidentity:', 'color:#8b95a6', challenge.identity)
+  console.groupEnd()
+}
+
+/**
+ * /auth/complete javobini chiqaradi.
+ * @param {object} data authComplete() natijasi
+ */
+export function logJwt(data) {
+  if (!debugOn() || !data) return
+
+  console.group('%c/auth/complete javobi', 'color:#1a6e4b;font-weight:600')
+  console.table({
+    'token_type': data.tokenType,
+    'access': data.access ? `${data.access.slice(0, 24)}…` : '—',
+    'refresh': data.refresh ? `${data.refresh.slice(0, 24)}…` : '—'
+  })
+  console.log('%cuser:', 'color:#8b95a6', data.user)
+  console.groupEnd()
+}
+
+/**
+ * Yuz bosqichidagi har bir xabar — oqim qayerda to'xtaganini ko'rish uchun.
+ * @param {string} status server holati
+ * @param {object} msg to'liq xabar
+ * @param {number} frames shu paytgacha yuborilgan freymlar soni
+ */
+export function logFace(status, msg, frames) {
+  if (!debugOn()) return
+
+  const parts = [`freym: ${frames}`]
+  if (msg?.prompt) parts.push(`prompt: ${msg.prompt}`)
+  if (typeof msg?.score === 'number') parts.push(`score: ${msg.score.toFixed(3)}`)
+  if (msg?.message) parts.push(msg.message)
+
+  const color = status === 'match' ? '#1a6e4b' : status === 'error' ? '#a52220' : '#23568f'
+  console.log(`%cface · ${status}`, `color:${color};font-weight:600`, parts.join(' · '))
+}

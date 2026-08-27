@@ -129,7 +129,7 @@ export const FILTER_GROUPS = [
       'namangan', 'navoi', 'kashkadarya', 'samarkand', 'syrdarya', 'surkhandarya',
       'khorezm', 'karakalpakstan']
   },
-  { key: 'amount', i18n: 'amounts', checked: [], values: ['lt5', 'm5_20', 'm20_50', 'gt50'] },
+  // zarar summasi ro'yxat emas — FilterPanel'dagi "dan – gacha" oralig'i
   { key: 'repeat', i18n: 'repeat', checked: [], values: ['duplicate', 'clean'] },
   { key: 'sla', i18n: 'sla', checked: [], values: ['inTime', 'breached'] }
 ]

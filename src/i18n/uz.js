@@ -554,8 +554,15 @@ export default {
       region: 'Hudud',
       amount: 'Zarar summasi',
       repeat: 'Takroriylik',
-      sla: 'SLA'
-    }
+      sla: 'Muddat'
+    },
+    all: 'Barchasi',
+    selected: '{n} ta tanlandi',
+    search: 'Qidirish',
+    notFound: 'Topilmadi',
+    amountUnit: 'mln',
+    from: 'dan',
+    to: 'gacha'
   },
 
   methods: {
@@ -603,13 +610,6 @@ export default {
     surkhandarya: 'Surxondaryo',
     khorezm: 'Xorazm',
     karakalpakstan: "Qoraqalpog'iston Resp."
-  },
-
-  amounts: {
-    lt5: '<5 mln',
-    m5_20: '5–20 mln',
-    m20_50: '20–50 mln',
-    gt50: '50 mln+'
   },
 
   repeat: {
@@ -997,6 +997,7 @@ export default {
         validation: "So'rov ma'lumotlari to'liq emas",
         network: "Kirish xizmatiga ulanib bo'lmadi. Tarmoqni tekshiring.",
         timeout: "Xizmat javob bermadi — qaytadan urinib ko'ring",
+        faceOff: "Yuz tanish xizmati ulanmagan — administratorga murojaat qiling",
         server: 'Kirish xizmatida xatolik'
       }
     },
@@ -1011,6 +1012,51 @@ export default {
       text: 'Kamera orqali yuzingizni skanerlab, tizimga soniyalar ichida kiring.',
       start: 'Skanerlashni boshlash',
       scanning: 'Skanerlanmoqda...'
+    },
+    // kamera orqali yuz tekshiruvi — components/login/FaceCheck.vue
+    faceCheck: {
+      camera: 'Kamera yoqilmoqda...',
+      connecting: 'Yuz tanish xizmatiga ulanmoqda...',
+      scanning: 'Kameraga qarang',
+      retry: 'Qayta urinish',
+      score: "O'xshashlik: {n}",
+      // server ko'rsatmalari inglizcha keladi — kalit so'z bo'yicha tarjima
+      prompts: {
+        look: 'Kameraga qarang',
+        right: "Boshingizni sekin o'ngga buring",
+        left: 'Boshingizni sekin chapga buring',
+        up: "Boshingizni yuqoriga ko'taring",
+        down: 'Boshingizni pastga tushiring',
+        blink: "Ko'zingizni pirpirating",
+        mouth: "Og'zingizni oching",
+        smile: 'Tabassum qiling',
+        nod: "Bosh irg'ating",
+        closer: 'Kameraga yaqinroq keling',
+        farther: 'Kameradan biroz uzoqlashing',
+        still: 'Qimirlamay turing',
+        glasses: 'Ko\'zoynagingizni yeching',
+        light: 'Yorug\'roq joyga o\'ting'
+      },
+      states: {
+        liveness: "Ko'rsatmani bajaring",
+        no_face: "Yuz ko'rinmayapti — kameraga qarang",
+        spoof: 'Jonli yuz kerak — rasm yoki ekran qabul qilinmaydi',
+        no_match: 'Yuz mos kelmadi — biroz kuting',
+        match: 'Yuz tasdiqlandi'
+      },
+      errors: {
+        noUrl: 'Yuz tanish manzili kelmadi',
+        noTicket: 'Yuz tanish chiptasi kelmadi',
+        noCamera: 'Kamera topilmadi',
+        denied: "Kameraga ruxsat berilmadi — brauzer sozlamalaridan yoqing",
+        camera: "Kamerani ochib bo'lmadi",
+        network: "Yuz tanish xizmatiga ulanib bo'lmadi",
+        closed: 'Yuz tanish xizmati aloqani uzdi',
+        timeout: "Vaqt tugadi — qaytadan urinib ko'ring",
+        cancelled: 'Yuz tekshiruvi bekor qilindi',
+        noProof: 'Server tasdiq (proof) bermadi',
+        server: 'Yuz tanish xizmatida xatolik'
+      }
     },
     errors: {
       credentials: "Login va parolni to'g'ri kiriting",

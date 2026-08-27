@@ -159,9 +159,35 @@ Rol kirish usulidan olinadi: E-imzo'dagi shaxsiy kalit (Boybayev Umrbek) —
 **Rahbar**, tashkilot kaliti va login/parol — **Navbatchi**. Keyin rolni
 profil menyusidan ham almashtirish mumkin.
 
-**Diqqat:** backend yo'q — parol tekshirilmaydi, har qanday to'ldirilgan forma
-qabul qilinadi, Face ID esa kamerani so'ramaydi (animatsiya). Real tizimda bu
-qism API va token bilan almashtiriladi.
+**Diqqat:** login/parol va Face ID tablari hali demo — parol tekshirilmaydi,
+Face ID tabi kamerani so'ramaydi (animatsiya). E-imzo tabi esa haqiqiy
+xizmatlarga ulangan (quyida).
+
+### E-imzo: kalit + yuz (ikki bosqich)
+
+E-imzo tabida kirish ikki qadamdan iborat va ikkalasi ham real backendga
+boradi:
+
+1. **Kalit.** Kalitlar ro'yxati ISigner'dan, faylning o'zi DSKEYS papkasidan
+   olinadi (`services/isigner.js`, `services/keyStore.js`). `.pfx` + parol
+   `POST /login-pfx` ga yuboriladi — sertifikat va `has_face` qaytadi.
+   Yuzi ro'yxatdan o'tmagan xodim shu yerda kiradi.
+2. **Yuz.** `POST /auth/pfx` (auth-gateway) `challenge_id`, `face_ticket` va
+   `face_ws_url` beradi. `components/login/FaceCheck.vue` kamerani yoqib,
+   `services/faceAuth.js` orqali WebSocket ochadi: avval chipta, keyin server
+   `ready` deganda har ~350 ms da jpeg freym yuboriladi. Server holatlari
+   (`liveness`, `no_face`, `spoof`, `no_match`) ekranda ko'rsatiladi,
+   `match` bo'lsa `face_proof` keladi.
+   So'ng `POST /auth/complete` yakuniy JWT beradi — `access` token
+   `turon-token` ga yoziladi va keyingi API so'rovlariga qo'shiladi.
+
+Kamera bekor qilinganda, tab almashganda yoki xato bo'lganda oqim ham,
+kamera ham darhol yopiladi. Aloqa tartibi `npm run test:face` bilan
+brauzersiz tekshiriladi.
+
+Manzillar `.env` orqali: `VITE_ERI_URL` va `VITE_GATEWAY_URL`
+(`.env.example` ga qarang). Kalit va javoblar haqidagi batafsil jurnal
+ishlab chiqish rejimida konsolga chiqadi — `services/keyLog.js`.
 
 ## Yangi murojaat formasi
 
@@ -295,9 +321,13 @@ Ro'yxat endi haqiqiy ishlaydi — hammasi `src/utils/table.js` dagi sof
 funksiyalarda, komponentlar faqat ularni chaqiradi:
 
 * **navbat** — manzildan (`/queue/blocked`), `overdue` ham navbat sifatida;
-* **filtr paneli** — 8 guruh (status, bank, usul, manba, hudud, summa oralig'i,
-  takroriylik, SLA); har bir qiymat yonidagi son ro'yxatdan hisoblanadi,
-  0 ta bo'lgan qiymat xiralashadi;
+* **filtr paneli** — 7 ta checkbox'li dropdown (status, bank, usul, manba,
+  hudud, takroriylik, muddat) va zarar summasi oralig'i (`dan – gacha`,
+  million so'mda). Bir guruhdan bir nechta qiymat tanlanadi; ro'yxat uzun
+  bo'lsa (8 tadan ko'p) ichida qidiruv chiqadi; har bir qiymat yonidagi son
+  ro'yxatdan hisoblanadi, 0 ta bo'lgani xiralashadi. Tanlovlar "Qo'llash"
+  bosilgunicha panelda turadi — dropdown `components/ui/MultiSelect.vue` da,
+  o'zi `position: fixed` bilan joylashadi (karta chekkasida kesilmasin);
 * **ustun qidiruvi** — jadval sarlavhasidagi qator: ariza/material raqami,
   oqim, F.I.Sh. yoki usul, karta yoki bank, summa `dan–gacha`, status tanlovi
   va sana (native date input); o'ngdagi ✕ hammasini tozalaydi;
@@ -305,8 +335,15 @@ funksiyalarda, komponentlar faqat ularni chaqiradi:
   `1–10` oralig'i va jami; filtr natijasi kamayganda sahifa avtomatik
   to'g'rilanadi.
 
-Takroriylik va SLA maydonlari ma'lumotda saqlanmaydi — bir xil karta bir necha
-arizada uchrashi va `overdue` bayrog'idan hisoblanadi.
+Takroriylik va muddat maydonlari ma'lumotda saqlanmaydi — bir xil karta bir
+necha arizada uchrashi va `overdue` bayrog'idan hisoblanadi.
+
+Serverga tanlovlar `status__in`, `bank__in`, `method__in`, `source__in`,
+`region__in`, muddat/takroriylik uchun `is_overdue` va `has_duplicate`, summa
+uchun `damage_amount__gte` / `damage_amount__lte` bo'lib ketadi
+(`src/stores/useRegistry.js` dagi `toParams`). Backend bu parametrlarni hali
+to'liq qo'llab-quvvatlamaydi — o'shangacha ro'yxat namuna ma'lumot ustida
+mahalliy filtrlanadi. Panel `npm run test:filters` bilan tekshiriladi.
 
 Namuna ro'yxat 64 ta arizadan iborat: 9 tasi asl dizayndan, qolgani
 `src/data/applications.js` dagi generator orqali indeksdan hosil qilinadi

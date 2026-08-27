@@ -9,6 +9,9 @@
 // manzil .env orqali almashtiriladi (VITE_ERI_URL), aks holda ish serveri
 const BASE = (import.meta.env?.VITE_ERI_URL || 'http://192.168.14.186/eri-login').replace(/\/+$/, '')
 
+// Yuz bosqichi bilan to'liq oqimni boshqaruvchi darvoza (challenge -> yuz -> JWT)
+const GATEWAY = (import.meta.env?.VITE_GATEWAY_URL || 'http://192.168.14.186/auth-gateway').replace(/\/+$/, '')
+
 const TIMEOUT = 30000
 const MAX_PFX = 512 * 1024 // .pfx odatda bir necha KB, 512 KB dan oshmaydi
 
@@ -46,13 +49,13 @@ function auditId() {
   return `cb-${Date.now().toString(36)}`
 }
 
-async function post(path, body) {
+async function post(path, body, base = BASE) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT)
 
   let res
   try {
-    res = await fetch(`${BASE}${path}`, {
+    res = await fetch(`${base}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Audit-Id': auditId() },
       body: JSON.stringify(body),
@@ -223,4 +226,64 @@ export async function verifySignature({ signature, data, certificate = '' }) {
   })
 }
 
+/* ---------- auth-gateway: yuz bosqichi bilan to'liq oqim ---------- */
+
+/*
+  Hujjat: http://192.168.14.186/auth-gateway/docs
+
+    POST /auth/pfx       { pfx_b64, password }
+      -> { challenge_id, face_ticket, face_ws_url, has_face, identity }
+    (ws)  face_ws_url    — services/faceAuth.js, natijasi face_proof
+    POST /auth/complete  { challenge_id, face_proof }
+      -> { access, refresh, token_type, user }
+*/
+
+/**
+ * 1-qadam: kalitni darvozaga beradi va yuz bosqichi uchun chipta oladi.
+ * @param {string} pfx_b64 .pfx fayli (base64)
+ * @param {string} password kalit paroli
+ */
+export async function authPfxB64(pfx_b64, password) {
+  if (!pfx_b64) throw new EriError('noFile')
+  if (!password) throw new EriError('noPassword')
+
+  const data = await post('/auth/pfx', { pfx_b64, password }, GATEWAY)
+
+  if (!data.challenge_id) throw new EriError('server')
+
+  return {
+    challengeId: data.challenge_id,
+    faceTicket: data.face_ticket || '',
+    faceWsUrl: data.face_ws_url || '',
+    hasFace: data.has_face !== false,
+    identity: data.identity || null,
+    // identity maydonlari sertifikatdagidek nomlanadi — bir xil o'qiymiz
+    user: readCertificate(data.identity ? { identity: data.identity } : null)
+  }
+}
+
+/**
+ * 3-qadam: yuz dalilini beradi va yakuniy JWT ni oladi.
+ * @param {string} challengeId
+ * @param {string} faceProof faceAuth.startFaceCheck() natijasi
+ */
+export async function authComplete(challengeId, faceProof) {
+  if (!challengeId || !faceProof) throw new EriError('server')
+
+  const data = await post('/auth/complete', {
+    challenge_id: challengeId,
+    face_proof: faceProof
+  }, GATEWAY)
+
+  if (!data.access) throw new EriError('server')
+
+  return {
+    access: data.access,
+    refresh: data.refresh || '',
+    tokenType: data.token_type || 'Bearer',
+    user: data.user || {}
+  }
+}
+
 export const ERI_BASE = BASE
+export const GATEWAY_BASE = GATEWAY

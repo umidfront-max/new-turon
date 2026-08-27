@@ -11,6 +11,9 @@ import { registryPage, statusToApi } from '@/utils/adapt'
 
 const FACETS = ['status', 'method', 'source', 'region', 'basis', 'crime_type', 'intake_type']
 
+// filtr panelidagi summa million so'mda kiritiladi
+const MLN = 1000000
+
 const state = reactive({
   rows: [],
   total: 0,
@@ -25,7 +28,7 @@ const state = reactive({
 })
 
 /** Ekran filtrini server parametrlariga o'giradi. */
-function toParams({ queue = 'all', query = '', region = '', picked = {}, page = 1, perPage = 10 } = {}) {
+function toParams({ queue = 'all', query = '', region = '', picked = {}, amount = {}, page = 1, perPage = 10 } = {}) {
   const params = { page, perPage, facets: FACETS }
 
   if (query.trim()) params.search = query.trim()
@@ -41,6 +44,17 @@ function toParams({ queue = 'all', query = '', region = '', picked = {}, page = 
   if (picked.method?.length) params.method__in = many(picked.method)
   if (picked.source?.length) params.source__in = many(picked.source)
   if (picked.region?.length) params.region__in = many(picked.region)
+  if (picked.bank?.length) params.bank__in = many(picked.bank)
+
+  // muddat va takroriylik — ikkalasi ham tanlansa cheklov qolmaydi
+  if (picked.sla?.length === 1) params.is_overdue = picked.sla[0] === 'breached'
+  if (picked.repeat?.length === 1) params.has_duplicate = picked.repeat[0] === 'duplicate'
+
+  // zarar summasi oralig'i: ekranda mln so'm, serverga so'mda ketadi
+  const from = Number(amount.from)
+  const to = Number(amount.to)
+  if (from > 0) params.damage_amount__gte = from * MLN
+  if (to > 0) params.damage_amount__lte = to * MLN
 
   return params
 }

@@ -37,6 +37,9 @@ const query = ref('')
 // filtr panelidan qo'llangan tanlovlar: { guruh: [qiymat, ...] }
 const picked = ref({})
 
+// zarar summasi oralig'i (mln so'm) — ro'yxat emas, shuning uchun alohida
+const amount = ref({ from: '', to: '' })
+
 const queue = computed(() => queueFromSlug(route.params.queue))
 
 // hudud filtri manzildan keladi: /?region=tashkentCity (admin panelidan o'tiladi)
@@ -49,15 +52,16 @@ function clearRegion() {
 }
 
 // navbat yoki filtr o'zgarsa — birinchi sahifaga
-watch([queue, picked, perPage, query], () => { page.value = 1 }, { deep: true })
+watch([queue, picked, amount, perPage, query], () => { page.value = 1 }, { deep: true })
 
 // har qanday o'zgarishda serverdan qayta so'raymiz
-watch([queue, picked, perPage, query, page, region], () => {
+watch([queue, picked, amount, perPage, query, page, region], () => {
   registry.load({
     queue: queue.value,
     query: query.value,
     region: region.value,
     picked: picked.value,
+    amount: amount.value,
     page: page.value,
     perPage: perPage.value
   })
@@ -67,6 +71,7 @@ const filtered = computed(() => filterApplications(items.value, {
   queue: queue.value,
   region: region.value,
   picked: picked.value,
+  amount: amount.value,
   query: query.value,
   dups: duplicateCards.value,
   labels: {
@@ -84,6 +89,7 @@ const rows = computed(() => (registry.live.value
 
 const activeFilters = computed(() =>
   Object.values(picked.value).reduce((n, list) => n + list.length, 0)
+  + (amount.value.from || amount.value.to ? 1 : 0)
   + (query.value.trim() ? 1 : 0)
   + (region.value ? 1 : 0))
 
@@ -96,14 +102,18 @@ function pickQueue(key) {
   router.push(queuePath(key))
 }
 
-function onFilters(groups) {
+function onFilters({ groups, amount: range }) {
   picked.value = Object.fromEntries(groups.map((g) => [g.key, g.values]))
+  amount.value = { ...range }
   filterOpen.value = false
-  toast(groups.length ? t('applications.filtersApplied', { n: activeFilters.value }) : t('applications.filtersCleared'))
+  toast(activeFilters.value
+    ? t('applications.filtersApplied', { n: activeFilters.value })
+    : t('applications.filtersCleared'))
 }
 
 function clearFilters() {
   picked.value = {}
+  amount.value = { from: '', to: '' }
   query.value = ''
   if (region.value) clearRegion()
   toast(t('applications.filtersCleared'))
@@ -190,6 +200,7 @@ async function exportXlsx() {
         <FilterPanel
           v-if="filterOpen"
           :selected="picked"
+          :amount="amount"
           @clear="clearFilters"
           @apply="onFilters"
         />
