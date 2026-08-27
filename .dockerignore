@@ -1,0 +1,22 @@
+# `COPY . .` bosqichida keraksiz narsalar образga tushmasin.
+# node_modules alohida muhim: uni ko'chirish `npm ci` natijasini bosib ketadi
+# va build sekinlashadi.
+node_modules
+dist
+.git
+.gitignore
+
+# maxfiy va mahalliy sozlamalar — manzillar --build-arg orqali beriladi
+.env
+.env.*
+!.env.example
+
+# dizayn namunasi (~800 KB) va backend jamoasi bergan arxivlar
+cardBlock*.html
+*.zip
+
+# ishlab chiqish uchun kerak, образda foydasi yo'q
+scripts
+README.md
+Dockerfile
+.dockerignore
