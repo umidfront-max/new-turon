@@ -595,24 +595,30 @@ const total = computed(() => {
   justify-content: center;
   border: 0;
   border-radius: 9px;
-  background: transparent;
-  color: var(--c98a3b6);
+  /* boshlang'ich holatda ham rangi bor — amal ko'rinib tursin */
+  background: var(--ce8eef7);
+  color: var(--c23568f);
   cursor: pointer;
   transition: background .16s ease, color .16s ease, transform .12s ease;
 }
 
 .icon-btn:hover {
-  background: var(--ce8eef7);
-  color: var(--c23568f);
+  background: var(--c23568f);
+  color: #fff;
 }
 
 .icon-btn:active {
   transform: scale(.94);
 }
 
-.icon-btn.danger:hover {
+.icon-btn.danger {
   background: var(--cfceceb);
-  color: var(--ca52220);
+  color: var(--cd9483f);
+}
+
+.icon-btn.danger:hover {
+  background: var(--cd9483f);
+  color: #fff;
 }
 
 .input-ico {
@@ -714,6 +720,10 @@ const total = computed(() => {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 2px 10px;
+}
+
+.tx-row .icon-btn + .icon-btn {
+  margin-left: -2px;
 }
 
 .tx-date {

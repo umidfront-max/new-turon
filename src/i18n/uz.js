@@ -1090,6 +1090,7 @@ export default {
     check: 'Tekshirish',
     checked: "Ma'lumotlar tekshirildi",
     invalid: "Majburiy maydonlarni to'g'ri to'ldiring",
+    needField: "«{field}» to'ldirilmagan",
     optional: 'ixtiyoriy',
     sent: 'Ariza bloklashga yuborildi',
     askTitle: 'Arizani bloklashga yuborasizmi?',

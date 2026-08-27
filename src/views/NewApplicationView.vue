@@ -263,6 +263,18 @@ function clearBlock(block) {
   Nima yetishmayotganini aniq aytadi: maydon to'ldirilgan bo'lsa-yu «qizil»
   bo'lib tursa, foydalanuvchi sababini bilmay qoladi.
 */
+// maydon -> ekrandagi nomi (xabarda aynan shu yoziladi)
+const FIELD_LABEL = {
+  id: 'form.app.id',
+  method: 'form.app.method',
+  source: 'form.app.source',
+  fabula: 'form.app.fabula',
+  fio: 'form.applicant.fio',
+  phone: 'form.applicant.phone',
+  region: 'form.applicant.region',
+  address: 'form.applicant.address'
+}
+
 function problemOf(bad) {
   if (bad.includes('fabula') && fabulaLength.value && fabulaLength.value < FABULA_MIN) {
     return t('form.app.fabulaShort', { n: FABULA_MIN, has: fabulaLength.value })
@@ -270,7 +282,9 @@ function problemOf(bad) {
   if (bad.includes('phone') && digitsOnly(form.phone).length) {
     return t('form.applicant.phoneShort')
   }
-  return t('form.invalid')
+
+  const label = FIELD_LABEL[bad[0]]
+  return label ? t('form.needField', { field: t(label) }) : t('form.invalid')
 }
 
 /* ---------- fabula ---------- */
@@ -283,13 +297,6 @@ function addHint(key) {
 }
 
 /* ---------- yuborish ---------- */
-const ready = computed(() =>
-  REQUIRED_APP.every((f) => String(form[f] || '').trim())
-  && fabulaLength.value >= FABULA_MIN
-  && REQUIRED_APPLICANT.every((f) => String(form[f] || '').trim())
-  && digitsOnly(form.phone).length === 12
-  && requisites.value.length > 0)
-
 const sending = ref(false)
 
 /** Telefon: serverga `+998XXXXXXXXX` ko'rinishida ketadi. */
@@ -507,7 +514,11 @@ function cancelAll() {
         <button type="button" class="btn-light" :disabled="savingDraft || sending" @click="saveDraftNow">
           {{ savingDraft ? $t('form.draftSaving') : $t('form.draftStore') }}
         </button>
-        <button type="button" class="btn-dark" :disabled="!ready || sending" @click="submit">
+        <!--
+          Tugma o'chirib qo'yilmaydi: aks holda forma to'ldirilgandek ko'rinib
+          tursa-yu bitta maydon yetmasa, foydalanuvchi sababini bilmay qoladi.
+        -->
+        <button type="button" class="btn-dark" :disabled="sending" @click="submit">
           {{ sending ? $t('form.sending') : $t('form.submit') }}
           <AppIcon v-if="!sending" name="chevronRight" :size="15" />
         </button>
@@ -713,10 +724,14 @@ function cancelAll() {
             </div>
 
             <label class="field">
-              <span class="label">
-                {{ $t('form.applicant.address') }} <i class="opt">· {{ $t('form.optional') }}</i>
-              </span>
-              <input v-model="form.address" class="input" :placeholder="$t('form.applicant.addressPh')" />
+              <span class="label">{{ $t('form.applicant.address') }} <i class="req">*</i></span>
+              <input
+                v-model="form.address"
+                class="input"
+                :class="{ bad: errors.address }"
+                :placeholder="$t('form.applicant.addressPh')"
+                @input="delete errors.address"
+              />
             </label>
 
             <div class="block-actions">
