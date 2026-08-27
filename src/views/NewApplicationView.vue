@@ -7,19 +7,29 @@ import VoiceRecorder from '@/components/form/VoiceRecorder.vue'
 import RequisitePanel from '@/components/form/RequisitePanel.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import CardHistory from '@/components/form/CardHistory.vue'
-import {
-  METHOD_OPTIONS, SOURCE_OPTIONS, REGION_OPTIONS,
-  maskPhone, applyMask, digitsOnly
-} from '@/data/form'
+import { maskPhone, applyMask, digitsOnly, toIsoDateTime } from '@/data/form'
+import { createManual } from '@/services/complaints'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
+import { useReferences } from '@/stores/useReferences'
 import { useNumberCheck } from '@/composables/useNumberCheck'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const { ask, toast } = useUi()
-const { items, draftById, removeDraft, addApplication } = useApplications()
+const { items, draftById, removeDraft } = useApplications()
+
+/*
+  Usul, manba va hudud ro'yxatlari serverdan — ariza saqlanganda ularning
+  id'lari yuboriladi. Server javob bermasa loyihadagi ro'yxat qoladi.
+*/
+const refs = useReferences()
+refs.load()
+
+const methodOptions = computed(() => refs.exact.value.methods)
+const sourceOptions = computed(() => refs.exact.value.sources)
+const regionOptions = computed(() => refs.exact.value.regions)
 
 /* ---------- forma holati ---------- */
 const form = reactive({
@@ -123,7 +133,8 @@ const historyOpen = ref(false)
 
 /* ---------- tekshiruvlar ---------- */
 const REQUIRED_APP = ['id', 'method', 'source', 'fabula']
-const REQUIRED_APPLICANT = ['fio', 'phone', 'region']
+// serverda `applicant.address` ham majburiy
+const REQUIRED_APPLICANT = ['fio', 'phone', 'region', 'address']
 
 function markErrors(fields) {
   const bad = []
@@ -174,6 +185,88 @@ const ready = computed(() =>
   && digitsOnly(form.phone).length === 12
   && requisites.value.length > 0)
 
+const sending = ref(false)
+
+/** Telefon: serverga `+998XXXXXXXXX` ko'rinishida ketadi. */
+function phoneFor(value) {
+  const digits = digitsOnly(value)
+  return digits ? `+${digits}` : ''
+}
+
+/**
+ * Formani serverdagi ManualComplaintRequest ko'rinishiga o'giradi.
+ * Karta va hisob raqamlari ikki alohida ro'yxat; har birida shu raqam bo'yicha
+ * qilingan barcha tranzaksiyalar yuboriladi.
+ */
+function buildPayload() {
+  const cards = []
+  const accounts = []
+
+  requisites.value.forEach((r) => {
+    const item = {
+      number: digitsOnly(r.number),
+      transactions: r.txs.map((x) => ({
+        amount: digitsOnly(x.amount),
+        transaction_time: toIsoDateTime(x.time)
+      }))
+    }
+
+    /*
+      Bank: kartada server BIN prefiksidan o'zi topadi, hisob raqamida esa
+      aniqlab bo'lmaydi. /cards/identify/ javob bergan bo'lsa id yuboriladi.
+    */
+    if (r.bank) item.bank = r.bank
+    if (r.kind === 'card') cards.push(item)
+    else accounts.push(item)
+  })
+
+  const applicant = {
+    full_name: form.fio.trim(),
+    phone_number: phoneFor(form.phone),
+    region: form.region,
+    address: form.address.trim()
+  }
+  if (form.phone2.trim()) applicant.additional_phone_number = phoneFor(form.phone2)
+
+  const body = {
+    number: form.id.trim(),
+    method: form.method,
+    source: form.source,
+    description: form.fabula.trim(),
+    /*
+      Bu forma aynan ariza qabul qilish uchun (xabarnoma emas), shuning uchun
+      asos doim `application`. `crime_type` esa arizadan arizaga farq qiladi —
+      formada bunday maydon yo'q, shuning uchun yuborilmaydi.
+    */
+    basis: 'application',
+    applicant
+  }
+
+  if (form.material.trim()) body.material_number = form.material.trim()
+  if (cards.length) body.cards = cards
+  if (accounts.length) body.accounts = accounts
+
+  return body
+}
+
+async function send() {
+  if (sending.value) return
+  sending.value = true
+
+  try {
+    const created = await createManual(buildPayload())
+    if (draftId) removeDraft(draftId)
+
+    toast(t('form.sent'))
+    router.push({ path: '/application', query: { id: created.id } })
+  } catch (e) {
+    // serverning o'z xabari bo'lsa — o'shani ko'rsatamiz, forma joyida qoladi
+    toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+  } finally {
+    sending.value = false
+  }
+}
+
 function submit() {
   const bad = [...markErrors(REQUIRED_APP), ...markErrors(REQUIRED_APPLICANT)]
   if (bad.length || !requisites.value.length) {
@@ -184,22 +277,7 @@ function submit() {
     title: t('form.askTitle'),
     text: t('form.askText', { n: requisites.value.length, amount: total.value }),
     ok: t('form.submit'),
-    run: () => {
-      const first = requisites.value[0]
-      const item = addApplication({
-        material: form.id.trim() || null,          // KJ-raqami jadvalda material ustunida
-        source: form.source,
-        name: form.fio.trim(),
-        method: form.method,
-        card: first.number,
-        bank: first.system,
-        amount: total.value,
-        region: form.region
-      })
-      if (draftId) removeDraft(draftId)
-      toast(t('form.addedToList'))
-      router.push({ path: '/application', query: { id: item.id } })
-    }
+    run: send
   })
 }
 
@@ -229,9 +307,9 @@ function cancelAll() {
       </template>
       <template #actions>
         <button type="button" class="btn-light" @click="cancelAll">{{ $t('common.cancel') }}</button>
-        <button type="button" class="btn-dark" :disabled="!ready" @click="submit">
-          {{ $t('form.submit') }}
-          <AppIcon name="chevronRight" :size="15" />
+        <button type="button" class="btn-dark" :disabled="!ready || sending" @click="submit">
+          {{ sending ? $t('form.sending') : $t('form.submit') }}
+          <AppIcon v-if="!sending" name="chevronRight" :size="15" />
         </button>
       </template>
     </PageHead>
@@ -318,7 +396,7 @@ function cancelAll() {
                     @change="delete errors.method"
                   >
                     <option value="" disabled>{{ $t('form.app.select') }}</option>
-                    <option v-for="m in METHOD_OPTIONS" :key="m" :value="m">{{ $t(`methods.${m}`) }}</option>
+                    <option v-for="m in methodOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
                   </select>
                   <AppIcon name="chevronDown" :size="13" class="select-caret" />
                 </span>
@@ -334,7 +412,7 @@ function cancelAll() {
                     @change="delete errors.source"
                   >
                     <option value="" disabled>{{ $t('form.app.select') }}</option>
-                    <option v-for="s in SOURCE_OPTIONS" :key="s" :value="s">{{ $t(`sources.${s}`) }}</option>
+                    <option v-for="s in sourceOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
                   </select>
                   <AppIcon name="chevronDown" :size="13" class="select-caret" />
                 </span>
@@ -424,7 +502,7 @@ function cancelAll() {
                     @change="delete errors.region"
                   >
                     <option value="" disabled>{{ $t('form.app.select') }}</option>
-                    <option v-for="r in REGION_OPTIONS" :key="r" :value="r">{{ $t(`regions.${r}`) }}</option>
+                    <option v-for="r in regionOptions" :key="r.value" :value="r.value">{{ r.label }}</option>
                   </select>
                   <AppIcon name="chevronDown" :size="13" class="select-caret" />
                 </span>
@@ -447,7 +525,12 @@ function cancelAll() {
       </div>
 
       <!-- ---------- o'ng ustun ---------- -->
-      <RequisitePanel v-model="requisites" :bank-label="numberCheck.bankLabel.value" @card="typedCard = $event" />
+      <RequisitePanel
+        v-model="requisites"
+        :bank-label="numberCheck.bankLabel.value"
+        :bank-id="numberCheck.identity.value?.bank ?? null"
+        @card="typedCard = $event"
+      />
 
     </div>
   </div>

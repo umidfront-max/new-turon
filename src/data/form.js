@@ -110,6 +110,21 @@ export function isValidDateTime(value) {
   return d >= 1 && d <= 31 && mo >= 1 && mo <= 12 && y >= 2000 && h < 24 && mi < 60
 }
 
+/*
+  "14.03.2026 01:13" -> "2026-03-14T01:13:00+05:00".
+
+  Server ISO kutadi. Vaqt mintaqasi ochiq yoziladi: naive sana yuborilsa
+  server uni o'z sozlamasi bo'yicha talqin qiladi va soat siljib ketishi
+  mumkin. Ariza O'zbekiston bo'yicha to'ldiriladi.
+  @returns {string} noto'g'ri qiymatda bo'sh satr
+*/
+export function toIsoDateTime(value) {
+  if (!isValidDateTime(value)) return ''
+  const [date, time] = String(value).trim().split(' ')
+  const [d, mo, y] = date.split('.')
+  return `${y}-${mo}-${d}T${time}:00+05:00`
+}
+
 export function maskDateTime(value) {
   const d = digitsOnly(value).slice(0, 12)
   let out = d.slice(0, 2)

@@ -1086,6 +1086,7 @@ export default {
     title: 'Yangi murojaat',
     draftSaved: 'Qoralama saqlandi · {time}',
     submit: 'Bloklashga yuborish',
+    sending: 'Yuborilmoqda...',
     check: 'Tekshirish',
     checked: "Ma'lumotlar tekshirildi",
     invalid: "Majburiy maydonlarni to'g'ri to'ldiring",

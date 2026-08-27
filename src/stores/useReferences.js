@@ -81,6 +81,20 @@ const methods = computed(() => pick(state.methods, METHOD_OPTIONS, 'methods'))
 const sources = computed(() => pick(state.sources, SOURCE_OPTIONS, 'sources'))
 const regions = computed(() => pick(state.regions, REGION_OPTIONS, 'regions'))
 
+/*
+  Yangi ariza formasi uchun: yozuv serverga saqlanadi, shuning uchun ro'yxat
+  qanchalik qisqa bo'lsa ham aynan serverdagi id'lar kerak. Yuqoridagi `pick`
+  bu yerda yaramaydi — u qisqa ro'yxatni zaxira bilan almashtirib yuboradi va
+  formadan `vishing` kabi matn kaliti ketib qolardi.
+
+  Zaxira faqat server umuman javob bermaganda qoladi.
+*/
+const exact = computed(() => ({
+  methods: state.methods.length ? state.methods : fromKeys(METHOD_OPTIONS, 'methods'),
+  sources: state.sources.length ? state.sources : fromKeys(SOURCE_OPTIONS, 'sources'),
+  regions: state.regions.length ? state.regions : fromKeys(REGION_OPTIONS, 'regions')
+}))
+
 /** Serverdagi ro'yxat ishlatilyaptimi — sozlash uchun. */
 const live = computed(() => ({
   methods: state.methods.length >= METHOD_OPTIONS.length,
@@ -89,5 +103,5 @@ const live = computed(() => ({
 }))
 
 export function useReferences() {
-  return { state, load, methods, sources, regions, live }
+  return { state, load, methods, sources, regions, exact, live }
 }

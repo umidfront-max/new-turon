@@ -17,7 +17,9 @@ const requisites = defineModel({ type: Array, required: true })
 
 const props = defineProps({
   // serverdan aniqlangan bank nomi; bo'lmasa raqamdan tizim hisoblanadi
-  bankLabel: { type: String, default: '' }
+  bankLabel: { type: String, default: '' },
+  // /cards/identify/ topgan bankning id'si — ariza saqlanganda serverga ketadi
+  bankId: { type: Number, default: null }
 })
 
 // kiritilayotgan raqam — ota-komponentdagi takroriylik ogohlantirishi uchun
@@ -116,6 +118,7 @@ function addRequisite() {
       kind: draft.kind,
       number: draft.number,
       system: system.value,
+      bank: props.bankId,
       open: true,
       txs: [{ id: `t${seq}`, amount: draft.amount, time: draft.time }]
     }]
