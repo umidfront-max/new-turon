@@ -7,11 +7,15 @@ import VoiceRecorder from '@/components/form/VoiceRecorder.vue'
 import RequisitePanel from '@/components/form/RequisitePanel.vue'
 import PageHead from '@/components/ui/PageHead.vue'
 import CardHistory from '@/components/form/CardHistory.vue'
-import { maskPhone, applyMask, digitsOnly, toIsoDateTime } from '@/data/form'
+import {
+  maskPhone, maskCard, maskAccount, maskAmount,
+  applyMask, digitsOnly, toIsoDateTime, fromIsoDateTime
+} from '@/data/form'
 import { createManual } from '@/services/complaints'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
 import { useReferences } from '@/stores/useReferences'
+import { useDrafts } from '@/stores/useDrafts'
 import { useNumberCheck } from '@/composables/useNumberCheck'
 
 const route = useRoute()
@@ -62,10 +66,68 @@ const draftTime = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-// qoralamadan davom etish: /application/new?draft=<id>
+/*
+  Qoralamadan davom etish: /application/new?draft=<id>.
+  Raqamli id — serverdagi qoralama, aks holda namuna ro'yxatidagi yozuv.
+*/
+const drafts = useDrafts()
 const draftId = typeof route.query.draft === 'string' ? route.query.draft : null
+const apiDraftId = draftId && /^\d+$/.test(draftId) ? Number(draftId) : null
 
-function loadDraft() {
+// serverda saqlangan qoralamaning id'si (saqlagandan keyin ham to'ladi)
+const savedDraft = ref(apiDraftId)
+const savingDraft = ref(false)
+
+/** Serverdagi payload'ni forma holatiga qaytaradi. */
+function fillFromPayload(payload) {
+  if (!payload || typeof payload !== 'object') return
+
+  const applicant = payload.applicant || {}
+  form.id = payload.number || ''
+  form.material = payload.material_number || ''
+  form.method = payload.method ?? ''
+  form.source = payload.source ?? ''
+  form.fabula = payload.description || ''
+  form.fio = applicant.full_name || ''
+  form.phone = maskPhone(applicant.phone_number || '')
+  form.phone2 = maskPhone(applicant.additional_phone_number || '')
+  form.region = applicant.region ?? ''
+  form.address = applicant.address || ''
+
+  let seq = 0
+  const restore = (list, kind) => (list || []).map((r) => {
+    seq += 1
+    const mask = kind === 'card' ? maskCard : maskAccount
+    return {
+      id: `d${seq}`,
+      kind,
+      number: mask(r.number || ''),
+      system: '',
+      bank: r.bank ?? null,
+      open: true,
+      txs: (r.transactions || []).map((x, i) => ({
+        id: `d${seq}t${i}`,
+        amount: maskAmount(x.amount || ''),
+        time: fromIsoDateTime(x.transaction_time)
+      }))
+    }
+  })
+
+  requisites.value = [...restore(payload.cards, 'card'), ...restore(payload.accounts, 'account')]
+}
+
+async function loadDraft() {
+  if (apiDraftId) {
+    try {
+      const res = await drafts.one(apiDraftId)
+      fillFromPayload(res?.payload)
+      toast(t('form.draftLoaded'))
+    } catch (e) {
+      toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+    }
+    return
+  }
+
   const d = draftId && draftById(draftId)
   if (!d) return
   form.id = d.id && d.id !== '—' ? d.id : ''
@@ -73,9 +135,8 @@ function loadDraft() {
   form.method = ['vishing', 'phishing', 'fakeShop', 'fakeInvest', 'simSwap', 'apk', 'fakeSupport', 'other']
     .includes(d.method) ? d.method : ''
   form.fio = d.name && d.name !== '—' ? d.name : ''
-  if (d.card && d.card !== '—') {
-    draft.number = d.card.replace(/\*/g, '0')
-  }
+  // namuna qoralamasida karta niqoblangan (8600 06** **** 1111) va tranzaksiya
+  // ma'lumoti yo'q — rekvizitni tiklab bo'lmaydi, foydalanuvchi qayta kiritadi
   toast(t('form.draftLoaded'))
 }
 
@@ -249,13 +310,46 @@ function buildPayload() {
   return body
 }
 
+/** Qoralamani serverga saqlaydi — forma to'liq bo'lmasa ham. */
+async function saveDraftNow() {
+  if (savingDraft.value) return
+  savingDraft.value = true
+
+  try {
+    const res = await drafts.save(buildPayload(), savedDraft.value)
+    const id = res?.id ?? savedDraft.value
+
+    // manzilga yozamiz: sahifa yangilansa ham qoralama qayta ochiladi
+    if (id && String(route.query.draft || '') !== String(id)) {
+      router.replace({ path: '/application/new', query: { draft: String(id) } })
+    }
+
+    savedDraft.value = id
+    elapsed.value = 0
+    toast(t('form.draftStored'))
+  } catch (e) {
+    toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+  } finally {
+    savingDraft.value = false
+  }
+}
+
 async function send() {
   if (sending.value) return
   sending.value = true
 
   try {
-    const created = await createManual(buildPayload())
-    if (draftId) removeDraft(draftId)
+    /*
+      Qoralamadan davom etilayotgan bo'lsa ariza o'sha qoralamadan yakunlanadi
+      (/drafts/<id>/submit/), aks holda to'g'ridan-to'g'ri yaratiladi.
+      Backend ikkalasini birga ishlatishni tavsiya qilmaydi.
+    */
+    const created = savedDraft.value
+      ? await drafts.submit(savedDraft.value, buildPayload())
+      : await createManual(buildPayload())
+
+    // namuna ro'yxatidagi qoralama (serverdagisini `submit` o'zi olib tashlaydi)
+    if (!savedDraft.value && draftId) removeDraft(draftId)
 
     toast(t('form.sent'))
     router.push({ path: '/application', query: { id: created.id } })
@@ -307,6 +401,9 @@ function cancelAll() {
       </template>
       <template #actions>
         <button type="button" class="btn-light" @click="cancelAll">{{ $t('common.cancel') }}</button>
+        <button type="button" class="btn-light" :disabled="savingDraft || sending" @click="saveDraftNow">
+          {{ savingDraft ? $t('form.draftSaving') : $t('form.draftStore') }}
+        </button>
         <button type="button" class="btn-dark" :disabled="!ready || sending" @click="submit">
           {{ sending ? $t('form.sending') : $t('form.submit') }}
           <AppIcon v-if="!sending" name="chevronRight" :size="15" />

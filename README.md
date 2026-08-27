@@ -159,6 +159,28 @@ Rol kirish usulidan olinadi: E-imzo'dagi shaxsiy kalit (Boybayev Umrbek) —
 **Rahbar**, tashkilot kaliti va login/parol — **Navbatchi**. Keyin rolni
 profil menyusidan ham almashtirish mumkin.
 
+### Yangi ariza: serverga saqlash
+
+`/application/new` to'liq backendga ulangan (`src/views/NewApplicationView.vue`):
+
+* usul, manba va hudud ro'yxatlari `/methods/`, `/sources/`, `/regions/` dan —
+  forma serverdagi **id**'larni yuboradi (`useReferences.exact`);
+* «Tekshirish» — `/cards/identify/` (bank) va `/complaints/check-number/`
+  (shu raqam bo'yicha oldingi arizalar);
+* «Bloklashga yuborish» — `POST /complaints/manual/`: karta va hisob raqamlari
+  alohida ro'yxat, har biriga tranzaksiyalar; telefon `+998XXXXXXXXX`, vaqt ISO
+  (`+05:00` ochiq yoziladi, aks holda soat siljiydi);
+* «Qoralama saqlash» — `POST /complaints/drafts/` (yoki mavjudini `PUT`).
+  Server qoralamani tekshirmaydi, shuning uchun yarim to'ldirilgan forma ham
+  saqlanadi. Saqlangach id manzilga yoziladi (`?draft=<id>`), ya'ni sahifa
+  yangilansa ham davom ettirish mumkin;
+* qoralamadan davom etilayotgan bo'lsa ariza `POST /drafts/<id>/submit/` orqali
+  yakunlanadi — `/manual/` bilan aralashtirilmaydi (backend shuni so'raydi).
+
+`/complaints/manual/` idempotent emas: bir xil `number` ikkinchi marta
+yuborilsa 400 qaytadi. Shuning uchun tugma so'rov davomida bloklanadi va xato
+bo'lganda forma joyida qoladi — soxta muvaffaqiyat ko'rsatilmaydi.
+
 **Diqqat:** login/parol va Face ID tablari hali demo — parol tekshirilmaydi,
 Face ID tabi kamerani so'ramaydi (animatsiya). E-imzo tabi esa haqiqiy
 xizmatlarga ulangan (quyida).

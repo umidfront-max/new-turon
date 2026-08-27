@@ -125,6 +125,15 @@ export function toIsoDateTime(value) {
   return `${y}-${mo}-${d}T${time}:00+05:00`
 }
 
+/**
+ * toIsoDateTime() ning teskarisi: "2026-03-14T01:13:00+05:00" -> "14.03.2026 01:13".
+ * Qoralamadagi saqlangan vaqtni formaga qaytarish uchun.
+ */
+export function fromIsoDateTime(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(value || ''))
+  return m ? `${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}` : ''
+}
+
 export function maskDateTime(value) {
   const d = digitsOnly(value).slice(0, 12)
   let out = d.slice(0, 2)

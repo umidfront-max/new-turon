@@ -1098,6 +1098,9 @@ export default {
     cancelText: "Kiritilgan barcha ma'lumotlar o'chiriladi va tiklab bo'lmaydi.",
     cancelled: 'Ariza bekor qilindi',
     draftLoaded: "Qoralama yuklandi — davom eting",
+    draftStore: 'Qoralama saqlash',
+    draftSaving: 'Saqlanmoqda...',
+    draftStored: 'Qoralama saqlandi',
     addedToList: "Ariza ro'yxatga qo'shildi",
     app: {
       title: "Ariza ma'lumotlari",

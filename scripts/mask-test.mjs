@@ -10,7 +10,8 @@ import { createServer } from 'vite'
 
 const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'silent' })
 const {
-  applyMask, maskCard, maskAccount, maskAmount, maskPhone, maskDateTime
+  applyMask, maskCard, maskAccount, maskAmount, maskPhone, maskDateTime,
+  toIsoDateTime, fromIsoDateTime
 } = await vite.ssrLoadModule('/src/data/form.js')
 
 const fail = []
@@ -163,6 +164,21 @@ function type(text, mask, start = '') {
   applyMask(el, maskPhone)
   eq(el.value, '+998 90 123 45 6', "telefon: o'chirishda qiymat o'zgardi")
 }
+
+/* ---------- serverga o'girish va qaytarish ---------- */
+
+// forma <-> server: qoralamani qayta ochganda vaqt aynan tiklanishi kerak
+{
+  const shown = '14.03.2026 01:13'
+  const iso = toIsoDateTime(shown)
+  eq(iso, '2026-03-14T01:13:00+05:00', "ISO ga ogirish xato")
+  eq(fromIsoDateTime(iso), shown, "ISO dan qaytarish xato")
+}
+
+// noto'g'ri qiymat serverga ketmasligi kerak
+eq(toIsoDateTime('14.03.2026'), '', "to'liqmas sana ISO ga o'girildi")
+eq(toIsoDateTime('32.13.2026 99:99'), '', "yaroqsiz sana ISO ga o'girildi")
+eq(fromIsoDateTime(''), '', "bo'sh ISO dan qiymat chiqdi")
 
 console.log(fail.length
   ? 'XATO:\n' + fail.join('\n')

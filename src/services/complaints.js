@@ -65,7 +65,13 @@ export const startDraft = (body) => post('/complaints/drafts/', body)
 export const saveDraft = (id, body) => put(`/complaints/drafts/${id}/`, body)
 export const autosaveDraft = (id, body) => patch(`/complaints/drafts/${id}/`, body)
 export const removeDraft = (id) => del(`/complaints/drafts/${id}/`)
-export const submitDraft = (id) => post(`/complaints/drafts/${id}/submit/`)
+/**
+ * Qoralamani yakunlab arizaga aylantiradi.
+ * @param {number} id qoralama identifikatori
+ * @param {object} [body] {payload} — formaning oxirgi holati; berilmasa
+ *   serverdagi saqlangan holat ishlatiladi
+ */
+export const submitDraft = (id, body) => post(`/complaints/drafts/${id}/submit/`, body)
 
 /* ---------- navbatchilik ---------- */
 
