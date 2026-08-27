@@ -114,8 +114,14 @@ async function loadCount() {
   } catch { /* namuna ro'yxati qoladi */ }
 }
 
+/*
+  Hali birinchi javob kelmagan — ekranda namuna ro'yxat emas, skelet turadi.
+  `loadCount()` bunga ta'sir qilmaydi: u faqat yon paneldagi sanoq uchun.
+*/
+const pending = computed(() => state.source === null)
+
 const live = computed(() => state.source === 'api')
 
 export function useDrafts() {
-  return { state, load, loadCount, one, save, submit, remove, live }
+  return { state, load, loadCount, one, save, submit, remove, live, pending }
 }

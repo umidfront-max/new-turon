@@ -128,7 +128,7 @@ function reload() {
   Ariza so'raldi, lekin javob hali kelmadi. Shu paytda ekranda namuna
   ma'lumot emas, skelet ko'rsatiladi — aks holda soxta ariza chaqnab o'tadi.
 */
-const pending = computed(() => state.loading || (!!state.id && state.source === null))
+const pending = computed(() => !!state.id && !state.detail && !state.error)
 
 const live = computed(() => state.source === 'api' && !!state.detail)
 

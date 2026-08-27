@@ -29,8 +29,12 @@ const draftCount = computed(() => drafted.state.count ?? drafts.value.length)
 /*
   Javob kelgunicha sonlar ko'rsatilmaydi: aks holda namuna ma'lumot (64)
   chaqnab, keyin haqiqiysiga (7) almashadi.
+
+  Aynan sanoqning o'ziga qaraladi, `registry.pending` ga emas: u jadval
+  yuklanganda hal bo'ladi, yon panel esa jadval umuman ochilmaydigan
+  sahifalarda ham (ariza qo'shish, qoralamalar) to'g'ri ishlashi kerak.
 */
-const countsPending = registry.pending
+const countsPending = computed(() => registry.counts.value === null)
 const draftsPending = computed(() => drafted.state.count === null)
 
 /*

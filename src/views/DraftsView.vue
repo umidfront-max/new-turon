@@ -26,10 +26,17 @@ const { drafts, removeDraft } = useApplications()
 const api = useDrafts()
 api.load()
 
+// javob kelgunicha ro'yxat ko'rsatilmaydi (namuna qoralamalar chaqnab o'tmasin)
+const pending = api.pending
+
 const rows = computed(() => {
+  if (pending.value) return []
   const list = api.live.value ? api.state.items : drafts.value
   return list.map((d, i) => ({ ...d, n: i + 1 }))
 })
+
+// skelet qatorlari soni
+const SKELETON_ROWS = 5
 
 function resume(draft) {
   /*
@@ -69,7 +76,8 @@ function remove(row) {
   <div class="screen">
     <PageHead :title="$t('drafts.title')">
       <template #chips>
-        <span class="chip">{{ $t('drafts.chip', rows.length) }}</span>
+        <span v-if="pending" class="sk" style="width: 96px; height: 24px; border-radius: 999px" />
+        <span v-else class="chip">{{ $t('drafts.chip', rows.length) }}</span>
       </template>
       <template #actions>
         <button type="button" class="btn-dark" @click="router.push('/application/new')">
@@ -99,7 +107,15 @@ function remove(row) {
               <th style="width:196px" />
             </tr>
           </thead>
-          <tbody>
+          <tbody v-if="pending">
+            <tr v-for="n in SKELETON_ROWS" :key="n" class="row">
+              <td v-for="c in 6" :key="c">
+                <span class="sk" :style="{ width: c === 1 ? '18px' : '70%', height: '13px' }" />
+              </td>
+            </tr>
+          </tbody>
+
+          <tbody v-else>
             <tr
               v-for="(d, i) in rows"
               :key="d.id + d.time"
@@ -146,7 +162,7 @@ function remove(row) {
       </div>
 
       <EmptyState
-        v-if="!rows.length"
+        v-if="!pending && !rows.length"
         icon="doc"
         :title="$t('drafts.emptyTitle')"
         :text="$t('drafts.emptyText')"

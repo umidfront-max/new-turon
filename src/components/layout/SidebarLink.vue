@@ -29,7 +29,10 @@ defineEmits(['click'])
     <AppIcon :name="icon" :size="22" />
     <span v-if="!compact" class="label">{{ label }}</span>
     <span v-if="loading && !compact" class="count sk" />
-    <span v-else-if="count !== null && !compact" class="count mono">{{ count }}</span>
+    <!-- nol bo'lsa nishoncha butunlay chiqmaydi — bo'sh joy tinchroq -->
+    <span v-else-if="!compact && count !== null && Number(count) !== 0" class="count mono">
+      {{ count }}
+    </span>
   </component>
 </template>
 
