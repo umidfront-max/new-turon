@@ -1,7 +1,7 @@
 // Ўзбекча (кирилл)
 export default {
   app: {
-    brand: 'TURON CYBER',
+    brand: 'TURON CYBER1',
     logoAlt: 'Кибержиноятларга қарши курашиш департаменти',
     defaultTitle: 'TURON CYBER · CardBlock'
   },

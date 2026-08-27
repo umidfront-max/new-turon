@@ -1,7 +1,7 @@
 // Русский
 export default {
   app: {
-    brand: 'TURON CYBER',
+    brand: 'TURON CYBER1',
     logoAlt: 'Департамент по борьбе с киберпреступностью',
     defaultTitle: 'TURON CYBER · CardBlock'
   },
