@@ -4,7 +4,6 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import { KPI } from '@/data/applications'
 import { useApplications } from '@/stores/useApplications'
 import { useRegistry } from '@/stores/useRegistry'
-import { statusToUi } from '@/utils/adapt'
 
 const { counts } = useApplications()
 const registry = useRegistry()
@@ -12,18 +11,7 @@ const registry = useRegistry()
 defineEmits(['pick'])
 
 // Sanoqlar serverdan (`by_status`) keladi; u yo'q bo'lsa namuna ma'lumotdan.
-const shown = computed(() => {
-  const raw = registry.state.byStatus
-  if (!raw) return counts.value
-
-  const out = { all: registry.state.total, overdue: 0 }
-  Object.entries(raw).forEach(([status, n]) => { out[statusToUi(status)] = n })
-
-  // muddati o'tganlar jarayon chiplarida keladi
-  const overdue = registry.state.processTabs.find((t) => t.apiKey === 'overdue')
-  if (overdue) out.overdue = overdue.count
-  return out
-})
+const shown = computed(() => registry.counts.value || counts.value)
 </script>
 
 <template>

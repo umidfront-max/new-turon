@@ -22,10 +22,11 @@ export async function exportApplications(rows, t) {
     [t('detail.fields.material')]: r.material || t('table.noMaterial'),
     [t('table.flow')]: r.flow === '102' ? '102' : t('flow.duty'),
     [t('detail.applicant.fio')]: r.name,
-    [t('detail.fields.method')]: t(`methods.${r.method}`),
+    // serverdan kelgan qatorda usul raqamli id, nomi alohida maydonda
+    [t('detail.fields.method')]: r.methodLabel || (r.method ? t(`methods.${r.method}`) : ''),
     [t('form.requisite.cardNumber')]: r.card,
     [t('filters.groups.bank')]: r.bank,
-    [t('filters.groups.region')]: r.region ? t(`regions.${r.region}`) : '',
+    [t('filters.groups.region')]: r.regionLabel || (r.region ? t(`regions.${r.region}`) : ''),
     [t('table.amount')]: toNumber(r.amount),
     [t('table.status')]: t(`status.${r.status}.label`),
     [t('table.time')]: r.time

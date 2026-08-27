@@ -443,6 +443,9 @@ export default {
     exportToast: 'Eksport tayyorlanmoqda · XLSX',
     exportDone: 'Yuklab olindi: {file}',
     exportEmpty: "Eksport uchun ariza yo'q",
+    exportTitle: '{n} ta ariza eksport qilinadi',
+    exportPartial: "Ro'yxat uzun — birinchi {n} ta ariza eksport qilindi",
+    exportFailed: "Eksport qilib bo'lmadi — qaytadan urinib ko'ring",
     filtersCleared: 'Filtrlar tozalandi',
     regionFilter: 'Hudud filtri',
     regionClear: 'Filtrni olib tashlash',
@@ -554,7 +557,10 @@ export default {
       region: 'Hudud',
       amount: 'Zarar summasi',
       repeat: 'Takroriylik',
-      sla: 'Muddat'
+      sla: 'Muddat',
+      basis: 'Asos',
+      crime_type: 'Jinoyat turi',
+      intake_type: 'Qabul turi'
     },
     all: 'Barchasi',
     selected: '{n} ta tanlandi',
@@ -678,7 +684,11 @@ export default {
       autopayment: "Avto to'lov",
       refunded: "Mablag' qaytarildi",
       cancelled: 'Bekor qilindi',
-      daysLeft: '{n} kun qoldi'
+      daysLeft: '{n} kun qoldi',
+      // serverdagi timeline kalitlari (snake_case)
+      received: 'Murojaat qabul qilindi',
+      sent_to_bank: 'Bankka yuborildi',
+      bank_answer: 'Bank javobi kutilmoqda'
     },
     bank: {
       title: 'Markaziy bank bilan almashinuv',
@@ -706,6 +716,9 @@ export default {
     workflow: {
       title: 'Ish jarayoni',
       officer: 'F.B.Suvonov',
+      history: "Status o'zgarishlari tarixi",
+      historyEmpty: "Status hali o'zgarmagan",
+      created: 'yaratildi',
       staffRole: 'Xodim — Kiberxavfsizlik boshqarmasi',
       bank: 'Markaziy bank',
       badges: {
@@ -731,7 +744,10 @@ export default {
       material: 'Material raqami',
       date: 'Kelib tushgan sana',
       source: 'Manba',
-      method: 'Firibgarlik usuli'
+      method: 'Firibgarlik usuli',
+      basis: 'Asos',
+      crimeType: 'Jinoyat turi',
+      intake: 'Qabul turi'
     },
     applicant: {
       title: 'Murojaat qiluvchi',
@@ -740,11 +756,13 @@ export default {
       phone2: "Qo'shimcha telefon",
       region: 'Hudud',
       address: 'Yashash manzili',
-      addressValue: 'Chilonzor tumani, 19-kvartal, 24-uy'
+      pinfl: 'JSHSHIR'
     },
     fabula: {
       title: 'Fabulasi — murojaat mazmuni',
       voice: 'Ovozli fabula',
+      empty: "Fabula matni kiritilmagan",
+      voicePending: "Ovozli fabula hali serverga ulanmagan — alohida vazifada",
       text: "Jabrlanuvchining bank kartasidan 12.07.2026 kuni soat 21:30 atrofida roziligisiz uch marta pul yechib olingan. Avval «bank xodimi» nomidan qo'ng'iroq qilinib, SMS-kod so'ralgan. «Kurs 60» yopiq Telegram guruhi orqali «APK» virusli ilova tarqatilgani aniqlandi. Umumiy zarar — {amount} so'm. Karta darhol bloklangan, bank ko'chirmasi ilova qilindi."
     },
     doc: {

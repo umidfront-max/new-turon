@@ -70,27 +70,6 @@ export function logKey(key, file, b64 = '') {
 }
 
 /**
- * /login-pfx javobini chiqaradi.
- * @param {object} result loginPfxB64() natijasi
- */
-export function logLogin(result) {
-  if (!debugOn() || !result) return
-
-  console.group('%c/login-pfx javobi', 'color:#1a6e4b;font-weight:600')
-  console.table({
-    'user_id': result.userId ?? '—',
-    'has_face': result.hasFace,
-    'F.I.Sh': result.user.name || '—',
-    'JSHSHIR': result.user.pinfl || '—',
-    'STIR': result.user.tin || '—',
-    'Tashkilot': result.user.org || '—',
-    'Amal tugashi': result.user.validTo || '—'
-  })
-  console.log('%cto\'liq sertifikat:', 'color:#8b95a6', result.certificate)
-  console.groupEnd()
-}
-
-/**
  * /auth/pfx javobini chiqaradi — yuz bosqichi ma'lumotlari.
  * @param {object} challenge authPfxB64() natijasi
  */

@@ -6,12 +6,24 @@ import AppIcon from '@/components/ui/AppIcon.vue'
 import SidebarLink from './SidebarLink.vue'
 import { useUi } from '@/stores/useUi'
 import { useApplications } from '@/stores/useApplications'
+import { useRegistry } from '@/stores/useRegistry'
+import { useDrafts } from '@/stores/useDrafts'
 import { useAdmin } from '@/stores/useAdmin'
 
 const route = useRoute()
 const { t } = useI18n()
 const { state, isExec, isStaff, isAdmin, isSuper, toggleSidebar, setMobileNav, toast } = useUi()
-const { counts, drafts } = useApplications()
+const { counts: mockCounts, drafts } = useApplications()
+
+/*
+  Yon paneldagi sonlar ham reyestr bilan bir xil manbadan bo'lishi kerak:
+  server javob bergan bo'lsa o'shandan, aks holda namuna ma'lumotdan.
+*/
+const registry = useRegistry()
+const drafted = useDrafts()
+
+const counts = computed(() => registry.counts.value || mockCounts.value)
+const draftCount = computed(() => (drafted.live.value ? drafted.state.total : drafts.value.length))
 const { banks } = useAdmin()
 
 function otherModule() {
@@ -85,7 +97,7 @@ function go() {
         <SidebarLink
           icon="docLines"
           :label="$t('nav.drafts')"
-          :count="drafts.length"
+          :count="draftCount"
           to="/drafts"
           :active="isActive('/drafts')"
           :compact="compact"

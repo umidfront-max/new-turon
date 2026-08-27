@@ -16,7 +16,7 @@ import { useComplaint } from '@/stores/useComplaint'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, te } = useI18n()
 const { toast } = useUi()
 const { byId } = useApplications()
 
@@ -108,13 +108,36 @@ watch(() => route.query.id, stopPlayer)
 onBeforeUnmount(() => clearInterval(ticker))
 
 /* ---------- amallar ---------- */
-const facts = computed(() => [
-  { key: 'id', icon: null, value: row.value.id, mono: true },
-  { key: 'material', icon: 'bookmark', value: row.value.material || t('table.noMaterial'), mono: true },
-  { key: 'date', icon: 'calendar', value: row.value.time, mono: true },
-  { key: 'source', icon: 'phone', value: data.value.sourceLabel || t(`sources.${data.value.source}`) },
-  { key: 'method', icon: null, value: t(`methods.${row.value.method}`) }
-])
+/*
+  Yuqoridagi faktlar qatori. Serverdan tayyor yorliq kelsa o'sha ishlatiladi
+  (usul va manba raqamli id bo'lgani uchun tarjima kaliti topilmaydi), asos va
+  jinoyat turi esa faqat serverda bor — bo'lmasa qator umuman chizilmaydi.
+*/
+const facts = computed(() => {
+  const d = data.value
+  const list = [
+    { key: 'id', icon: null, value: row.value.id, mono: true },
+    { key: 'material', icon: 'bookmark', value: row.value.material || t('table.noMaterial'), mono: true },
+    { key: 'date', icon: 'calendar', value: row.value.time, mono: true },
+    { key: 'source', icon: 'phone', value: d.sourceLabel || t(`sources.${d.source}`) },
+    { key: 'method', icon: null, value: row.value.methodLabel || t(`methods.${row.value.method}`) },
+    { key: 'basis', icon: 'doc', value: d.basisLabel },
+    { key: 'crimeType', icon: 'shield', value: d.crimeTypeLabel },
+    { key: 'intake', icon: 'inbox', value: d.intakeLabel }
+  ]
+  return list.filter((f) => f.value)
+})
+
+/*
+  Qadam nomi: tarjimamiz bo'lsa o'sha (til almashganda darhol o'zgaradi),
+  bo'lmasa serverning yorlig'i. Server kalitlari snake_case bo'lgani uchun
+  eski camelCase kalitlar ham qoldirilgan — namuna ma'lumot ular bilan ishlaydi.
+*/
+function stepTitle(st) {
+  const key = `detail.steps.${st.key}`
+  if (te(key)) return t(key)
+  return st.label || st.key
+}
 
 function close() {
   router.push('/')
@@ -203,7 +226,7 @@ function exportXlsx() {
           <div class="step" :class="st.tone">
             <span class="step-icon"><AppIcon :name="st.icon" :size="18" /></span>
             <span class="step-text">
-              <span class="step-title">{{ $t(`detail.steps.${st.key}`) }}</span>
+              <span class="step-title">{{ stepTitle(st) }}</span>
               <span class="step-meta mono">
                 <template v-if="st.time">{{ st.time }}</template>
                 <template v-else-if="st.days">{{ $t('detail.steps.daysLeft', st.days) }}</template>
@@ -256,7 +279,15 @@ function exportXlsx() {
             </div>
             <div class="field">
               <div class="field-label">{{ $t('detail.applicant.phone') }}</div>
-              <div class="field-value mono">{{ data.phone }}</div>
+              <div class="field-value mono">{{ data.phone || '—' }}</div>
+            </div>
+            <div v-if="data.phone2" class="field">
+              <div class="field-label">{{ $t('detail.applicant.phone2') }}</div>
+              <div class="field-value mono">{{ data.phone2 }}</div>
+            </div>
+            <div v-if="data.pinfl" class="field">
+              <div class="field-label">{{ $t('detail.applicant.pinfl') }}</div>
+              <div class="field-value mono">{{ data.pinfl }}</div>
             </div>
             <div class="field">
               <div class="field-label">{{ $t('detail.applicant.region') }}</div>
@@ -264,7 +295,7 @@ function exportXlsx() {
             </div>
             <div class="field wide">
               <div class="field-label">{{ $t('detail.applicant.address') }}</div>
-              <div class="field-value">{{ $t('detail.applicant.addressValue') }}</div>
+              <div class="field-value">{{ data.address || '—' }}</div>
             </div>
           </div>
         </div>
@@ -276,8 +307,10 @@ function exportXlsx() {
           <span class="side-title">{{ $t('detail.fabula.title') }}</span>
         </div>
         <div class="block-body">
-          <p class="fabula">{{ $t('detail.fabula.text', { amount: data.total }) }}</p>
+          <p v-if="data.description" class="fabula">{{ data.description }}</p>
+          <p v-else class="fabula dim">{{ $t('detail.fabula.empty') }}</p>
 
+          <template v-if="data.audio">
           <div class="voice-label">{{ $t('detail.fabula.voice') }}</div>
           <div class="player">
             <button
@@ -297,6 +330,13 @@ function exportXlsx() {
             <AppIcon name="volume" :size="17" class="player-ico" />
             <AppIcon name="download" :size="17" class="player-ico" />
           </div>
+          </template>
+
+          <!-- ovozli fabula serverda hali yo'q — blok ochiq deb belgilanadi -->
+          <p v-else class="pending">
+            <AppIcon name="clock" :size="15" />
+            {{ $t('detail.fabula.voicePending') }}
+          </p>
         </div>
       </section>
 
@@ -365,7 +405,12 @@ function exportXlsx() {
     <BankTab v-else-if="tab === 'bank'" :data="data" :api="api.state.bank" @fix="onAction" />
 
     <!-- ---------- Ish jarayoni ---------- -->
-    <WorkflowTab v-else-if="tab === 'workflow'" :tree="data.workflow" :events="api.state.workflow" />
+    <WorkflowTab
+      v-else-if="tab === 'workflow'"
+      :tree="data.workflow"
+      :events="api.state.workflow"
+      :history="api.state.history"
+    />
 
     <!-- ---------- Sanksiyalar ---------- -->
     <SanctionsTab v-else-if="tab === 'sanctions'" :row="row" :api="api.state.sanctions" />
@@ -383,6 +428,25 @@ function exportXlsx() {
 </template>
 
 <style scoped>
+/* serverda hali ma'lumot yo'q blok — ochiq ish sifatida belgilanadi */
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px dashed var(--cc8cdd6);
+  background: var(--cf8fafc);
+  font-size: 13.5px;
+  color: var(--c8b95a6);
+}
+
+.fabula.dim {
+  color: var(--c98a3b6);
+  font-style: italic;
+}
+
 
 .dim {
   color: var(--c8b95a6);

@@ -9,11 +9,11 @@ import { reactive, computed } from 'vue'
 import { i18nLang } from '@/i18n'
 import {
   fetchComplaint, fetchBankOperations, fetchSanctions,
-  fetchTransactionChain, fetchWorkflow
+  fetchTransactionChain, fetchWorkflow, fetchHistory
 } from '@/services/complaints'
 import {
   complaintDetail, bankOperations, sanctionList,
-  transactionChain, workflowEvents
+  transactionChain, workflowEvents, statusHistory
 } from '@/utils/adapt'
 
 const state = reactive({
@@ -23,6 +23,7 @@ const state = reactive({
   sanctions: null,
   chain: null,
   workflow: null,
+  history: null,
   loading: false,
   source: null, // 'api' | 'mock'
   error: null
@@ -34,6 +35,7 @@ function clear() {
   state.sanctions = null
   state.chain = null
   state.workflow = null
+  state.history = null
 }
 
 /**
@@ -60,17 +62,19 @@ async function load(id) {
   }
 
   // tablar mustaqil: biri yiqilsa qolgani baribir ko'rsatiladi
-  const [bank, sanctions, chain, workflow] = await Promise.allSettled([
+  const [bank, sanctions, chain, workflow, history] = await Promise.allSettled([
     fetchBankOperations(id),
     fetchSanctions(id),
     fetchTransactionChain(id),
-    fetchWorkflow(id)
+    fetchWorkflow(id),
+    fetchHistory(id)
   ])
 
   const value = (r, map) => (r.status === 'fulfilled' ? map(r.value) : null)
   state.bank = value(bank, bankOperations)
   state.sanctions = value(sanctions, sanctionList)
   state.workflow = value(workflow, workflowEvents)
+  state.history = value(history, statusHistory)
 
   // Zanjir endpointi jabrlanuvchi kartasini qaytarmaydi — u arizaning o'z
   // rekviziti. Shuning uchun tafsilotdan olib qo'yamiz (ekran shuni kutadi).

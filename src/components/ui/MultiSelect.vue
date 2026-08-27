@@ -20,6 +20,8 @@ const props = defineProps({
   modelValue: { type: Array, default: () => [] },
   // shuncha qiymatdan boshlab ichida qidiruv chiqadi (0 — doim, Infinity — hech qachon)
   searchFrom: { type: Number, default: 8 },
+  // faqat bitta qiymat tanlanadi — serverda bu guruhning `__in` shakli yo'q
+  single: { type: Boolean, default: false },
   placeholder: { type: String, default: '' }
 })
 
@@ -84,6 +86,13 @@ const summary = computed(() => {
 })
 
 function toggle(value) {
+  if (props.single) {
+    // qayta bosilsa tanlov olib tashlanadi, aks holda avvalgisi almashadi
+    emit('update:modelValue', props.modelValue.includes(value) ? [] : [value])
+    open.value = false
+    return
+  }
+
   const next = new Set(props.modelValue)
   if (next.has(value)) next.delete(value)
   else next.add(value)
@@ -159,7 +168,7 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
           v-for="o in visible"
           :key="o.value"
           class="ms-item"
-          :class="{ zero: !o.count }"
+          :class="{ zero: o.count === 0 }"
         >
           <input
             type="checkbox"
@@ -167,7 +176,7 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
             :checked="chosen.has(o.value)"
             @change="toggle(o.value)"
           />
-          <span class="box" :class="{ on: chosen.has(o.value) }" />
+          <span class="box" :class="{ on: chosen.has(o.value), radio: single }" />
           <span class="truncate">{{ o.label }}</span>
           <span v-if="o.count !== undefined" class="ms-count mono">{{ o.count }}</span>
         </label>
@@ -337,6 +346,21 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
 .box.on {
   background: var(--c23568f);
   border-color: var(--c23568f);
+}
+
+.box.radio {
+  border-radius: 50%;
+}
+
+.box.radio.on::after {
+  left: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  transform: none;
 }
 
 .box.on::after {

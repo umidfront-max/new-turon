@@ -56,6 +56,28 @@ if (store.live.value) {
     r.tx.forEach((t) => ok(!t.time.includes('NaN'), 'tranzaksiya vaqti xato: ' + t.time))
   })
 
+  // serverdagi tayyor yorliqlar ekranga chiqadimi
+  ok(typeof d.basisLabel === 'string', "asos yorligi yoq")
+  ok(typeof d.crimeTypeLabel === 'string', "jinoyat turi yorligi yoq")
+  ok(typeof d.intakeLabel === 'string', "qabul turi yorligi yoq")
+  ok(typeof d.description === 'string', "fabula matni yoq")
+  ok(typeof d.address === 'string', "manzil yoq")
+
+  // qadam nomi: tarjima kaliti yoki serverning yorlig'i bo'lishi shart
+  const STEP_KEYS = ['accepted', 'sentToBank', 'notSent', 'awaiting', 'returned', 'blocked',
+    'autopayment', 'refunded', 'cancelled', 'received', 'sent_to_bank', 'bank_answer']
+  d.steps.forEach((st) => {
+    ok(STEP_KEYS.includes(st.key) || !!st.label,
+      `qadam "${st.key}" uchun na tarjima, na yorliq bor`)
+  })
+
+  // status tarixi ulangan
+  ok(store.state.history === null || Array.isArray(store.state.history), 'tarix tuzilmasi xato')
+  ;(store.state.history || []).forEach((h) => {
+    ok(!!h.to, "tarix qatorida yangi status yoq")
+    ok(h.time && !h.time.includes('NaN'), 'tarix vaqti xato: ' + h.time)
+  })
+
   // tablar yiqilmasligi kerak — bo'sh bo'lsa ham tuzilma to'g'ri
   ok(store.state.bank === null || Array.isArray(store.state.bank.exchange), 'bank tabi tuzilmasi xato')
   ok(store.state.chain === null || Array.isArray(store.state.chain.level1), 'zanjir tuzilmasi xato')
@@ -64,7 +86,11 @@ if (store.live.value) {
 
   console.log(`ariza ${d.row.id}: ${d.requisites.length} rekvizit, ${d.txTotal} tranzaksiya, ${d.steps.length} qadam`)
   console.log(`tablar: bank ${store.state.bank?.exchange.length ?? '—'}, zanjir ${store.state.chain?.level1.length ?? '—'}, `
-    + `sanksiya ${store.state.sanctions?.length ?? '—'}, jarayon ${store.state.workflow?.length ?? '—'}`)
+    + `sanksiya ${store.state.sanctions?.length ?? '—'}, jarayon ${store.state.workflow?.length ?? '—'}, `
+    + `tarix ${store.state.history?.length ?? '—'}`)
+  console.log(`maydonlar: asos "${d.basisLabel}", jinoyat turi "${d.crimeTypeLabel}", `
+    + `qabul "${d.intakeLabel}", fabula ${d.description.length} belgi`)
+  console.log('qadamlar: ' + d.steps.map((st) => `${st.key}${st.label ? ` (${st.label})` : ''}`).join(', '))
 }
 
 await vite.close()

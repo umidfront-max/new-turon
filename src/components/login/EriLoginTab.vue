@@ -9,12 +9,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import FaceCheck from './FaceCheck.vue'
-import { loginPfxB64, authPfxB64, authComplete, fileToBase64, maskId, EriError } from '@/services/eriLogin'
+import { authPfxB64, authComplete, fileToBase64, maskId, EriError } from '@/services/eriLogin'
 import { setToken } from '@/services/api'
 import { collectKeys, canPickFolder } from '@/services/dsKeys'
 import { canRemember, restoreFolder, regrantFolder, chooseFolder } from '@/services/keyStore'
 import { listKeys as isignerKeys } from '@/services/isigner'
-import { logKey, logLogin, logChallenge, logJwt } from '@/services/keyLog'
+import { logKey, logChallenge, logJwt } from '@/services/keyLog'
 import { useUi } from '@/stores/useUi'
 import { useAuth } from '@/stores/useAuth'
 
@@ -394,9 +394,16 @@ async function submitEimzo() {
   eriError.value = ''
 
   try {
-    const result = await loginPfxB64(pfxB64.value, pfxPass.value)
-    logLogin(result)
-    const cert = result.user
+    /*
+      Yagona qadam: darvoza .pfx ni ochadi, egasini sertifikatdan aniqlaydi va
+      yuz bosqichi uchun chipta beradi (eri_login'ni o'zi ichkarida chaqiradi).
+      Shu sababli frontend eri-login'ga alohida murojaat qilmaydi — ba'zi
+      muhitlarda u tashqariga umuman ochilmagan bo'ladi.
+    */
+    const challenge = await authPfxB64(pfxB64.value, pfxPass.value)
+    logChallenge(challenge)
+
+    const cert = challenge.user
 
     // tanlangan kalit bilan qaytgan sertifikat bir xil odamnikimi
     if (key && key.pinfl && cert.pinfl && key.pinfl !== cert.pinfl) {
@@ -407,16 +414,6 @@ async function submitEimzo() {
     const shown = cert.pinfl || cert.tin || key?.pinfl || key?.tin
 
     // Yuzi ro'yxatdan o'tmagan xodim uchun kalitning o'zi yetarli
-    if (!result.hasFace) {
-      finishLogin(name, shown)
-      return
-    }
-
-    // 2-bosqich: darvozadan challenge va yuz chiptasi olinadi
-    const challenge = await authPfxB64(pfxB64.value, pfxPass.value)
-    logChallenge(challenge)
-
-    // Darvoza ham yuzni tanimasa — tekshirib bo'lmaydi, kalitning o'zi qoladi
     if (!challenge.hasFace) {
       finishLogin(name, shown)
       return

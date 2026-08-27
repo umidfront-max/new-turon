@@ -295,7 +295,10 @@ export function complaintDetail(c, lang = 'uz') {
   const requisites = (c.requisites || []).map((r) => ({
     card: r.number || '',
     bank: r.bank_name || '',
+    // ro'yxatda faqat `number_type` keladi, tayyor yorliq esa tranzaksiya
+    // ichidagi kartada — shuning uchun tur kaliti ham saqlanadi
     system: r.number_type_display || '',
+    systemKey: r.number_type || '',
     blocked: !!r.is_blocked,
     frozen: r.frozen_amount ? money(r.frozen_amount) : null,
     sum: money(r.total_amount),
@@ -348,6 +351,14 @@ export function complaintDetail(c, lang = 'uz') {
     sourceLabel: refName(c.source, lang),
     regionLabel: refName(c.region, lang),
     description: c.description || '',
+    // serverda tayyor yorliq bilan keladigan maydonlar
+    basis: c.basis || '',
+    basisLabel: c.basis_display || '',
+    crimeType: c.crime_type || '',
+    crimeTypeLabel: c.crime_type_display || '',
+    intakeLabel: c.intake_type_display || '',
+    externalId: c.external_id || '',
+    statusLabel: c.status_display || '',
     total: money(c.total_amount),
     requisites,
     txTotal: requisites.reduce((n, r) => n + r.tx.length, 0),
@@ -367,7 +378,7 @@ export function complaintDetail(c, lang = 'uz') {
     source: null,          // manba i18n kaliti o'rniga sourceLabel ishlatiladi
     region: null,          // regionLabel ishlatiladi
     deadline: null,        // muddat sanksiyadan keladi (hali bo'sh)
-    audio: null,           // ovozli fabula serverda yo'q
+    audio: null,           // ovozli fabula serverda yo'q — pleyer ko'rsatilmaydi
     exchange: [],
     blocked: [],
     workflow: []
@@ -465,6 +476,26 @@ export function workflowEvents(res) {
     depth: 0,
     children: []
   }))
+}
+
+/**
+ * Status tarixi — /complaints/<id>/history/.
+ * Server ro'yxatni o'sish tartibida beradi, ekranda yangisi tepada turadi.
+ */
+export function statusHistory(res) {
+  const rows = Array.isArray(res) ? res : res?.results || []
+
+  return rows
+    .map((h) => ({
+      id: h.id,
+      from: h.from_status ? statusToUi(h.from_status) : null,
+      to: statusToUi(h.to_status),
+      time: dateTime(h.changed_at || h.created_at),
+      at: h.changed_at || h.created_at || '',
+      person: h.employee_name || '',
+      comment: h.comment || ''
+    }))
+    .sort((a, b) => String(b.at).localeCompare(String(a.at)))
 }
 
 /* ---------- navbatchilik ---------- */

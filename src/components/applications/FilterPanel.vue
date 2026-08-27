@@ -6,6 +6,10 @@
   bir guruhdan bir nechta qiymat tanlash mumkin. Zarar summasi esa ro'yxat emas,
   million so'mdagi oraliq (dan – gacha).
 
+  Guruhlar server bergan `facets` dan olinadi: qiymat, nom va sanoq — hammasi
+  o'shandan. Server javob bermagan bo'lsa mahalliy ro'yxatga (FILTER_GROUPS)
+  qaytadi, shunda ekran baribir to'liq ko'rinadi.
+
   Tanlovlar shu yerda saqlanadi va faqat "Qo'llash" bosilganda yuqoriga
   uzatiladi — har bir belgilashda jadval qayta so'ralib ketmasin.
 */
@@ -14,6 +18,7 @@ import { useI18n } from 'vue-i18n'
 import MultiSelect from '@/components/ui/MultiSelect.vue'
 import { FILTER_GROUPS } from '@/data/applications'
 import { useApplications } from '@/stores/useApplications'
+import { useRegistry } from '@/stores/useRegistry'
 
 const props = defineProps({
   // qo'llangan tanlovlar: { guruh: [qiymat, ...] }
@@ -26,10 +31,12 @@ const emit = defineEmits(['apply', 'clear'])
 
 const { t } = useI18n()
 const { filterCounts } = useApplications()
+const { facetGroups } = useRegistry()
 
+// tanlovlar guruh kaliti bo'yicha: { status: [...], region: [...] }
 function fromProps() {
   return Object.fromEntries(
-    FILTER_GROUPS.map((g) => [g.key, [...(props.selected[g.key] || g.checked || [])]])
+    Object.entries(props.selected).map(([key, list]) => [key, [...(list || [])]])
   )
 }
 
@@ -47,16 +54,18 @@ function valueLabel(group, value) {
   return t(`${group.i18n}.${value}${suffix}`)
 }
 
-// dropdown kutadigan ko'rinish: [{ value, label, count }]
-const groups = computed(() => FILTER_GROUPS.map((g) => ({
+// mahalliy ro'yxat — server javob bermaganda
+const localGroups = computed(() => FILTER_GROUPS.map((g) => ({
   key: g.key,
-  searchFrom: g.searchFrom ?? 8,
   options: g.values.map((value) => ({
     value,
     label: valueLabel(g, value),
     count: filterCounts.value[g.key]?.[value] ?? 0
   }))
 })))
+
+// dropdown kutadigan ko'rinish: [{ value, label, count }]
+const groups = computed(() => (facetGroups.value.length ? facetGroups.value : localGroups.value))
 
 function pick(key, values) {
   chosen.value = { ...chosen.value, [key]: values }
@@ -72,7 +81,7 @@ function onRange(side, e) {
 }
 
 function clearAll() {
-  chosen.value = Object.fromEntries(FILTER_GROUPS.map((g) => [g.key, []]))
+  chosen.value = {}
   range.value = { from: '', to: '' }
   emit('clear')
 }
@@ -85,8 +94,8 @@ function apply() {
   if (flip) range.value = span
 
   emit('apply', {
-    groups: FILTER_GROUPS
-      .filter((g) => chosen.value[g.key].length)
+    groups: groups.value
+      .filter((g) => chosen.value[g.key]?.length)
       .map((g) => ({ key: g.key, values: chosen.value[g.key] })),
     amount: { ...span }
   })
@@ -101,8 +110,8 @@ function apply() {
         :key="g.key"
         :label="$t(`filters.groups.${g.key}`)"
         :options="g.options"
-        :model-value="chosen[g.key]"
-        :search-from="g.searchFrom"
+        :model-value="chosen[g.key] || []"
+        :single="!!g.single"
         @update:model-value="pick(g.key, $event)"
       />
 

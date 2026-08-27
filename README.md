@@ -170,10 +170,13 @@ boradi:
 
 1. **Kalit.** Kalitlar ro'yxati ISigner'dan, faylning o'zi DSKEYS papkasidan
    olinadi (`services/isigner.js`, `services/keyStore.js`). `.pfx` + parol
-   `POST /login-pfx` ga yuboriladi — sertifikat va `has_face` qaytadi.
-   Yuzi ro'yxatdan o'tmagan xodim shu yerda kiradi.
-2. **Yuz.** `POST /auth/pfx` (auth-gateway) `challenge_id`, `face_ticket` va
-   `face_ws_url` beradi. `components/login/FaceCheck.vue` kamerani yoqib,
+   `POST /auth/pfx` ga (auth-gateway) yuboriladi — darvoza kalitni ochadi,
+   egasini aniqlaydi (`identity`) va `has_face` ni qaytaradi. Frontend
+   `eri-login` ga alohida murojaat qilmaydi: darvoza uni o'zi chaqiradi, ba'zi
+   muhitlarda esa u tashqariga umuman ochilmagan bo'ladi. Yuzi ro'yxatdan
+   o'tmagan xodim shu yerda kiradi.
+2. **Yuz.** O'sha javobdagi `challenge_id`, `face_ticket` va
+   `face_ws_url` ishlatiladi. `components/login/FaceCheck.vue` kamerani yoqib,
    `services/faceAuth.js` orqali WebSocket ochadi: avval chipta, keyin server
    `ready` deganda har ~350 ms da jpeg freym yuboriladi. Server holatlari
    (`liveness`, `no_face`, `spoof`, `no_match`) ekranda ko'rsatiladi,
@@ -185,8 +188,11 @@ Kamera bekor qilinganda, tab almashganda yoki xato bo'lganda oqim ham,
 kamera ham darhol yopiladi. Aloqa tartibi `npm run test:face` bilan
 brauzersiz tekshiriladi.
 
-Manzillar `.env` orqali: `VITE_ERI_URL` va `VITE_GATEWAY_URL`
-(`.env.example` ga qarang). Kalit va javoblar haqidagi batafsil jurnal
+Manzil bitta — `.env` dagi `VITE_GATEWAY_URL` (`.env.example` ga qarang).
+Tunnel orqali sinash uchun shu qatorni almashtirish yetarli. Server xatolarni
+`{"detail": "..."}` bilan o'zbekcha qaytaradi va o'sha matn ekranda
+ko'rsatiladi; 401/403 esa "kalit yoki parol noto'g'ri" deb qaraladi va parol
+maydoni belgilanadi. Kalit va javoblar haqidagi batafsil jurnal
 ishlab chiqish rejimida konsolga chiqadi — `services/keyLog.js`.
 
 ## Yangi murojaat formasi
@@ -321,13 +327,16 @@ Ro'yxat endi haqiqiy ishlaydi — hammasi `src/utils/table.js` dagi sof
 funksiyalarda, komponentlar faqat ularni chaqiradi:
 
 * **navbat** — manzildan (`/queue/blocked`), `overdue` ham navbat sifatida;
-* **filtr paneli** — 7 ta checkbox'li dropdown (status, bank, usul, manba,
-  hudud, takroriylik, muddat) va zarar summasi oralig'i (`dan – gacha`,
-  million so'mda). Bir guruhdan bir nechta qiymat tanlanadi; ro'yxat uzun
-  bo'lsa (8 tadan ko'p) ichida qidiruv chiqadi; har bir qiymat yonidagi son
-  ro'yxatdan hisoblanadi, 0 ta bo'lgani xiralashadi. Tanlovlar "Qo'llash"
-  bosilgunicha panelda turadi — dropdown `components/ui/MultiSelect.vue` da,
-  o'zi `position: fixed` bilan joylashadi (karta chekkasida kesilmasin);
+* **filtr paneli** — checkbox'li dropdown'lar va zarar summasi oralig'i
+  (`dan – gacha`, million so'mda). Guruhlar serverning `facets` javobidan
+  olinadi: qiymat, nom va sanoq — hammasi o'shandan (status, bank, usul,
+  manba, hudud, asos, jinoyat turi, qabul turi), ustiga muddat guruhi
+  qo'shiladi (`is_overdue`, sanog'i jarayon chiplaridan). Server javob
+  bermasa mahalliy ro'yxatga qaytadi. Bir guruhdan bir nechta qiymat
+  tanlanadi; ro'yxat 8 tadan uzun bo'lsa ichida qidiruv chiqadi; sanog'i
+  0 bo'lgan qiymat xiralashadi. Tanlovlar "Qo'llash" bosilgunicha panelda
+  turadi — dropdown `components/ui/MultiSelect.vue` da, o'zi
+  `position: fixed` bilan joylashadi (karta chekkasida kesilmasin);
 * **ustun qidiruvi** — jadval sarlavhasidagi qator: ariza/material raqami,
   oqim, F.I.Sh. yoki usul, karta yoki bank, summa `dan–gacha`, status tanlovi
   va sana (native date input); o'ngdagi ✕ hammasini tozalaydi;
@@ -338,12 +347,34 @@ funksiyalarda, komponentlar faqat ularni chaqiradi:
 Takroriylik va muddat maydonlari ma'lumotda saqlanmaydi — bir xil karta bir
 necha arizada uchrashi va `overdue` bayrog'idan hisoblanadi.
 
-Serverga tanlovlar `status__in`, `bank__in`, `method__in`, `source__in`,
-`region__in`, muddat/takroriylik uchun `is_overdue` va `has_duplicate`, summa
-uchun `damage_amount__gte` / `damage_amount__lte` bo'lib ketadi
-(`src/stores/useRegistry.js` dagi `toParams`). Backend bu parametrlarni hali
-to'liq qo'llab-quvvatlamaydi — o'shangacha ro'yxat namuna ma'lumot ustida
-mahalliy filtrlanadi. Panel `npm run test:filters` bilan tekshiriladi.
+Server parametrlari Swagger'dan (`/api/schema/`) tekshirilib, har biri
+haqiqiy so'rov bilan sinalgan — `src/stores/useRegistry.js` dagi `toParams`:
+
+| Ekrandagi narsa | Parametr |
+| --- | --- |
+| navbat chiplari | `tab=<status>`, muddati o'tgani `process_tab=overdue` |
+| status, usul, manba, hudud, asos, jinoyat turi | `<guruh>__in` (vergul bilan) |
+| bank, qabul turi | `bank=`, `intake_type=` — serverda `__in` shakli yo'q, shuning uchun panelda ham bittadan tanlanadi |
+| muddat | `is_overdue=true\|false` |
+| zarar summasi | `amount_min` / `amount_max` (so'mda; ekranda mln) |
+| qidiruv | `search` |
+
+Navbat aynan `tab`/`process_tab` bilan beriladi: server chiplar sanog'ini
+o'sha tabning o'zisiz hisoblaydi, `status=`/`is_overdue=` bilan yuborilsa esa
+bitta chip tanlanganda qolganlari nolga tushib qoladi.
+
+Takroriylik alohida parametr emas — status ro'yxatidagi `duplicate`.
+`facets=` faqat qo'shimchalarni so'raydi (`status`, `basis`, `crime_type`,
+`intake_type`, `sla`): usul, manba, hudud va bank har bir javobda o'zi keladi.
+
+Reyestr sahifasining qolgan qismi ham serverdan oziqlanadi: KPI kartochkalari
+va yon paneldagi sonlar `by_status` + `tabs`/`process_tabs` dan
+(`useRegistry.counts` — bitta joyda hisoblanadi), navbat chiplari `tabs` dan,
+qoralamalar soni `useDrafts` dan, jadval va sahifalash `results`/`count` dan.
+XLSX eksporti server rejimida joriy filtr bo'yicha to'liq ro'yxatni alohida
+so'rov bilan oladi (`loadAll`, 1000 tagacha) — ilgari u ochiq sahifadagi emas,
+namuna ma'lumotni yozib yuborardi. Har bir joyda server javob bermasa namuna
+ma'lumotga qaytadi, shuning uchun ekran hech qachon bo'sh qolmaydi.
 
 Namuna ro'yxat 64 ta arizadan iborat: 9 tasi asl dizayndan, qolgani
 `src/data/applications.js` dagi generator orqali indeksdan hosil qilinadi

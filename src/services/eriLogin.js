@@ -19,11 +19,13 @@ export class EriError extends Error {
   /**
    * @param {string} key i18n kaliti (login.eri.errors.*)
    * @param {string} [detail] serverdan kelgan matn — bo'lsa shu ko'rsatiladi
+   * @param {number} [status] HTTP kodi — chaqiruvchi xatoni aniqroq ajratishi uchun
    */
-  constructor(key, detail) {
+  constructor(key, detail, status = 0) {
     super(detail || key)
     this.key = key
     this.detail = detail || ''
+    this.status = status
   }
 }
 
@@ -78,7 +80,7 @@ async function post(path, body, base = BASE) {
     throw new EriError('validation', first?.msg)
   }
 
-  if (!res.ok) throw new EriError('server', data?.detail || `HTTP ${res.status}`)
+  if (!res.ok) throw new EriError('server', data?.detail || `HTTP ${res.status}`, res.status)
 
   return data || {}
 }
@@ -247,7 +249,17 @@ export async function authPfxB64(pfx_b64, password) {
   if (!pfx_b64) throw new EriError('noFile')
   if (!password) throw new EriError('noPassword')
 
-  const data = await post('/auth/pfx', { pfx_b64, password }, GATEWAY)
+  let data
+  try {
+    data = await post('/auth/pfx', { pfx_b64, password }, GATEWAY)
+  } catch (e) {
+    // 401/403 — kalit yoki parol qabul qilinmadi; serverning matni saqlanadi,
+    // lekin kalit "rejected" bo'lgani uchun parol maydoni belgilanadi
+    if (e instanceof EriError && (e.status === 401 || e.status === 403)) {
+      throw new EriError('rejected', e.detail, e.status)
+    }
+    throw e
+  }
 
   if (!data.challenge_id) throw new EriError('server')
 

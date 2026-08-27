@@ -8,7 +8,9 @@ const props = defineProps({
   // detailFor().workflow — ichma-ich joylashgan daraxt (namuna)
   tree: { type: Array, default: () => [] },
   // serverdan kelgan hodisalar — tekis ro'yxat, yangisi tepada
-  events: { type: Array, default: null }
+  events: { type: Array, default: null },
+  // status o'zgarishlari tarixi — /complaints/<id>/history/
+  history: { type: Array, default: null }
 })
 
 const rows = computed(() => {
@@ -46,10 +48,85 @@ const rows = computed(() => {
       <span class="wf-badge" :class="n.actor">{{ n.label || $t(`detail.workflow.badges.${n.badge}`) }}</span>
       <span v-if="n.code" class="tag code mono">{{ n.code }}</span>
     </div>
+    <!-- status tarixi: serverdan alohida endpoint bilan keladi -->
+    <template v-if="history">
+      <div class="hist-head">{{ $t('detail.workflow.history') }}</div>
+
+      <div v-if="!history.length" class="hist-empty">
+        {{ $t('detail.workflow.historyEmpty') }}
+      </div>
+
+      <div v-for="h in history" :key="h.id" class="hist-row">
+        <span class="wf-time mono">
+          <AppIcon name="clock" :size="13" />
+          {{ h.time || '—' }}
+        </span>
+        <span class="hist-move">
+          <template v-if="h.from">
+            {{ $t(`status.${h.from}.label`) }}
+            <AppIcon name="arrowRight" :size="13" />
+          </template>
+          <template v-else>{{ $t('detail.workflow.created') }} →</template>
+          <strong>{{ $t(`status.${h.to}.label`) }}</strong>
+        </span>
+        <span v-if="h.person" class="hist-person">{{ h.person }}</span>
+        <span v-if="h.comment" class="hist-comment">{{ h.comment }}</span>
+      </div>
+    </template>
   </DetailPanel>
 </template>
 
 <style scoped>
+/* ---------- status tarixi ---------- */
+.hist-head {
+  margin: 18px 0 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ceef1f6);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c16233d);
+}
+
+.hist-empty {
+  font-size: 13.5px;
+  color: var(--c98a3b6);
+}
+
+.hist-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--ceef1f6);
+  font-size: 13.5px;
+  color: var(--c3d4d66);
+}
+
+.hist-row:last-child {
+  border-bottom: 0;
+}
+
+.hist-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c66748c);
+}
+
+.hist-move strong {
+  color: var(--c16233d);
+}
+
+.hist-person {
+  color: var(--c8b95a6);
+}
+
+.hist-comment {
+  flex: 1 0 100%;
+  color: var(--c8b95a6);
+}
+
 
 .wf-row {
   display: flex;

@@ -27,6 +27,7 @@ const { items, counts, duplicateCards } = useApplications()
 const registry = useRegistry()
 
 const filterOpen = ref(false)
+const exporting = ref(false)
 const page = ref(1)
 const perPage = ref(10)
 
@@ -44,6 +45,20 @@ const queue = computed(() => queueFromSlug(route.params.queue))
 
 // hudud filtri manzildan keladi: /?region=tashkentCity (admin panelidan o'tiladi)
 const region = computed(() => (typeof route.query.region === 'string' ? route.query.region : ''))
+
+/*
+  Hudud chipi: admin panelidan mahalliy kalit (`tashkentCity`) bilan ham,
+  serverdagi raqamli id bilan ham kelishi mumkin — nomi avval facets'dan
+  qidiriladi, topilmasa tarjimadan.
+*/
+const regionLabel = computed(() => {
+  const key = region.value
+  if (!key) return ''
+
+  const facet = registry.facetGroups.value.find((g) => g.key === 'region')
+  const hit = facet?.options.find((o) => String(o.value) === String(key))
+  return hit ? hit.label : t(`regions.${key}`)
+})
 
 function clearRegion() {
   const query = { ...route.query }
@@ -119,14 +134,50 @@ function clearFilters() {
   toast(t('applications.filtersCleared'))
 }
 
+const EXPORT_LIMIT = 1000
+
 async function exportXlsx() {
-  if (!filtered.value.length) {
+  if (exporting.value) return
+
+  // namuna rejimida ro'yxat qo'lda, server rejimida esa so'rov bilan olinadi
+  if (!registry.live.value && !filtered.value.length) {
     toast(t('applications.exportEmpty'), 'warn')
     return
   }
+
+  exporting.value = true
   toast(t('applications.exportToast'))
-  const name = await exportApplications(filtered.value, t)
-  toast(t('applications.exportDone', { file: name }))
+
+  try {
+    let rows = filtered.value
+    let cut = 0
+
+    if (registry.live.value) {
+      const all = await registry.loadAll({
+        queue: queue.value,
+        query: query.value,
+        region: region.value,
+        picked: picked.value,
+        amount: amount.value
+      }, EXPORT_LIMIT)
+
+      rows = all.rows
+      cut = Math.max(0, all.total - all.rows.length)
+    }
+
+    if (!rows.length) {
+      toast(t('applications.exportEmpty'), 'warn')
+      return
+    }
+
+    const name = await exportApplications(rows, t)
+    toast(t('applications.exportDone', { file: name }))
+    if (cut) toast(t('applications.exportPartial', { n: rows.length }), 'warn')
+  } catch {
+    toast(t('applications.exportFailed'), 'bad')
+  } finally {
+    exporting.value = false
+  }
 }
 </script>
 
@@ -175,16 +226,24 @@ async function exportXlsx() {
           <span>{{ $t('applications.filters') }}</span>
           <span v-if="activeFilters" class="head-badge mono">{{ activeFilters }}</span>
         </button>
-        <button type="button" class="head-btn" @click="exportXlsx">
-          <AppIcon name="download" :size="16" />
+        <button
+          type="button"
+          class="head-btn"
+          :disabled="exporting"
+          :title="$t('applications.exportTitle', { n: total })"
+          @click="exportXlsx"
+        >
+          <span v-if="exporting" class="head-spin" />
+          <AppIcon v-else name="download" :size="16" />
           <span>{{ $t('applications.export') }}</span>
+          <span v-if="total" class="head-badge mono">{{ total }}</span>
         </button>
       </header>
 
       <div v-if="region" class="region-bar">
         <span class="region-label">{{ $t('applications.regionFilter') }}</span>
         <span class="region-chip">
-          {{ $t(`regions.${region}`) }}
+          {{ regionLabel }}
           <button
             type="button"
             class="region-clear"
@@ -354,6 +413,19 @@ async function exportXlsx() {
   white-space: nowrap;
 }
 
+.card-count {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .12);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
 .head-btn {
   display: flex;
   align-items: center;
@@ -379,6 +451,47 @@ async function exportXlsx() {
 .head-btn.on {
   background: rgba(255, 255, 255, .26);
   border-color: #fff;
+}
+
+.head-btn:disabled {
+  opacity: .6;
+  cursor: progress;
+}
+
+.head-btn:disabled:hover {
+  background: rgba(255, 255, 255, .10);
+  transform: none;
+}
+
+/* tugma ichidagi sanoq: nechta ariza eksport qilinadi / nechta filtr yoqilgan */
+.head-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  margin-right: -4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .26);
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+}
+
+.head-spin {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  animation: headSpin .7s linear infinite;
+}
+
+@keyframes headSpin {
+  to { transform: rotate(360deg) }
 }
 
 /* filtr panelining ochilishi */
@@ -413,7 +526,7 @@ async function exportXlsx() {
     letter-spacing: .04em;
   }
 
-  .head-btn span {
+  .head-btn span:not(.head-badge):not(.head-spin) {
     display: none;
   }
 
