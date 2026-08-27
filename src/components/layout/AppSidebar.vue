@@ -27,6 +27,13 @@ const counts = computed(() => registry.counts.value || mockCounts.value)
 const draftCount = computed(() => drafted.state.count ?? drafts.value.length)
 
 /*
+  Javob kelgunicha sonlar ko'rsatilmaydi: aks holda namuna ma'lumot (64)
+  chaqnab, keyin haqiqiysiga (7) almashadi.
+*/
+const countsPending = registry.pending
+const draftsPending = computed(() => drafted.state.count === null)
+
+/*
   Reyestr ochilmagan sahifada (ariza qo'shish, qoralamalar, sozlamalar...)
   hech kim sanoqni so'ramaydi va sonlar namuna ma'lumotga tushib qolardi.
   Shuning uchun yon panel ularni o'zi bir marta yuklaydi; reyestr sahifasi
@@ -94,6 +101,7 @@ function go() {
         icon="list"
         :label="$t('nav.all')"
         :count="counts.all"
+        :loading="countsPending"
         to="/"
         :active="isActive('/')"
         :compact="compact"
@@ -113,6 +121,7 @@ function go() {
           icon="docLines"
           :label="$t('nav.drafts')"
           :count="draftCount"
+          :loading="draftsPending"
           to="/drafts"
           :active="isActive('/drafts')"
           :compact="compact"
@@ -171,6 +180,7 @@ function go() {
         icon="inbox"
         :label="$t('nav.newApps')"
         :count="counts.new || 0"
+        :loading="countsPending"
         count-tone="danger"
         :to="queuePath('new')"
         :active="isQueue('new')"
@@ -181,6 +191,7 @@ function go() {
         icon="back"
         :label="$t('nav.returned')"
         :count="counts.error || 0"
+        :loading="countsPending"
         count-tone="danger"
         :to="queuePath('error')"
         :active="isQueue('error')"
@@ -195,6 +206,7 @@ function go() {
         icon="bank"
         :label="$t('nav.inBank')"
         :count="counts.pending || 0"
+        :loading="countsPending"
         :to="queuePath('pending')"
         :active="isQueue('pending')"
         :compact="compact"
@@ -204,6 +216,7 @@ function go() {
         icon="lock"
         :label="$t('nav.blocked')"
         :count="counts.blocked || 0"
+        :loading="countsPending"
         count-tone="success"
         :to="queuePath('blocked')"
         :active="isQueue('blocked')"
@@ -214,6 +227,7 @@ function go() {
         icon="refresh"
         :label="$t('nav.autopayment')"
         :count="counts.autopayment || 0"
+        :loading="countsPending"
         :to="queuePath('autopayment')"
         :active="isQueue('autopayment')"
         :compact="compact"

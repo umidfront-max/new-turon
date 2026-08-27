@@ -93,8 +93,13 @@ async function load(id) {
   state.loading = false
 }
 
+/** Til almashganda ochiq arizani qaytadan so'raydi (yorliqlar tilga bog'liq). */
+function reload() {
+  return state.id && state.source === 'api' ? load(state.id) : Promise.resolve()
+}
+
 const live = computed(() => state.source === 'api' && !!state.detail)
 
 export function useComplaint() {
-  return { state, load, clear, live }
+  return { state, load, clear, reload, live }
 }

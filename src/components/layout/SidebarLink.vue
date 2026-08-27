@@ -5,6 +5,8 @@ defineProps({
   icon: { type: String, required: true },
   label: { type: String, required: true },
   count: { type: [String, Number], default: null },
+  // sanoq hali kelmagan — raqam o'rniga skelet turadi
+  loading: { type: Boolean, default: false },
   to: { type: String, default: null },
   active: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },   // yig'ilgan menyu
@@ -26,11 +28,19 @@ defineEmits(['click'])
   >
     <AppIcon :name="icon" :size="22" />
     <span v-if="!compact" class="label">{{ label }}</span>
-    <span v-if="count !== null && !compact" class="count mono">{{ count }}</span>
+    <span v-if="loading && !compact" class="count sk" />
+    <span v-else-if="count !== null && !compact" class="count mono">{{ count }}</span>
   </component>
 </template>
 
 <style scoped>
+/* skelet nishoncha sanoq bilan bir o'lchamda tursin */
+.count.sk {
+  width: 26px;
+  height: 18px;
+  border-radius: 999px;
+}
+
 .nav-link {
   display: flex;
   align-items: center;

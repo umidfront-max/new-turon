@@ -98,7 +98,11 @@ function toParams({ queue = 'all', query = '', region = '', picked = {}, amount 
  * Reyestrni yuklaydi. Xato bo'lsa `source` 'mock' bo'lib qoladi va
  * chaqiruvchi namuna ma'lumotга o'tadi.
  */
+// oxirgi so'rov parametrlari — til almashganda o'shani qaytadan so'raymiz
+let lastFilters = null
+
 async function load(filters) {
+  lastFilters = filters
   state.loading = true
   state.error = null
 
@@ -163,6 +167,16 @@ async function loadAll(filters, limit = 1000) {
   return { rows: page.rows, total: page.total }
 }
 
+/*
+  Serverdagi yorliqlar (chip nomlari, facet nomlari, status matnlari) so'rov
+  vaqtidagi tilda keladi. Til almashganda ularni qaytadan so'raymiz.
+*/
+function reload() {
+  if (lastFilters) return load(lastFilters)
+  if (state.byStatus) return loadCounts()
+  return Promise.resolve()
+}
+
 /** Serverdagi ma'lumot ishlatilyaptimi. */
 const live = computed(() => state.source === 'api')
 
@@ -218,5 +232,5 @@ const facetGroups = computed(() => {
 })
 
 export function useRegistry() {
-  return { state, load, loadCounts, loadAll, live, pending, counts, facetGroups, toParams }
+  return { state, load, loadCounts, loadAll, reload, live, pending, counts, facetGroups, toParams }
 }

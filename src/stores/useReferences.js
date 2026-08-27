@@ -68,6 +68,13 @@ async function load() {
   state.loaded = true
 }
 
+/** Til almashganda nomlarni qaytadan so'raydi. */
+async function reload() {
+  if (!state.loaded) return
+  state.loaded = false
+  await load()
+}
+
 /**
  * Serverdagi ro'yxat ishonchli bo'lsagina ishlatiladi.
  * Hozircha bazada sinov yozuvlari bor (1 ta hudud, 1 ta usul), shuning uchun
@@ -103,5 +110,5 @@ const live = computed(() => ({
 }))
 
 export function useReferences() {
-  return { state, load, methods, sources, regions, exact, live }
+  return { state, load, reload, methods, sources, regions, exact, live }
 }

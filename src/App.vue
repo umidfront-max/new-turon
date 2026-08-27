@@ -3,8 +3,12 @@ import { useRoute } from 'vue-router'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import AppToast from '@/components/ui/AppToast.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
+import { useLangRefresh } from '@/composables/useLangRefresh'
 
 const route = useRoute()
+
+// til almashganda serverdan kelgan matnlar qaytadan so'raladi
+useLangRefresh()
 </script>
 
 <template>
