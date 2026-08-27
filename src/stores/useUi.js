@@ -143,10 +143,13 @@ export function useUi() {
     state.confirm = null
   }
 
-  function runConfirm() {
+  /**
+   * @param {string} [value] `prompt` maydoniga kiritilgan matn
+   */
+  function runConfirm(value) {
     const box = state.confirm
     state.confirm = null
-    if (box && typeof box.run === 'function') box.run()
+    if (box && typeof box.run === 'function') box.run(value)
   }
 
   /** Ixtiyoriy uchinchi amal (`alt` yozuvi bo'lsa ko'rsatiladi). */

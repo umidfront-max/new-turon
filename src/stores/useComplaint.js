@@ -9,7 +9,7 @@ import { reactive, computed } from 'vue'
 import { i18nLang } from '@/i18n'
 import {
   fetchComplaint, fetchBankOperations, fetchSanctions,
-  fetchTransactionChain, fetchWorkflow, fetchHistory
+  fetchTransactionChain, fetchWorkflow, fetchHistory, changeStatus
 } from '@/services/complaints'
 import {
   complaintDetail, bankOperations, sanctionList,
@@ -93,6 +93,27 @@ async function load(id) {
   state.loading = false
 }
 
+/**
+ * Status o'zgartiradi va arizani qaytadan o'qiydi.
+ *
+ * Server har bir o'tishni tarixga yozadi, shuning uchun izoh ham yuboriladi.
+ * Yangilashdan keyin status, qadamlar treki, ish jarayoni va tarix bir vaqtda
+ * yangilanadi — qo'lda tuzatishga hojat yo'q.
+ *
+ * @param {string} status server kodidagi status ('pending', 'canceled', ...)
+ * @param {string} [comment] tarixda ko'rinadigan izoh
+ */
+async function setStatus(status, comment = '') {
+  if (!state.id) return null
+
+  const body = { status }
+  if (String(comment || '').trim()) body.comment = String(comment).trim()
+
+  const res = await changeStatus(state.id, body)
+  await load(state.id)
+  return res
+}
+
 /** Til almashganda ochiq arizani qaytadan so'raydi (yorliqlar tilga bog'liq). */
 function reload() {
   return state.id && state.source === 'api' ? load(state.id) : Promise.resolve()
@@ -101,5 +122,5 @@ function reload() {
 const live = computed(() => state.source === 'api' && !!state.detail)
 
 export function useComplaint() {
-  return { state, load, clear, reload, live }
+  return { state, load, clear, reload, setStatus, live }
 }

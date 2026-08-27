@@ -1,9 +1,20 @@
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { useUi } from '@/stores/useUi'
 
 const { ui, closeConfirm, runConfirm, runConfirmAlt } = useUi()
+
+/*
+  Ba'zi tasdiqlar izoh so'raydi (masalan status o'zgarishi — u tarixga
+  yoziladi). `prompt` berilgan bo'lsa maydon chiqadi va matn `run(value)` ga
+  uzatiladi.
+*/
+const note = ref('')
+
+watch(() => ui.confirm, (box) => { note.value = box?.prompt?.value || '' })
+
+const blocked = () => !!ui.confirm?.prompt?.required && !note.value.trim()
 
 function onKey(e) {
   if (e.key === 'Escape' && ui.confirm) closeConfirm()
@@ -26,6 +37,19 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
         <div class="ask-title">{{ ui.confirm.title }}</div>
         <div class="ask-text">{{ ui.confirm.text }}</div>
 
+        <label v-if="ui.confirm.prompt" class="ask-prompt">
+          <span class="ask-prompt-label">
+            {{ ui.confirm.prompt.label }}
+            <i v-if="!ui.confirm.prompt.required" class="ask-prompt-opt">· {{ $t('form.optional') }}</i>
+          </span>
+          <textarea
+            v-model="note"
+            class="ask-input"
+            rows="3"
+            :placeholder="ui.confirm.prompt.placeholder || ''"
+          />
+        </label>
+
         <div class="ask-actions">
           <!--
             Uchinchi amal bo'lsa (masalan «saqlamasdan chiqish») bekor qilish
@@ -44,7 +68,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
             type="button"
             class="btn-main"
             :style="{ background: ui.confirm.danger ? 'var(--cc0392b)' : 'var(--btn)' }"
-            @click="runConfirm"
+            :disabled="blocked()"
+            @click="runConfirm(note)"
           >
             {{ ui.confirm.ok || $t('common.confirm') }}
           </button>
@@ -63,6 +88,50 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
 .btn-ghost.alt:hover {
   background: var(--cfceceb);
+}
+
+.ask-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ask-prompt-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c3d4d66);
+}
+
+.ask-prompt-opt {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--c98a3b6);
+}
+
+.ask-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--ce2e8f1);
+  border-radius: 10px;
+  background: var(--s-card);
+  color: var(--c16233d);
+  font-size: 14.5px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.ask-input:focus {
+  border-color: var(--c23568f);
+  box-shadow: 0 0 0 3px var(--ce8eef7);
+}
+
+.btn-main:disabled {
+  opacity: .55;
+  cursor: not-allowed;
 }
 
 .ask-close {

@@ -17,7 +17,7 @@ import { useComplaint } from '@/stores/useComplaint'
 const route = useRoute()
 const router = useRouter()
 const { t, te } = useI18n()
-const { toast } = useUi()
+const { ask, toast } = useUi()
 const { byId } = useApplications()
 
 /*
@@ -143,8 +143,42 @@ function close() {
   router.push('/')
 }
 
+const acting = ref(false)
+
+/*
+  Statusni serverda o'zgartiradi. Server o'tishni tarixga yozadi, shuning
+  uchun keyin ariza qaytadan o'qiladi: status chipi, qadamlar treki, ish
+  jarayoni va tarix bir vaqtda yangilanadi.
+*/
+async function applyStatus(status, comment) {
+  if (acting.value) return
+  acting.value = true
+
+  try {
+    await api.setStatus(status, comment)
+    toast(t('detail.statusChanged'))
+  } catch (e) {
+    toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
+  } finally {
+    acting.value = false
+  }
+}
+
 function onAction() {
-  toast(data.value.action === 'fix' ? t('detail.fixToast') : t('detail.sent'))
+  // namuna ma'lumot bilan ishlayotganda server yo'q — avvalgidek xabar
+  if (!api.live.value) {
+    toast(data.value.action === 'fix' ? t('detail.fixToast') : t('detail.sent'))
+    return
+  }
+
+  ask({
+    title: t('detail.askSendTitle'),
+    text: t('detail.askSendText', { id: row.value.id }),
+    prompt: { label: t('detail.comment'), placeholder: t('detail.commentPh') },
+    ok: t(`detail.${data.value.action}`),
+    // «yuborish» ham, «tuzatib qayta yuborish» ham bankka jo'natadi
+    run: (comment) => applyStatus('pending', comment)
+  })
 }
 
 // daraxtni tekis ro'yxatga yozamiz — chuqurlik chekinish uchun
@@ -187,9 +221,15 @@ function exportXlsx() {
         {{ $t('detail.export') }}
       </button>
 
-      <button v-if="data.action" type="button" class="btn-dark" @click="onAction">
-        {{ $t(`detail.${data.action}`) }}
-        <AppIcon name="chevronRight" :size="15" />
+      <button
+        v-if="data.action"
+        type="button"
+        class="btn-dark"
+        :disabled="acting"
+        @click="onAction"
+      >
+        {{ acting ? $t('detail.sending') : $t(`detail.${data.action}`) }}
+        <AppIcon v-if="!acting" name="chevronRight" :size="15" />
       </button>
 
       <button type="button" class="icon-btn" :title="$t('detail.close')" @click="close">
