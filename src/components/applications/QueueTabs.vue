@@ -17,6 +17,9 @@ defineEmits(['update:modelValue'])
   Chiplar serverdan keladi: `tabs` — status bo'yicha, har birida tayyor
   yorliq va sanoq. Server javob bermasa loyihadagi ro'yxat va namuna sanoqlari.
 */
+// birinchi javob kelgunicha chiplar skelet holatida turadi
+const pending = registry.pending
+
 const tabs = computed(() => {
   const fromApi = registry.state.tabs
   if (fromApi.length) return fromApi
@@ -37,7 +40,8 @@ const tabs = computed(() => {
       @click="$emit('update:modelValue', q.key)"
     >
       <span>{{ q.label || $t(`queues.${q.key}`) }}</span>
-      <span class="q-count mono">{{ q.count }}</span>
+      <span v-if="pending" class="sk" style="width: 16px; height: 14px" />
+      <span v-else class="q-count mono">{{ q.count }}</span>
     </button>
   </div>
 </template>

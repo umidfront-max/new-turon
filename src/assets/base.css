@@ -154,6 +154,21 @@ textarea::placeholder {
   70% { box-shadow: 0 0 0 7px rgba(74, 157, 107, 0) }
 }
 
+/*
+  Yuklanayotgan joy. Ma'lumot kelgunicha namuna qiymat ko'rsatilmasligi
+  kerak — uning o'rniga shu "kulrang chiziq" turadi.
+*/
+.sk {
+  display: inline-block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--ceef1f6) 25%, var(--cf8fafc) 50%, var(--ceef1f6) 75%);
+  background-size: 420px 100%;
+  animation: shimmer 1.2s linear infinite;
+  color: transparent;
+  user-select: none;
+  pointer-events: none;
+}
+
 @keyframes shimmer {
   from { background-position: -420px 0 }
   to { background-position: 420px 0 }

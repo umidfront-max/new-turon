@@ -4,8 +4,13 @@ import StatusPill from '@/components/ui/StatusPill.vue'
 import { flowStyle } from '@/data/applications'
 
 defineProps({
-  rows: { type: Array, required: true }
+  rows: { type: Array, required: true },
+  // serverdan javob kutilyapti — qatorlar o'rniga skelet chiziladi
+  loading: { type: Boolean, default: false }
 })
+
+// skelet qatorlari soni (bir sahifadagi odatiy qator)
+const SKELETON_ROWS = 10
 
 defineEmits(['open'])
 
@@ -39,7 +44,15 @@ const COLS = [
         </tr>
       </thead>
 
-      <tbody>
+      <tbody v-if="loading">
+        <tr v-for="n in SKELETON_ROWS" :key="n" class="row sk-row">
+          <td v-for="c in COLS" :key="c.key">
+            <span class="sk" :style="{ width: c.key === 'n' ? '18px' : '70%', height: '13px' }" />
+          </td>
+        </tr>
+      </tbody>
+
+      <tbody v-else>
         <tr
           v-for="(r, i) in rows"
           :key="r.id"
@@ -94,6 +107,14 @@ const COLS = [
 
   <!-- ---------- mobil kartalar ---------- -->
   <div class="cards">
+    <div v-if="loading" class="sk-cards">
+      <div v-for="n in 4" :key="n" class="sk-card">
+        <span class="sk" style="width: 45%; height: 14px" />
+        <span class="sk" style="width: 70%; height: 12px" />
+        <span class="sk" style="width: 30%; height: 12px" />
+      </div>
+    </div>
+
     <button
       v-for="(r, i) in rows"
       :key="r.id"
@@ -130,6 +151,28 @@ const COLS = [
 </template>
 
 <style scoped>
+/* yuklanish skeleti — qatorlar bosilmaydi va animatsiyasiz turadi */
+.sk-row {
+  animation: none;
+  cursor: default;
+}
+
+.sk-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--ce2e8f1);
+  border-radius: 10px;
+  background: var(--s-card);
+}
+
 /* ---------- jadval ---------- */
 
 .grid {

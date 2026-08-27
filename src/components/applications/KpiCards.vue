@@ -12,6 +12,9 @@ defineEmits(['pick'])
 
 // Sanoqlar serverdan (`by_status`) keladi; u yo'q bo'lsa namuna ma'lumotdan.
 const shown = computed(() => registry.counts.value || counts.value)
+
+// birinchi javob kelgunicha namuna soni emas, skelet
+const pending = registry.pending
 </script>
 
 <template>
@@ -30,7 +33,8 @@ const shown = computed(() => registry.counts.value || counts.value)
       <span class="kpi-body">
         <span class="kpi-label">{{ $t(`kpi.${k.key}.label`) }}</span>
         <span class="kpi-row">
-          <span class="kpi-value mono" :style="{ color: k.tone }">{{ shown[k.key] || 0 }}</span>
+          <span v-if="pending" class="sk" style="width: 32px; height: 26px" />
+          <span v-else class="kpi-value mono" :style="{ color: k.tone }">{{ shown[k.key] || 0 }}</span>
           <span class="kpi-note">{{ $t(`kpi.${k.key}.note`) }}</span>
         </span>
       </span>

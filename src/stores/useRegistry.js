@@ -166,6 +166,15 @@ async function loadAll(filters, limit = 1000) {
 /** Serverdagi ma'lumot ishlatilyaptimi. */
 const live = computed(() => state.source === 'api')
 
+/*
+  Hali birinchi javob kelmagan. Shu paytda ekranda namuna ma'lumot emas,
+  yuklanish ko'rsatiladi — aks holda soxta sonlar chaqnab o'tadi.
+
+  Keyingi so'rovlarda (filtr, sahifa almashganda) skelet qaytmaydi: jadval
+  eski qatorlar bilan turadi va yangisi kelganda almashadi.
+*/
+const pending = computed(() => state.source === null)
+
 /**
  * Ekran kalitlari bo'yicha sanoqlar (`all`, `new`, `blocked`, `overdue`, ...).
  * Server javob bermagan bo'lsa null — chaqiruvchi namuna sanoqlariga qaytadi.
@@ -209,5 +218,5 @@ const facetGroups = computed(() => {
 })
 
 export function useRegistry() {
-  return { state, load, loadCounts, loadAll, live, counts, facetGroups, toParams }
+  return { state, load, loadCounts, loadAll, live, pending, counts, facetGroups, toParams }
 }

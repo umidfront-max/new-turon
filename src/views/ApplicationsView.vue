@@ -25,6 +25,9 @@ const { items, counts, duplicateCards } = useApplications()
 // quyidagi namuna ma'lumot ishlatiladi, ekran bir xil ko'rinadi.
 const registry = useRegistry()
 
+// birinchi javob kelgunicha namuna sonlari emas, yuklanish ko'rsatiladi
+const pending = registry.pending
+
 const filterOpen = ref(false)
 const exporting = ref(false)
 
@@ -263,7 +266,8 @@ async function exportXlsx() {
       <header class="card-head dark-bar">
         <AppIcon name="list" :size="19" />
         <span class="card-title">{{ $t('applications.title') }}</span>
-        <span class="card-count mono">{{ total }}</span>
+        <span v-if="pending" class="sk card-count" style="width: 34px; height: 22px" />
+        <span v-else class="card-count mono">{{ total }}</span>
 
         <label class="search">
           <AppIcon name="search" :size="18" />
@@ -309,7 +313,7 @@ async function exportXlsx() {
             <span v-if="exporting" class="head-spin" />
             <AppIcon v-else name="download" :size="16" />
             <span>{{ $t('applications.export') }}</span>
-            <span v-if="total" class="head-badge mono">{{ total }}</span>
+            <span v-if="!pending && total" class="head-badge mono">{{ total }}</span>
           </button>
         </div>
       </header>
@@ -339,17 +343,17 @@ async function exportXlsx() {
         />
       </Transition>
 
-      <ApplicationsTable :rows="rows" @open="openApplication" />
+      <ApplicationsTable :rows="rows" :loading="pending" @open="openApplication" />
 
       <EmptyState
-        v-if="!rows.length"
+        v-if="!pending && !rows.length"
         icon="doc"
         :title="$t('applications.emptyTitle')"
         :text="$t('applications.emptyText')"
       />
 
       <TablePagination
-        v-if="total"
+        v-if="!pending && total"
         v-model="page"
         v-model:per-page="perPage"
         :total="total"

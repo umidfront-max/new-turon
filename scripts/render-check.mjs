@@ -21,6 +21,10 @@ globalThis.history = {
 globalThis.addEventListener = () => {}; globalThis.removeEventListener = () => {}; globalThis.scrollTo = () => {}
 globalThis.window = globalThis
 
+// tekshiruv namuna ma'lumot ustida ketadi — so'rov darhol yiqilsin
+process.env.VITE_API_URL = 'http://127.0.0.1:9/api/v1'
+process.env.VITE_GATEWAY_URL = 'http://127.0.0.1:9'
+
 const { createServer } = await import('vite')
 const { renderToString } = await import('vue/server-renderer')
 const { createSSRApp } = await import('vue')
@@ -31,9 +35,19 @@ const { default: i18n, setLang } = await vite.ssrLoadModule('/src/i18n/index.js'
 const router = (await vite.ssrLoadModule('/src/router/index.js')).default
 const { useAuth } = await vite.ssrLoadModule('/src/stores/useAuth.js')
 const { useApplications, toNumber } = await vite.ssrLoadModule('/src/stores/useApplications.js')
+const { useRegistry } = await vite.ssrLoadModule('/src/stores/useRegistry.js')
 
 const auth = useAuth()
 const store = useApplications()
+
+const registry = useRegistry()
+
+/*
+  Reyestr birinchi javob kelgunicha skelet ko'rsatadi. Bu yerda server yo'q
+  (manzil ataylab ulanmaydigan qilib qo'yilgan), shuning uchun bir marta
+  so'rab qo'yamiz: u yiqiladi va ekran namuna ma'lumotga o'tadi.
+*/
+await registry.load({}).catch(() => {})
 
 async function render(path) {
   const app = createSSRApp(App)
