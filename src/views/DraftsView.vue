@@ -32,7 +32,12 @@ const rows = computed(() => {
 })
 
 function resume(draft) {
-  router.push({ path: '/application/new', query: { draft: draft.id } })
+  /*
+    Serverdagi qoralama uchun raqamli identifikator kerak: `id` — bu ariza
+    raqami ("KJ-2026-..."), forma esa uni raqam deb qabul qilmaydi va
+    qoralamani ochib bo'lmasdi.
+  */
+  router.push({ path: '/application/new', query: { draft: String(draft.apiId ?? draft.id) } })
 }
 
 function barColor(done) {
