@@ -464,18 +464,26 @@ export function transactionChain(res) {
 /** Ish jarayoni tabi — hodisalar tekis ro'yxatda, yangisi tepada. */
 export function workflowEvents(res) {
   const events = res?.events || []
-  return events.map((e) => ({
-    kind: e.kind,
-    label: e.label || '',
-    actor: e.kind === 'status' ? 'bank' : 'staff',
-    badge: e.to_status || e.kind,
-    time: dateTime(e.at),
-    person: e.employee_name || '',
-    position: e.employee_position || '',
-    comment: e.comment || '',
-    depth: 0,
-    children: []
-  }))
+
+  return events
+    // server yangisini tepada beradi, ekranda esa voqealar tartibi bo'yicha
+    .slice()
+    .sort((a, b) => String(a.at).localeCompare(String(b.at)))
+    .map((e) => ({
+      kind: e.kind,
+      label: e.label || '',
+      // xodim nomi bo'lsa — u qilgan, bo'lmasa tizim/bank tomonidan
+      actor: e.employee_name ? 'staff' : 'bank',
+      badge: e.to_status || e.kind,
+      from: e.from_status ? statusToUi(e.from_status) : null,
+      to: e.to_status ? statusToUi(e.to_status) : null,
+      time: dateTime(e.at),
+      person: e.employee_name || '',
+      position: e.employee_position || '',
+      comment: e.comment || '',
+      depth: 0,
+      children: []
+    }))
 }
 
 /**
