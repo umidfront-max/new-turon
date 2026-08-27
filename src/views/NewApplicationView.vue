@@ -789,8 +789,13 @@ function cancelAll() {
 /* ---------- ustunlar ---------- */
 .cols {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 420px;
-  gap: 14px;
+  /*
+    O'ng ustun — rekvizit paneli. 420px da karta raqami, to'lov tizimi va
+    tranzaksiyalar bir-biriga siqilib qolardi; keng ekranda 480px gacha
+    kengayadi, tor ekranda esa 380px gacha qisqaradi.
+  */
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 32vw, 480px);
+  gap: 16px;
   align-items: start;
 }
 

@@ -581,6 +581,68 @@ const total = computed(() => {
   background: var(--cf8fafc);
 }
 
+.added-ico {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--ce8eef7);
+  color: var(--c23568f);
+}
+
+/* raqam va tavsif ustma-ust: tor ustunda bir qatorga sig'maydi */
+.added-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.added-num {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: var(--c16233d);
+  overflow-wrap: anywhere;
+}
+
+.added-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 12.5px;
+  color: var(--c8b95a6);
+}
+
+/* to'lov tizimi (UzCard, Humo) yoki bank nomi */
+.added-meta .tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--cf0f3f8);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c3d4d66);
+}
+
+.req-chev {
+  flex: 0 0 auto;
+  color: var(--c98a3b6);
+}
+
+.req-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--ceef1f6);
+  background: var(--cf8fafc);
+}
+
 
 .tx-row {
   display: flex;
@@ -590,6 +652,28 @@ const total = computed(() => {
   border-radius: 9px;
   border: 1px solid var(--ce2e8f1);
   background: var(--s-card);
+  transition: border-color .16s ease;
+}
+
+.tx-row:hover {
+  border-color: var(--cc8cdd6);
+}
+
+/* summa va vaqt ikki chetga: tor joyda ustma-ust tushadi */
+.tx-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.tx-date {
+  font-size: 12.5px;
+  color: var(--c8b95a6);
+  white-space: nowrap;
 }
 
 
