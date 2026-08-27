@@ -205,7 +205,7 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: var(--c8b95a6);
+  color: var(--c66748c);
 }
 
 .ms-control {
@@ -215,10 +215,11 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border: 1.5px solid var(--ce2e8f1);
+  border: 1.5px solid var(--cd5e0ee);
   border-radius: 10px;
   background: var(--s-card);
-  color: var(--ca3adbd);
+  /* bo'sh holatdagi matn ham o'qilarli bo'lsin */
+  color: var(--c66748c);
   font-size: 14.5px;
   font-family: inherit;
   text-align: left;
@@ -247,7 +248,7 @@ onBeforeUnmount(() => { if (open.value) listen(false) })
 
 .ms-caret {
   flex: 0 0 auto;
-  color: var(--c98a3b6);
+  color: var(--c8b95a6);
 }
 
 .ms-pop {

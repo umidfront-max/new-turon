@@ -171,7 +171,7 @@ function apply() {
   font-weight: 600;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: var(--c8b95a6);
+  color: var(--c66748c);
 }
 
 .famount-row {
@@ -185,7 +185,7 @@ function apply() {
   min-width: 0;
   height: 44px;
   padding: 0 12px;
-  border: 1.5px solid var(--ce2e8f1);
+  border: 1.5px solid var(--cd5e0ee);
   border-radius: 10px;
   background: var(--s-card);
   color: var(--c16233d);
@@ -196,7 +196,7 @@ function apply() {
 }
 
 .famount-input::placeholder {
-  color: var(--ca3adbd);
+  color: var(--c8b95a6);
 }
 
 .famount-input:hover {
@@ -210,7 +210,7 @@ function apply() {
 
 .famount-dash {
   flex: 0 0 auto;
-  color: var(--ca3adbd);
+  color: var(--c8b95a6);
 }
 
 /* ---------- amallar ---------- */
