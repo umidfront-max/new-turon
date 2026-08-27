@@ -89,9 +89,26 @@ function markErrorsRequisite() {
   return !(errors.number || errors.amount || errors.time)
 }
 
+/*
+  Nima yetishmayotganini aniq aytadi. Ilgari «Tekshirish» tugmasi shunchaki
+  o'chirilgan turardi va foydalanuvchi sababini bilmasdi — masalan sanadan
+  keyin soat kiritilmagan bo'lsa.
+*/
+function requisiteProblem() {
+  const need = requiredLength.value
+  const has = digitsOnly(draft.number).length
+
+  if (has !== need) return t('form.requisite.needNumber', { n: need, has })
+  if (!digitsOnly(draft.amount)) return t('form.requisite.needAmount')
+  if (!isValidDateTime(draft.time)) {
+    return t('form.requisite.needTime', { format: t('form.requisite.timePh') })
+  }
+  return t('form.invalid')
+}
+
 function checkRequisite() {
   if (!markErrorsRequisite()) {
-    toast(t('form.invalid'), 'bad')
+    toast(requisiteProblem(), 'bad')
     return
   }
   verified.value = true
@@ -277,11 +294,15 @@ const total = computed(() => {
       </div>
 
       <div class="block-actions">
+        <!--
+          Tugma o'chirib qo'yilmaydi: aks holda foydalanuvchi nega bosib
+          bo'lmayotganini bilmay qoladi. Bosilganda yetishmayotgan maydon
+          qizil bo'lib belgilanadi.
+        -->
         <button
           v-if="!verified"
           type="button"
           class="btn-dark"
-          :disabled="!canAdd"
           @click="checkRequisite"
         >
           <AppIcon name="scan" :size="16" />
