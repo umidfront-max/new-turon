@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import RoleMenu from './RoleMenu.vue'
@@ -23,6 +23,39 @@ notifyApi.load()
 // Navbatchilik bosqichi ham serverdan (bo'lsa) — chip va tugma shunga qarab
 const dutyApi = useDuty()
 dutyApi.load()
+
+// javob kelgunicha chipda skelet turadi
+const dutyPending = computed(() => dutyApi.state.source === null)
+
+// serverdagi bosqich ekrandagi holatni boshqaradi
+watch(() => dutyApi.phase.value, (p) => {
+  if (dutyApi.live.value) state.dutyPhase = p || 'closed'
+}, { immediate: true })
+
+/*
+  Chipning ikkinchi qatori. Ilgari bu yerda qat'iy yozilgan matn turardi
+  ("1-smena · 09:00–21:00"). Endi bosqichga mos serverdagi vaqt ko'rsatiladi.
+*/
+const dutyMeta = computed(() => {
+  if (!dutyApi.live.value) return duty.value.meta
+
+  const sh = dutyApi.state.shift || dutyApi.state.report
+  if (!sh) return ''
+
+  return {
+    on: sh.startedAt,
+    review: sh.submittedAt,
+    returned: sh.returnedAt,
+    closed: sh.endedAt || sh.acceptedAt
+  }[state.dutyPhase] || ''
+})
+
+// serverda smena yo'q — hozir navbatchi emas
+const dutyState = computed(() => (
+  dutyApi.live.value && !dutyApi.state.shift && !dutyApi.state.report
+    ? t('duty.none')
+    : duty.value.state
+))
 // sanoq faqat serverdan: javob kelgunicha nishoncha umuman chiqmaydi
 const unreadCount = computed(() => notifyApi.unread.value)
 
@@ -129,8 +162,11 @@ function onDutyClick() {
     >
       <span class="duty-dot" :style="{ background: duty.dot }" />
       <span class="duty-text">
-        <span class="duty-state">{{ duty.state }}</span>
-        <span class="duty-meta mono">{{ duty.meta }}</span>
+        <span v-if="dutyPending" class="sk duty-sk-state" />
+        <span v-else class="duty-state">{{ dutyState }}</span>
+
+        <span v-if="dutyPending" class="sk duty-sk-meta" />
+        <span v-else-if="dutyMeta" class="duty-meta mono">{{ dutyMeta }}</span>
       </span>
       <button
         v-if="dutyButton"
@@ -274,6 +310,17 @@ function onDutyClick() {
 /* tugmasi yo'q holatda o'ng chekka ham matn kabi bo'shliqli tursin */
 .duty.no-btn {
   padding-right: 13px;
+}
+
+.duty-sk-state {
+  width: 84px;
+  height: 13px;
+}
+
+.duty-sk-meta {
+  width: 108px;
+  height: 10px;
+  margin-top: 5px;
 }
 
 .duty-dot {

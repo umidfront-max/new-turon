@@ -11,16 +11,19 @@
 */
 import { reactive, computed } from 'vue'
 import {
-  fetchCurrentDuty, fetchDutyCandidates, startDuty,
+  fetchCurrentDuty, fetchDutyCandidates, fetchDutyReport, startDuty,
   handOverDuty, acceptDuty, returnDuty
 } from '@/services/complaints'
-import { dutyShift, dutyCandidates } from '@/utils/adapt'
+import { dutyShift, dutyCandidates, dutyReport } from '@/utils/adapt'
 
 const state = reactive({
   shift: null,
   report: null,
   incoming: [],
   candidates: { available: false, count: 0, items: [] },
+  // hisobot oynasining ichi: natijalar, bajarilgan va qolgan ishlar
+  detail: null,
+  detailLoading: false,
   loading: false,
   source: null, // 'api' | 'mock'
   error: null
@@ -46,6 +49,25 @@ async function load() {
   } finally {
     state.loading = false
   }
+}
+
+/**
+  Hisobot oynasi ochilganda uning ichi so'raladi. Ro'yxat va sanoqlar faqat
+  shu javobdan olinadi — javob kelgunicha oynada skelet turadi.
+*/
+async function loadReport(id) {
+  if (!id) return null
+  state.detailLoading = true
+
+  try {
+    state.detail = dutyReport(await fetchDutyReport(id))
+  } catch {
+    state.detail = null
+  } finally {
+    state.detailLoading = false
+  }
+
+  return state.detail
 }
 
 /** Topshirish oynasi ochilganda nomzodlar ro'yxati kerak bo'ladi. */
@@ -93,5 +115,5 @@ const live = computed(() => state.source === 'api')
 const phase = computed(() => state.shift?.phase || state.report?.phase || null)
 
 export function useDuty() {
-  return { state, load, loadCandidates, start, handOver, accept, sendBack, live, phase }
+  return { state, load, loadReport, loadCandidates, start, handOver, accept, sendBack, live, phase }
 }

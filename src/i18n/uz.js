@@ -84,6 +84,7 @@ export default {
   },
 
   duty: {
+    none: 'Navbatchilikda emas',
     staff: {
       on: { state: 'Navbatchi', meta: '1-smena · 09:00–21:00' },
       review: { state: 'Tekshiruvda', meta: '1-smena · 09:41 da' },
@@ -130,28 +131,17 @@ export default {
     results: 'Smena natijalari',
     items: '{n} ta',
     stats: {
-      accepted: 'ariza qabul qilindi',
-      blocked: 'rekvizit bloklandi',
-      sent: 'bankka yuborildi',
-      closed: 'ariza yopildi',
-      autopayment: "avto to'lov to'xtatildi",
-      answer: "o'rtacha javob vaqti"
+      received: 'ariza qabul qilindi',
+      taken: "o'ziga olindi",
+      done: 'ariza yopildi',
+      open: 'ochiq qoldi',
+      hours: 'soat navbatchilik'
     },
     done: 'Bajarilgan ishlar',
-    doneItems: {
-      blocked: "Karta bloklandi, mablag' ushlab qolindi",
-      bankRequest: "Bankka so'rov yuborildi (Kapitalbank)",
-      autopayment: "Avto to'lov to'xtatildi",
-      manyBlocked: '12 rekvizit bloklandi'
-    },
-    tags: { closed: 'Yopildi', done: 'Bajarildi' },
     left: 'Topshirilayotgan (qolgan) ishlar',
-    leftItems: {
-      waitBank: 'Bank javobi kutilmoqda',
-      noContact: "Fuqaro bilan bog'lanilmadi",
-      notEnough: "Ma'lumot yetarli emas"
-    },
-    next: { tomorrow: 'Ertaga 12:00 gacha', recall: "Qayta qo'ng'iroq", request: "Tergovchidan so'rov" },
+    doneEmpty: 'Smena davomida yakunlangan ish yo\'q',
+    leftEmpty: 'Topshirilayotgan ish yo\'q',
+    noCandidates: 'Topshirish uchun xodim topilmadi',
     note: 'Navbatchi izohi',
     notePh: "Smena davomidagi muhim holatlar, e'tibor talab qiladigan arizalar…",
     noteEmpty: 'Izoh qoldirilmagan',

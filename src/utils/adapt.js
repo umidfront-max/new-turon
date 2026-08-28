@@ -578,6 +578,42 @@ function hoursBetween(from, to) {
 }
 
 /** Topshirish uchun nomzodlar. */
+/**
+  Navbatchilik hisoboti — `GET /duty/{id}/`.
+
+  Server to'rt bo'lak qaytaradi: smena sarlavhasi, natijalar, bajarilgan
+  ishlar va topshirilayotgan (ochiq qolgan) ishlar. Ilgari bu bo'limlar
+  namuna ma'lumot bilan to'ldirilardi.
+*/
+export function dutyReport(res) {
+  if (!res) return null
+
+  const st = res.statistics || {}
+  const row = (r) => ({
+    id: r.id,
+    number: r.number || '',
+    material: r.material_number || null,
+    method: r.method_name || '',
+    status: statusToUi(r.status),
+    statusLabel: r.status_display || '',
+    at: dateTime(r.updated_at)
+  })
+
+  return {
+    shift: dutyShift(res.shift),
+    // faqat server bergan ko'rsatkichlar; yorliqlar dutyReport.stats.* dan
+    stats: [
+      { key: 'received', v: st.received ?? 0 },
+      { key: 'taken', v: st.taken ?? 0 },
+      { key: 'done', v: st.done ?? 0, fg: 'var(--c1a6e4b)' },
+      { key: 'open', v: st.open ?? 0 },
+      { key: 'hours', v: st.duration_hours ?? 0 }
+    ],
+    done: (res.done || []).map(row),
+    open: (res.open || []).map(row)
+  }
+}
+
 export function dutyCandidates(res) {
   return {
     available: !!res?.available,

@@ -9,7 +9,8 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
-import { CODE, STATS, DONE, LEFT, TARGETS, REASONS, TAG_TONE } from '@/data/duty'
+import { REASONS } from '@/data/duty'
+import { STATUS } from '@/data/applications'
 import { useUi } from '@/stores/useUi'
 import { useDuty } from '@/stores/useDuty'
 
@@ -25,26 +26,39 @@ const returning = ref(false)
 const duty = useDuty()
 const shift = computed(() => duty.state.shift || duty.state.report)
 
-// Kimga topshirish: serverdagi nomzodlar bo'lsa ulardan, aks holda namunadan.
-const targets = computed(() => {
-  const list = duty.state.candidates.items
-  if (!list.length) return TARGETS
-  return list.map((c) => ({
-    id: c.id,
-    ini: (c.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase(),
-    name: c.name,
-    note: c.position || c.region || ''
-  }))
-})
+// Kimga topshirish — faqat serverdagi nomzodlar (bir hudud, bir lavozim).
+const targets = computed(() => duty.state.candidates.items.map((c) => ({
+  id: c.id,
+  ini: (c.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase(),
+  name: c.name,
+  note: c.position || c.region || ''
+})))
 
 // tanlangan nomzodning serverdagi identifikatori
 const handTo = computed(() => targets.value[target.value]?.id ?? null)
 const phase = computed(() => (duty.live.value && duty.phase.value ? duty.phase.value : state.dutyPhase))
 
-// oyna ochilganda topshirish uchun nomzodlar so'raladi
-watch(() => state.dutyModal, (open) => {
-  if (open && duty.live.value) duty.loadCandidates()
+/*
+  Oyna ochilganda ikki so'rov ketadi: hisobotning ichi (natijalar va ishlar
+  ro'yxati) hamda topshirish uchun nomzodlar. Izoh ham serverdagisidan
+  boshlanadi — navbatchi uni davom ettirib tahrirlaydi.
+*/
+watch(() => state.dutyModal, async (open) => {
+  if (!open) return
+  duty.loadCandidates()
+
+  const id = shift.value?.id
+  if (!id) return
+
+  const res = await duty.loadReport(id)
+  note.value = res?.shift?.note || shift.value?.note || ''
 })
+
+const report = computed(() => duty.state.detail)
+const loading = computed(() => duty.state.detailLoading)
+
+// ro'yxat qatoridagi holat nishonchasi — reyestrdagi ranglar bilan bir xil
+const tone = (status) => STATUS[status] || STATUS.new
 
 // navbatchi hisobotni faqat qoralama yoki qaytarilgan holatda tahrirlaydi
 const editable = computed(() => !isExec.value && (phase.value === 'on' || phase.value === 'returned'))
@@ -55,12 +69,38 @@ const banner = computed(() => {
   return null
 })
 
-const meta = computed(() => [
-  { k: 'officer', v: t('profile.staff.name') },
-  { k: 'shift', v: '09:00 – 21:00' },
-  { k: 'hours', v: t('dutyReport.hoursValue', { n: 12 }) },
-  { k: 'receiver', v: targets.value[target.value]?.name || '' }
-])
+/*
+  Sarlavha ostidagi to'rt maydon — smena yozuvidan. Qabul qiluvchi: hisobot
+  yuborilgan bo'lsa serverdagi voris, hali yuborilmagan bo'lsa ro'yxatdan
+  tanlangani.
+*/
+const meta = computed(() => {
+  const sh = report.value?.shift || shift.value
+  const hours = report.value?.stats.find((x) => x.key === 'hours')?.v
+
+  return [
+    { k: 'officer', v: sh?.officer || '' },
+    { k: 'shift', v: [sh?.startedAt, sh?.endedAt].filter(Boolean).join(' – ') },
+    { k: 'hours', v: hours == null ? '' : t('dutyReport.hoursValue', { n: hours }) },
+    { k: 'receiver', v: sh?.successor || targets.value[target.value]?.name || '' }
+  ]
+})
+
+/*
+  Yuborilgan hisobotda voris serverdan keladi; hali yuborilmagan bo'lsa
+  ro'yxatdan tanlangani ko'rsatiladi.
+*/
+const handed = computed(() => {
+  const sh = report.value?.shift || shift.value
+  const pick = targets.value[target.value]
+  const name = sh?.successor || pick?.name || ''
+
+  return {
+    name,
+    note: sh?.successorPosition || pick?.note || '',
+    ini: (name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+  }
+})
 
 const mainAction = computed(() => {
   if (isExec.value) {
@@ -157,7 +197,8 @@ async function runReturn() {
           <span class="head-ico"><AppIcon name="doc" :size="28" /></span>
           <div class="head-text">
             <span class="title">{{ $t('dutyReport.title') }}</span>
-            <span class="code mono">{{ shift?.code || CODE }}</span>
+            <span v-if="shift?.code" class="code mono">{{ shift.code }}</span>
+            <span v-else class="sk code-sk" />
           </div>
           <span class="tag">{{ $t(`dutyReport.phase.${phase}`) }}</span>
           <button type="button" class="close" :title="$t('common.close')" @click="close">
@@ -193,9 +234,15 @@ async function runReturn() {
           <section class="group">
             <span class="group-title">{{ $t('dutyReport.results') }}</span>
             <div class="stats">
-              <div v-for="s in STATS" :key="s.key" class="stat">
-                <span class="stat-v mono" :style="{ color: s.fg || 'var(--c1c2b45)' }">{{ s.v }}</span>
-                <span class="stat-k">{{ $t(`dutyReport.stats.${s.key}`) }}</span>
+              <template v-if="loading">
+                <div v-for="n in 5" :key="n" class="stat">
+                  <span class="sk stat-sk-v" />
+                  <span class="sk stat-sk-k" />
+                </div>
+              </template>
+              <div v-for="x in (report?.stats || [])" v-else :key="x.key" class="stat">
+                <span class="stat-v mono" :style="{ color: x.fg || 'var(--c1c2b45)' }">{{ x.v }}</span>
+                <span class="stat-k">{{ $t(`dutyReport.stats.${x.key}`) }}</span>
               </div>
             </div>
           </section>
@@ -204,17 +251,21 @@ async function runReturn() {
           <section class="group">
             <span class="group-title">
               {{ $t('dutyReport.done') }}
-              <span class="count">{{ $t('dutyReport.items', DONE.length) }}</span>
+              <span v-if="!loading" class="count">{{ $t('dutyReport.items', report?.done.length || 0) }}</span>
             </span>
             <div class="rows">
-              <div v-for="d in DONE" :key="d.id" class="row">
-                <span class="row-id mono">{{ d.id }}</span>
-                <span class="row-title">{{ $t(`dutyReport.doneItems.${d.key}`) }}</span>
-                <span class="row-tag" :style="{ background: TAG_TONE[d.tag].bg, color: TAG_TONE[d.tag].fg }">
-                  {{ $t(`dutyReport.tags.${d.tag}`) }}
+              <div v-if="loading" class="row"><span class="sk row-sk" /></div>
+              <div v-for="d in (report?.done || [])" v-else :key="d.id" class="row">
+                <span class="row-id mono">{{ d.number }}</span>
+                <span class="row-title">{{ d.method }}</span>
+                <span class="row-tag" :style="{ background: tone(d.status).bg, color: tone(d.status).fg }">
+                  {{ d.statusLabel }}
                 </span>
-                <span class="row-time mono">{{ d.time }}</span>
+                <span class="row-time mono">{{ d.at }}</span>
               </div>
+              <p v-if="!loading && !report?.done.length" class="row-empty">
+                {{ $t('dutyReport.doneEmpty') }}
+              </p>
             </div>
           </section>
 
@@ -222,15 +273,19 @@ async function runReturn() {
           <section class="group">
             <span class="group-title">
               {{ $t('dutyReport.left') }}
-              <span class="count">{{ $t('dutyReport.items', LEFT.length) }}</span>
+              <span v-if="!loading" class="count">{{ $t('dutyReport.items', report?.open.length || 0) }}</span>
             </span>
             <div class="rows">
-              <div v-for="l in LEFT" :key="l.id" class="row">
-                <span class="row-id mono">{{ l.id }}</span>
-                <span class="row-title">{{ $t(`dutyReport.leftItems.${l.key}`) }}</span>
+              <div v-if="loading" class="row"><span class="sk row-sk" /></div>
+              <div v-for="l in (report?.open || [])" v-else :key="l.id" class="row">
+                <span class="row-id mono">{{ l.number }}</span>
+                <span class="row-title">{{ l.method }}</span>
                 <div class="spacer" />
-                <span class="row-next">{{ $t(`dutyReport.next.${l.next}`) }}</span>
+                <span class="row-next">{{ l.statusLabel }}</span>
               </div>
+              <p v-if="!loading && !report?.open.length" class="row-empty">
+                {{ $t('dutyReport.leftEmpty') }}
+              </p>
             </div>
           </section>
 
@@ -252,7 +307,11 @@ async function runReturn() {
               {{ editable ? $t('dutyReport.handTo') : $t('dutyReport.handedTo') }}
             </span>
 
-            <div v-if="editable" class="targets">
+            <p v-if="editable && !targets.length" class="row-empty">
+              {{ $t('dutyReport.noCandidates') }}
+            </p>
+
+            <div v-else-if="editable" class="targets">
               <button
                 v-for="(tg, i) in targets"
                 :key="tg.id ?? tg.ini"
@@ -271,13 +330,13 @@ async function runReturn() {
             </div>
 
             <div v-else class="target static">
-              <span class="avatar">{{ TARGETS[target].ini }}</span>
+              <span class="avatar">{{ handed.ini }}</span>
               <span class="target-text">
-                <span class="target-name">{{ TARGETS[target].name }}</span>
-                <span class="target-note">{{ TARGETS[target].note }}</span>
+                <span class="target-name">{{ handed.name }}</span>
+                <span class="target-note">{{ handed.note }}</span>
               </span>
               <div class="spacer" />
-              <span class="pass">{{ $t('dutyReport.passing', { n: LEFT.length }) }}</span>
+              <span class="pass">{{ $t('dutyReport.passing', { n: report?.open.length || 0 }) }}</span>
             </div>
           </section>
 
@@ -758,6 +817,37 @@ async function runReturn() {
   background: var(--ce0452f);
   border-color: var(--ce0452f);
   color: #fff;
+}
+
+/* ---------- javob kelgunicha ---------- */
+.code-sk {
+  width: 190px;
+  height: 12px;
+  margin-top: 3px;
+}
+
+.stat-sk-v {
+  width: 44px;
+  height: 22px;
+}
+
+.stat-sk-k {
+  width: 88px;
+  height: 11px;
+  margin-top: 7px;
+}
+
+.row-sk {
+  width: 100%;
+  height: 14px;
+}
+
+.row-empty {
+  margin: 0;
+  padding: 14px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--c98a3b6);
 }
 
 .foot {
