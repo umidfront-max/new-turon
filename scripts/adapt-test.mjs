@@ -214,6 +214,18 @@ const cand = dutyCandidates({
 ok(cand.available && cand.items[0].id === 9, 'nomzodlar xato')
 ok(dutyCandidates(null).items.length === 0, "bo'sh nomzodlar xato")
 
+// Serverdagi barcha bildirishnoma turlari tanilishi kerak: yangi tur qo'shilsa
+// shu ro'yxatga ham qo'shilsin, aks holda u umumiy qo'ng'iroq bilan chiqadi.
+const TYPES = [
+  'sanction_created', 'user_not_logged', 'crime_error', 'crime_created',
+  'duty_handed_over', 'duty_accepted', 'duty_returned', 'manual'
+]
+const generic = TYPES.filter((type) => {
+  const row = notification({ id: 1, type, created_at: null })
+  return row.icon === 'bell' && row.tone === 'info' && type !== 'manual' && type !== 'crime_created'
+})
+ok(generic.length === 0, 'tanilmagan bildirishnoma turlari: ' + generic.join(', '))
+
 await vite.close()
 console.log(`adapter: ${Object.keys(pairs).length} status, qator va sahifa tekshirildi`)
 console.log(problems.length ? 'XATO:\n' + problems.join('\n') : 'adapter: barcha tekshiruvlar o\'tdi')

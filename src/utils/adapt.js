@@ -148,7 +148,9 @@ const NOTIFY_TONE = {
   user_not_logged: { tone: 'warn', icon: 'user' },
   duty_handed_over: { tone: 'info', icon: 'swap' },
   duty_accepted: { tone: 'ok', icon: 'check' },
-  duty_returned: { tone: 'warn', icon: 'back' }
+  duty_returned: { tone: 'warn', icon: 'back' },
+  // admin qo'lda yozgan xabar
+  manual: { tone: 'info', icon: 'bell' }
 }
 
 /** "2026-08-26T09:12:00+05:00" -> { unit, n } ("8 daqiqa oldin" uchun) */

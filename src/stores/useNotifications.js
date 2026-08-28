@@ -1,8 +1,9 @@
 /*
   Bildirishnomalar — serverdan.
 
-  Server javob bermasa `source` 'mock' bo'lib qoladi va ekranlar useUi'dagi
-  namuna ro'yxatda ishlayveradi — ko'rinishi bir xil.
+  Ro'yxat `GET /notifications/` dan olinadi va jonli oqim (SSE) yangi
+  bildirishnoma paydo bo'lganda uni qayta so'raydi. Server javob bermasa
+  `source` 'mock' bo'lib qoladi — ekranlarda namuna emas, bo'sh holat ko'rinadi.
 */
 import { reactive, computed } from 'vue'
 import { fetchNotifications, readNotification, readAllNotifications } from '@/services/complaints'
@@ -20,13 +21,20 @@ const state = reactive({
 
 const rows = (res) => (Array.isArray(res) ? res : res?.results || [])
 
+/*
+  Server sahifalab beradi (limit/offset). Aniq limit yubormasak DRF o'z
+  qiymatini qo'llaydi va ro'yxat jimgina kesilib qoladi — shuning uchun
+  o'zimiz beramiz. Server qo'llaydigan boshqa filtrlar: `type`, `is_read`.
+*/
+const PAGE = 50
+
 async function load(params) {
   if (state.loading) return
   state.loading = true
   state.error = null
 
   try {
-    const res = await fetchNotifications(params)
+    const res = await fetchNotifications({ limit: PAGE, ...params })
     state.items = rows(res).map(notification)
     state.total = res?.count ?? state.items.length
     state.source = 'api'

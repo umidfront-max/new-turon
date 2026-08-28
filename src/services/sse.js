@@ -10,6 +10,9 @@
   Shu sababli oqim `fetch` + `ReadableStream` orqali o'qiladi: sarlavhalarni
   o'zimiz beramiz.
 
+  Server har ~30 soniyada `: keep-alive` izoh satrini yuboradi va ulanishni
+  bir soatdan keyin o'zi uzadi — mijoz qayta ulanishi kutiladi.
+
   Ulanish uzilsa o'zi qayta ulanadi — kutish vaqti har safar ikkilanadi
   (1s dan 30s gacha), server bo'g'ilib qolmasin. Oxirgi hodisa raqami
   `?last_event_id=` bilan qaytariladi, shunda uzilish paytidagi hodisalar
