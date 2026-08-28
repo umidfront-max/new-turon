@@ -74,10 +74,13 @@ function type(text, mask, start = '') {
   eq(applyMask(el, maskCard), full, 'karta: 17-raqam kirib ketdi')
 }
 
-// hisob raqami — 20 ta
+/*
+  Hisob raqami — 22 ta. Uzunlik serverning tekshiruvidan olingan:
+  "Karta (12-19 raqam) yoki hisob raqamini (22 raqam) kiriting".
+*/
 {
-  const el = field('2020 8012 3456 7890 1234 99')
-  eq(applyMask(el, maskAccount), '2020 8012 3456 7890 1234', 'hisob: 20 raqamdan oshdi')
+  const el = field('2020 8012 3456 7890 1234 5699')
+  eq(applyMask(el, maskAccount), '2020 8012 3456 7890 1234 56', 'hisob: 22 raqamdan oshdi')
 }
 
 /* ---------- kursor ---------- */
@@ -182,7 +185,7 @@ eq(fromIsoDateTime(''), '', "bo'sh ISO dan qiymat chiqdi")
 
 console.log(fail.length
   ? 'XATO:\n' + fail.join('\n')
-  : 'niqoblar: karta 16, hisob 20, telefon, summa va sana chegaralari hamda kursor tekshirildi')
+  : 'niqoblar: karta 16, hisob 22, telefon, summa va sana chegaralari hamda kursor tekshirildi')
 
 await vite.close()
 process.exit(fail.length ? 1 : 0)

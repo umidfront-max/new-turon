@@ -51,6 +51,20 @@ const form = reactive({
 
 const requisites = ref([])
 
+/*
+  Barcha rekvizitlardagi tranzaksiyalar yig'indisi — tasdiq oynasida
+  ("... {amount} so'm zarar bilan ...") ko'rsatiladi. Rekvizit paneli o'zida
+  ham shu hisobni yuritadi, lekin u bolaning ichki holati; bu yerda ro'yxat
+  ustidan qayta hisoblanadi.
+*/
+const total = computed(() => {
+  const sum = requisites.value.reduce(
+    (acc, r) => acc + r.txs.reduce((a, x) => a + Number(digitsOnly(x.amount)), 0),
+    0
+  )
+  return maskAmount(String(sum))
+})
+
 // ko'rsatilgan xatolar: { maydon: true }
 const errors = reactive({})
 
