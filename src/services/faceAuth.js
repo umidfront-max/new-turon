@@ -174,6 +174,11 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
   let settle = null
   let frames = 0   // yuborilgan kadrlar — jurnalda oqim ketayotganini ko'rsatadi
 
+  // chipta yuborildimi va server uni qabul qilib `ready` dedimi —
+  // uzilish sababini shu ikkisi aniqlaydi
+  let ticketSent = false
+  let accepted = false
+
   function cleanup() {
     clearTimeout(frameTimer)
     clearTimeout(openTimer)
@@ -233,8 +238,15 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
 
   function startSending() {
     if (sending) return
+    accepted = true
     sending = true
     pump()
+  }
+
+  /** Kadr yuborishni to'xtatadi, ulanishni ochiq qoldiradi. */
+  function stopSending() {
+    sending = false
+    clearTimeout(frameTimer)
   }
 
   function onMessage(raw) {
@@ -262,6 +274,18 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
       // liveness | no_face | spoof | no_match va boshqalar — oqim davom etadi
       default:
         say(msg.status || 'info', msg)
+
+        /*
+          `done: true` — server tekshiruvni yakunladi. `match` kelmagani uchun
+          natija muvaffaqiyatsiz: kadr yuborishni to'xtatamiz va sababni
+          serverning o'z matni bilan qaytaramiz. Ilgari bu belgi e'tiborsiz
+          qolar, kadrlar yuborilaverar va oxirida aloqa uzilgani "xizmatga
+          ulanib bo'lmadi" bo'lib ko'rinardi.
+        */
+        if (msg.done) {
+          stopSending()
+          finish(new FaceError('failed', msg.prompt || msg.message))
+        }
     }
   }
 
@@ -290,14 +314,26 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
 
         ws.onopen = () => {
           clearTimeout(openTimer)
-          try { ws.send(JSON.stringify({ face_ticket: ticket })) } catch { /* yopiq */ }
+          try {
+            ws.send(JSON.stringify({ face_ticket: ticket }))
+            ticketSent = true
+          } catch { /* yopiq */ }
           say('connected')
         }
         ws.onmessage = (ev) => onMessage(ev.data)
-        // xato ham, uzilish ham bir xil o'qiladi: freymlar ketayotgan
-        // bo'lsa — aloqa uzildi, aks holda umuman ulanmadi
-        ws.onerror = () => finish(new FaceError(sending ? 'closed' : 'network'))
-        ws.onclose = () => finish(new FaceError(sending ? 'closed' : 'network'))
+        /*
+          Uzilish sababi uch xil: chipta yuborilgandan keyin server hech nima
+          demasdan yopsa — chipta qabul qilinmagan (u bir martalik, qayta
+          urinishda yangisi kerak); `ready` dan keyin uzilsa — aloqa uzilgan;
+          umuman ochilmasa — tarmoq.
+        */
+        const closeKey = () => {
+          if (accepted) return 'closed'
+          return ticketSent ? 'ticket' : 'network'
+        }
+
+        ws.onerror = () => finish(new FaceError(closeKey()))
+        ws.onclose = () => finish(new FaceError(closeKey()))
       },
       (err) => finish(err instanceof FaceError ? err : new FaceError('camera', err?.message))
     )

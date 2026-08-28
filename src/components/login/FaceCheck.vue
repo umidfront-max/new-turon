@@ -20,7 +20,7 @@ const props = defineProps({
 
 const emit = defineEmits(['done', 'cancel'])
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const video = ref(null)
 const phase = ref('camera')  // camera | connecting | scanning | done | error
@@ -98,9 +98,17 @@ async function start() {
     phase.value = 'error'
     prompt.value = ''
     hint.value = ''
-    error.value = e instanceof FaceError && e.detail
+    /*
+      Serverning o'z matni faqat `server` xatosida ko'rsatiladi (u yerda u
+      aniq sababni aytadi: "face_ticket yaroqsiz..."). Qolgan hollarda
+      tarjimamiz ustun: masalan tiriklik xatosida server inglizcha
+      "Liveness check failed" yuboradi, foydalanuvchiga esa nima qilish
+      kerakligi o'z tilida aytilgani ma'qul.
+    */
+    const key = e?.key || 'camera'
+    error.value = key === 'server' && e?.detail
       ? e.detail
-      : t(`login.faceCheck.errors.${e?.key || 'camera'}`)
+      : t(`login.faceCheck.errors.${te(`login.faceCheck.errors.${key}`) ? key : 'camera'}`)
   } finally {
     if (session === current) session = null
   }

@@ -180,6 +180,35 @@ globalThis.location = { protocol: 'http:', host: 'app.local' }
   eq(err?.key, 'closed', 'oqim ustida uzilish')
 }
 
+// 6a. server tekshiruvni yakunladi (done) — kadr yuborish to'xtaydi
+{
+  const session = startFaceCheck({ url: 'http://h/ws', ticket: 'T', video: newVideo(), frameMs: 5 })
+  await sleep(20)
+  const ws = FakeWs.last
+  ws.emit({ status: 'ready' })
+  await sleep(30)
+
+  const before = ws.sent.filter((m) => m.frame).length
+  ws.emit({ status: 'liveness', prompt: 'Liveness check failed — try again', done: true })
+
+  const err = await session.result.then(() => null, (e) => e)
+  eq(err?.key, 'failed', 'done: tiriklik xatosi')
+  eq(err?.detail, 'Liveness check failed — try again', 'done: sabab serverdan')
+
+  await sleep(30)
+  const after = ws.sent.filter((m) => m.frame).length
+  eq(after, before, 'done dan keyin freym yuborilmaydi')
+}
+
+// 6b. chipta yuborildi, lekin server ready demasdan yopdi — chipta qabul qilinmagan
+{
+  const session = startFaceCheck({ url: 'http://h/ws', ticket: 'T', video: newVideo(), frameMs: 5 })
+  await sleep(20)
+  FakeWs.last.drop()
+  const err = await session.result.then(() => null, (e) => e)
+  eq(err?.key, 'ticket', 'ready dan oldin uzilish -> chipta')
+}
+
 // 7. chipta yo'q
 {
   const session = startFaceCheck({ url: 'http://h/ws', ticket: '', video: newVideo() })
@@ -212,5 +241,5 @@ globalThis.location = { protocol: 'http:', host: 'app.local' }
 
 console.log(bad.length
   ? 'XATO:\n' + bad.join('\n')
-  : "yuz bosqichi: chipta, freym oqimi, match/error, bekor qilish, uzilish va ko'rsatma tarjimasi tekshirildi")
+  : "yuz bosqichi: chipta, freym oqimi, match/error, bekor qilish, uzilish, done va ko'rsatma tarjimasi tekshirildi")
 process.exit(bad.length ? 1 : 0)
