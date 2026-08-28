@@ -12,4 +12,9 @@ createApp(App).use(i18n).use(router).mount('#app')
 // Ma'lumotnomalarni fonda yuklaymiz. Server javob bermasa yoki ro'yxati to'liq
 // bo'lmasa — ekranlar loyihadagi ro'yxatda ishlayveradi (dizayn o'zgarmaydi).
 useReferences().load()
-useNotifications().load()
+
+// Bildirishnomalar: bir marta ro'yxat olinadi, keyin jonli oqim (SSE) ochiladi —
+// serverda yangisi paydo bo'lganda ro'yxat o'zi qayta so'raladi.
+const notifications = useNotifications()
+notifications.load()
+notifications.connect()
