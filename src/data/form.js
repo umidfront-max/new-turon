@@ -90,17 +90,6 @@ export function digitsOnly(value) {
   return String(value).replace(/\D/g, '')
 }
 
-// 8600 / 5614 / 6262 — UzCard, 9860 — Humo, 4 — Visa, 5 — Mastercard
-export function cardSystem(card) {
-  const d = digitsOnly(card)
-  if (d.length < 4) return null
-  const head = d.slice(0, 4)
-  if (head === '9860') return 'Humo'
-  if (['8600', '5614', '6262'].includes(head)) return 'UzCard'
-  if (d[0] === '4') return 'Visa'
-  if (d[0] === '5') return 'Mastercard'
-  return null
-}
 
 // "KK.OO.YYYY SS:DD" ko'rinishidagi sana
 export function isValidDateTime(value) {

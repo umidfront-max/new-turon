@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import {
   maskCard, maskAccount, maskAmount, maskDateTime, applyMask,
-  digitsOnly, cardSystem, isValidDateTime
+  digitsOnly, isValidDateTime
 } from '@/data/form'
 import { useUi } from '@/stores/useUi'
 
@@ -31,11 +31,12 @@ const { toast } = useUi()
 const errors = reactive({})
 const draft = reactive({ kind: 'card', number: '', amount: '', time: '' })
 
-// serverdagi javob ustun: u haqiqiy bankni biladi, cardSystem faqat BIN dan taxmin qiladi
-const system = computed(() => {
-  if (props.bankLabel) return props.bankLabel
-  return draft.kind === 'card' ? cardSystem(draft.number) : null
-})
+/*
+  Bank nomi faqat serverdan (/cards/identify/). Ilgari server tanimasa
+  prefiksdan "UzCard/Humo" deb taxmin qilinardi — bu bank emas, to'lov tizimi
+  va u mahalliy ro'yxatdan olinardi, ya'ni ishonchsiz ma'lumot edi.
+*/
+const system = computed(() => props.bankLabel || null)
 
 function onCard(e) {
   draft.number = applyMask(e.target, draft.kind === 'card' ? maskCard : maskAccount)
