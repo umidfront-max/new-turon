@@ -607,10 +607,14 @@ async function exportXlsx() {
   Shu kenglikdan tugmalar keyingi qatorga tushadi. Qidiruvdagi `max-width`
   esa uni 520px da to'xtatib, o'ng tomonda bo'sh joy qoldirardi — endi
   qatorni to'liq egallaydi.
+
+  O'ng chekkadagi tashqi bo'shliq ham olib tashlanadi: tugmalarda u yo'q,
+  shuning uchun qidiruv maydoni ular bilan bir chiziqda tugamasdi.
 */
 @media (max-width: 1024px) {
   .search {
     max-width: none;
+    margin-right: 0;
   }
 }
 
