@@ -11,19 +11,20 @@ import { useDuty } from '@/stores/useDuty'
 
 const { t } = useI18n()
 const {
-  state, isExec, isAdmin, profile, duty, unread,
+  state, isExec, isAdmin, profile, duty,
   toggleRoleMenu, toggleNotify, setMobileNav, ask, toast
 } = useUi()
 
-// O'qilmaganlar soni: serverdagi ro'yxat bo'lsa undan, aks holda namunadan.
-// Qo'ng'iroq menyusi ham xuddi shu manbadan oladi — sonlar bir-biriga mos turadi.
+// O'qilmaganlar soni faqat serverdan — qo'ng'iroq menyusi ham shu manbadan
+// oladi, sonlar bir-biriga mos turadi.
 const notifyApi = useNotifications()
 notifyApi.load()
 
 // Navbatchilik bosqichi ham serverdan (bo'lsa) — chip va tugma shunga qarab
 const dutyApi = useDuty()
 dutyApi.load()
-const unreadCount = computed(() => (notifyApi.live.value ? notifyApi.unread.value : unread.value))
+// sanoq faqat serverdan: javob kelgunicha nishoncha umuman chiqmaydi
+const unreadCount = computed(() => notifyApi.unread.value)
 
 const clock = ref('09:41')
 const today = ref('14.08')

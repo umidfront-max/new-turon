@@ -9,7 +9,7 @@ import { useNotifications } from '@/stores/useNotifications'
 
 const router = useRouter()
 const { t } = useI18n()
-const { state, unread, markRead, markAllRead, toggleNotify, toast } = useUi()
+const { toggleNotify, toast } = useUi()
 
 const api = useNotifications()
 
@@ -20,42 +20,29 @@ function ago(a) {
   return t(TIME_KEY[a.unit] || TIME_KEY.min, a.n)
 }
 
-// Serverdagi ro'yxat bo'lsa — o'sha, aks holda namuna (useUi).
-// Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
-const source = computed(() => (api.live.value ? api.state.items : state.notifications))
-const unreadCount = computed(() => (api.live.value ? api.unread.value : unread.value))
+/*
+  Ro'yxat faqat serverdan. Ilgari javob kelgunicha namuna bildirishnomalar
+  ko'rinib turardi — foydalanuvchi ularni haqiqiy deb o'ylardi. Endi javob
+  kelgunicha skelet turadi.
 
-function label(n, part) {
-  if (n.title || n.text) return part === 'title' ? n.title : n.text
-  return part === 'title'
-    ? t(`notify.items.${n.key}.title`)
-    : t(`notify.items.${n.key}.text`, n.params || {})
-}
+  Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
+*/
+const pending = computed(() => api.state.source === null)
+const unreadCount = computed(() => api.unread.value)
 
-const items = computed(() => source.value.map((n) => ({
+const items = computed(() => api.state.items.map((n) => ({
   id: n.id,
   icon: n.icon,
   read: n.read,
   appId: n.appId,
-  title: label(n, 'title'),
-  text: label(n, 'text'),
+  title: n.title,
+  text: n.text,
   when: ago(n.ago),
   tone: TONE[n.tone] || TONE.info
 })))
 
-// o'qilgan deb belgilash: serverdagi ro'yxat bo'lsa u orqali, aks holda namunada
-function setRead(id) {
-  if (api.live.value) api.markRead(id)
-  else markRead(id)
-}
-
-function setAllRead() {
-  if (api.live.value) api.markAllRead()
-  else markAllRead()
-}
-
 function open(item) {
-  setRead(item.id)
+  api.markRead(item.id)
   toggleNotify(false)
   if (item.appId) router.push({ path: '/application', query: { id: item.appId } })
 }
@@ -67,7 +54,7 @@ function openAll() {
 
 function readAll() {
   if (!unreadCount.value) return
-  setAllRead()
+  api.markAllRead()
   toast(t('notify.allRead'))
 }
 </script>
@@ -84,6 +71,18 @@ function readAll() {
     </div>
 
     <div class="notify-list thin-scroll">
+      <!-- javob kelgunicha: uchta bo'sh qator -->
+      <div v-if="pending" class="notify-skel">
+        <div v-for="n in 3" :key="n" class="skel-row">
+          <span class="sk skel-icon" />
+          <span class="skel-body">
+            <span class="sk skel-line w60" />
+            <span class="sk skel-line w90" />
+            <span class="sk skel-line w30" />
+          </span>
+        </div>
+      </div>
+
       <button
         v-for="(n, i) in items"
         :key="n.id"
@@ -104,7 +103,7 @@ function readAll() {
         <span v-if="!n.read" class="n-dot" />
       </button>
 
-      <div v-if="!items.length" class="notify-empty">
+      <div v-if="!pending && !items.length" class="notify-empty">
         <span class="empty-icon"><AppIcon name="bell" :size="24" /></span>
         <div class="empty-title">{{ $t('notify.emptyTitle') }}</div>
         <div class="empty-text">{{ $t('notify.emptyText') }}</div>
@@ -193,6 +192,41 @@ function readAll() {
   overflow-y: auto;
   scrollbar-width: thin;
 }
+
+.notify-skel {
+  padding: 4px 0;
+}
+
+.skel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ceef1f6);
+}
+
+.skel-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 9px;
+}
+
+.skel-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skel-line {
+  height: 11px;
+}
+
+.skel-line.w30 { width: 30%; }
+.skel-line.w60 { width: 60%; }
+.skel-line.w90 { width: 90%; }
 
 .notify-item {
   width: 100%;

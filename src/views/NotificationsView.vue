@@ -11,7 +11,7 @@ import { useNotifications } from '@/stores/useNotifications'
 
 const router = useRouter()
 const { t } = useI18n()
-const { state, unread, markRead, markAllRead, toast } = useUi()
+const { toast } = useUi()
 
 const onlyUnread = ref(false)
 
@@ -27,50 +27,36 @@ function ago(a) {
   return t(TIME_KEY[a.unit] || TIME_KEY.min, a.n)
 }
 
-// Serverdagi ro'yxat bo'lsa — o'sha, aks holda namuna (useUi).
-// Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
-const source = computed(() => (api.live.value ? api.state.items : state.notifications))
-const unreadCount = computed(() => (api.live.value ? api.unread.value : unread.value))
+/*
+  Ro'yxat faqat serverdan. Javob kelgunicha namuna bildirishnomalar o'rniga
+  skelet turadi — foydalanuvchi yo'q narsani o'qib qolmasin.
 
-function label(n, part) {
-  if (n.title || n.text) return part === 'title' ? n.title : n.text
-  return part === 'title'
-    ? t(`notify.items.${n.key}.title`)
-    : t(`notify.items.${n.key}.text`, n.params || {})
-}
+  Sarlavha va matn serverdan tayyor keladi, shuning uchun i18n kaliti kerak emas.
+*/
+const pending = computed(() => api.state.source === null)
+const unreadCount = computed(() => api.unread.value)
 
-const rows = computed(() => source.value
+const rows = computed(() => api.state.items
   .filter((n) => !onlyUnread.value || !n.read)
   .map((n) => ({
     id: n.id,
     icon: n.icon,
     read: n.read,
     appId: n.appId,
-    title: label(n, 'title'),
-    text: label(n, 'text'),
+    title: n.title,
+    text: n.text,
     when: ago(n.ago),
     tone: TONE[n.tone] || TONE.info
   })))
 
-// o'qilgan deb belgilash: serverdagi ro'yxat bo'lsa u orqali, aks holda namunada
-function setRead(id) {
-  if (api.live.value) api.markRead(id)
-  else markRead(id)
-}
-
-function setAllRead() {
-  if (api.live.value) api.markAllRead()
-  else markAllRead()
-}
-
 function open(item) {
-  setRead(item.id)
+  api.markRead(item.id)
   if (item.appId) router.push({ path: '/application', query: { id: item.appId } })
 }
 
 function readAll() {
   if (!unreadCount.value) return
-  setAllRead()
+  api.markAllRead()
   toast(t('notify.allRead'))
 }
 </script>
@@ -105,6 +91,18 @@ function readAll() {
         <span class="list-note">{{ $t('notify.pageNote') }}</span>
       </div>
 
+      <!-- javob kelgunicha: bo'sh qatorlar -->
+      <div v-if="pending" class="skel-rows">
+        <div v-for="n in 5" :key="n" class="skel-row">
+          <span class="sk skel-icon" />
+          <span class="skel-body">
+            <span class="sk skel-line w40" />
+            <span class="sk skel-line w80" />
+          </span>
+          <span class="sk skel-when" />
+        </div>
+      </div>
+
       <button
         v-for="(n, i) in rows"
         :key="n.id"
@@ -130,7 +128,7 @@ function readAll() {
       </button>
 
       <EmptyState
-        v-if="!rows.length"
+        v-if="!pending && !rows.length"
         icon="bell"
         :title="$t('notify.emptyTitle')"
         :text="$t('notify.emptyText')"
@@ -140,6 +138,42 @@ function readAll() {
 </template>
 
 <style scoped>
+.skel-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--ceef1f6);
+}
+
+.skel-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+}
+
+.skel-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.skel-line {
+  height: 12px;
+}
+
+.skel-line.w40 { width: 40%; }
+.skel-line.w80 { width: 80%; }
+
+.skel-when {
+  width: 74px;
+  height: 12px;
+  flex: 0 0 74px;
+}
+
 
 .crumb:hover {
   color: var(--c23568f);
