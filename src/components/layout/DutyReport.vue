@@ -352,7 +352,11 @@ async function runReturn() {
   align-items: center;
   gap: 13px;
   padding: 0 20px;
-  height: 66px;
+  /*
+    Qat'iy balandlik emas: uzun tarjimada sarlavha ikki qatorga bo'linib,
+    ostidagi kod satri sarlavhadan tashqariga chiqib ketardi.
+  */
+  min-height: 66px;
   color: #c9d9ec;
 }
 
@@ -818,4 +822,85 @@ async function runReturn() {
 .btn-dark:hover {
   filter: brightness(1.12);
 }
+
+/*
+  Telefon. Modal deyarli butun ekranni egallaydi, sarlavha o'sib matnni
+  sig'diradi, pastdagi izoh va tugmalar esa alohida qatorlarga bo'linadi.
+  Desktop ko'rinishiga tegilmagan.
+*/
+@media (max-width: 560px) {
+  .root {
+    padding: 10px;
+  }
+
+  .sheet {
+    max-width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+  }
+
+  .head {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .head-ico {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+  }
+
+  .title {
+    font-size: 15.5px;
+  }
+
+  .code {
+    font-size: 12px;
+  }
+
+  .tag {
+    height: 24px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+
+  .body {
+    padding: 14px 12px 16px;
+    gap: 14px;
+  }
+
+  /* ikkitadan emas, bittadan ustun — raqamlar qisilib qolmasin */
+  .meta,
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .foot {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  /* izoh o'z qatorida, tugmalar ostida qolgan joyni bo'lishadi */
+  .foot-note {
+    flex: 1 1 100%;
+    min-width: 0;
+    font-size: 13px;
+  }
+
+  .foot .spacer {
+    display: none;
+  }
+
+  /*
+    `1 1 auto` (0 emas): yozuv nowrap, uchta tugma bo'lgan holatda ham
+    har biri o'z eniga qarab joylashadi, kesilib qolmaydi.
+  */
+  .foot .btn-light,
+  .foot .btn-warn,
+  .foot .btn-dark {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0 14px;
+  }
+}
+
 </style>

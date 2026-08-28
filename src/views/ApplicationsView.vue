@@ -296,11 +296,11 @@ async function exportXlsx() {
             @click="clearFilters"
           >
             <AppIcon name="close" :size="15" />
-            <span>{{ $t('common.clear') }}</span>
+            <span class="head-btn-label">{{ $t('common.clear') }}</span>
           </button>
           <button type="button" class="head-btn" :class="{ on: filterOpen }" @click="filterOpen = !filterOpen">
             <AppIcon name="filter" :size="16" />
-            <span>{{ $t('applications.filters') }}</span>
+            <span class="head-btn-label">{{ $t('applications.filters') }}</span>
             <span v-if="activeFilters" class="head-badge mono">{{ activeFilters }}</span>
           </button>
           <button
@@ -312,7 +312,7 @@ async function exportXlsx() {
           >
             <span v-if="exporting" class="head-spin" />
             <AppIcon v-else name="download" :size="16" />
-            <span>{{ $t('applications.export') }}</span>
+            <span class="head-btn-label">{{ $t('applications.export') }}</span>
             <span v-if="!pending && total" class="head-badge mono">{{ total }}</span>
           </button>
         </div>
@@ -604,6 +604,17 @@ async function exportXlsx() {
 /* bo'sh holat */
 
 /*
+  Shu kenglikdan tugmalar keyingi qatorga tushadi. Qidiruvdagi `max-width`
+  esa uni 520px da to'xtatib, o'ng tomonda bo'sh joy qoldirardi — endi
+  qatorni to'liq egallaydi.
+*/
+@media (max-width: 1024px) {
+  .search {
+    max-width: none;
+  }
+}
+
+/*
   Tor ekranda sarlavha qatori ikkiga bo'linadi: yuqorida nom, sanoq va
   tugmalar, ostida esa butun kenglikdagi qidiruv. Ilgari uchalasi bitta
   qatorga tiqilib, qidiruv ham tugmalar ham qisilib qolardi.
@@ -633,9 +644,13 @@ async function exportXlsx() {
   }
 }
 
-/* bu yerdan tugmalar faqat ikonka bo'lib qoladi */
+/*
+  Bu yerdan tugmalarda faqat ikonka qoladi. Faqat yozuv yashiriladi:
+  AppIcon ham <span> chiqaradi, shuning uchun `.head-btn span` deb yozib
+  bo'lmaydi — u ikonkani ham o'chirib, tugmani bo'm-bo'sh qutiga aylantiradi.
+*/
 @media (max-width: 560px) {
-  .head-btn span:not(.head-badge):not(.head-spin) {
+  .head-btn-label {
     display: none;
   }
 

@@ -783,6 +783,10 @@ function forgot() {
     min-height: 100vh;
   }
 
+  /*
+    Bu yerda span faqat AppIcon: tab yozuvi oddiy matn tuguni. Ya'ni tor
+    ekranda ikonka ketadi, yozuv qoladi — ataylab shunday.
+  */
   .tab span {
     display: none;
   }
