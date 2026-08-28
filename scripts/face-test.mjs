@@ -81,6 +81,12 @@ eq(resolveWsUrl('https://h/face/ws'), 'wss://h/face/ws', 'https -> wss')
 eq(resolveWsUrl('/face/ws'), 'ws://app.local/face/ws', 'nisbiy yo\'l')
 try { resolveWsUrl(''); bad.push("bo'sh manzil xato bermadi") } catch (e) { eq(e.key, 'noUrl', "bo'sh manzil") }
 
+// sozlamadagi xost servernikidan ustun turadi (ilova boshqa xostdan ochilganda)
+eq(resolveWsUrl('ws://192.168.1.5/face/ws', 'wss://tunnel.example'), 'wss://tunnel.example/face/ws', 'xost almashdi')
+eq(resolveWsUrl('ws://192.168.1.5/face/ws?t=1', 'https://tunnel.example'), 'wss://tunnel.example/face/ws?t=1', "yo'l va parametr saqlandi")
+eq(resolveWsUrl('ws://192.168.1.5/face/ws', 'proxy'), 'ws://app.local/face/ws', "to'liq manzil emas -> sahifaning o'zi")
+eq(resolveWsUrl('ws://192.168.1.5/face/ws', ''), 'ws://192.168.1.5/face/ws', 'sozlamasiz tegilmaydi')
+
 // https sahifada oddiy ws bloklanadi — wss ga ko'tariladi
 globalThis.location = { protocol: 'https:', host: 'app.local' }
 eq(resolveWsUrl('ws://h/face/ws'), 'wss://h/face/ws', 'https sahifada ws -> wss')

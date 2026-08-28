@@ -35,12 +35,26 @@ export class FaceError extends Error {
   }
 }
 
+/*
+  Yuz xizmatining xosti.
+
+  Darvoza `face_ws_url` ni o'zi qaytaradi, lekin u ichki tarmoq manzili
+  bo'lishi mumkin (masalan ws://192.168...). Ilova tashqaridan — tunnel yoki
+  boshqa xost orqali ochilganda bunday manzilga ulanib bo'lmaydi. Shu sababli
+  `VITE_FACE_WS` berilgan bo'lsa, manzilning faqat protokoli va xosti
+  almashtiriladi; yo'l va parametrlar serverdagicha qoladi.
+*/
+const FACE_WS = String(import.meta.env?.VITE_FACE_WS || '').trim()
+
 /**
  * Serverdan kelgan manzilni brauzer tushunadigan ws manziliga keltiradi.
  * http(s) -> ws(s), nisbiy yo'l -> joriy host. Sahifa https bo'lsa oddiy ws
  * bloklanadi, shuning uchun wss ga ko'tariladi.
+ *
+ * @param {string} raw serverdan kelgan manzil
+ * @param {string} [override] xostni almashtirish uchun (sinovlarda beriladi)
  */
-export function resolveWsUrl(raw) {
+export function resolveWsUrl(raw, override = FACE_WS) {
   const value = String(raw || '').trim()
   if (!value) throw new FaceError('noUrl')
 
@@ -51,6 +65,23 @@ export function resolveWsUrl(raw) {
   else if (url.startsWith('/')) url = `${secure ? 'wss:' : 'ws:'}//${location.host}${url}`
   else if (/^https:/i.test(url)) url = url.replace(/^https:/i, 'wss:')
   else if (/^http:/i.test(url)) url = url.replace(/^http:/i, 'ws:')
+
+  /*
+    Sozlamadagi qiymat to'liq manzil bo'lsa (wss://...) protokol va xost
+    o'shanikiga almashadi. To'liq manzil bo'lmasa — sahifaning o'z manzili
+    ishlatiladi: ishlab chiqishda ulanish Vite proxy orqali o'tadi, ngrok
+    ogohlantirish sahifasi esa WebSocket'ni to'sib qo'yadi va unga sarlavha
+    qo'shib bo'lmaydi.
+  */
+  if (override) {
+    const base = String(override).replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:')
+    const host = base.match(/^(wss?:)\/\/([^/]+)/i)
+
+    if (host) url = url.replace(/^wss?:\/\/[^/]+/i, `${host[1]}//${host[2]}`)
+    else if (typeof location !== 'undefined' && location.host) {
+      url = url.replace(/^wss?:\/\/[^/]+/i, `${secure ? 'wss:' : 'ws:'}//${location.host}`)
+    }
+  }
 
   if (secure && /^ws:/i.test(url)) url = 'wss:' + url.slice(3)
   if (!/^wss?:/i.test(url)) throw new FaceError('noUrl')

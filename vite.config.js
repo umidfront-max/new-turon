@@ -49,6 +49,18 @@ export default defineConfig(({ mode }) => {
         target,
         changeOrigin: true,
         headers: { 'ngrok-skip-browser-warning': '1' }
+      },
+      /*
+        Yuz tekshiruvi WebSocket'i. Brauzerdan tunnelga to'g'ridan-to'g'ri
+        ulanib bo'lmaydi: ngrok ogohlantirish sahifasi qaytaradi (101 emas),
+        WebSocket API'ga esa sarlavha qo'shib bo'lmaydi. Proxy uni server
+        tomonda qo'shadi.
+      */
+      '/face-recog': {
+        target,
+        changeOrigin: true,
+        ws: true,
+        headers: { 'ngrok-skip-browser-warning': '1' }
       }
     }
   }
