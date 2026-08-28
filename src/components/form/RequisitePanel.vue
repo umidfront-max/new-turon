@@ -19,7 +19,12 @@ const props = defineProps({
   // serverdan aniqlangan bank nomi; bo'lmasa raqamdan tizim hisoblanadi
   bankLabel: { type: String, default: '' },
   // /cards/identify/ topgan bankning id'si — ariza saqlanganda serverga ketadi
-  bankId: { type: Number, default: null }
+  bankId: { type: Number, default: null },
+  /*
+    «Tekshirish» bosilganda serverga so'rov yuboradi (/complaints/check-number/)
+    va natijasini qaytaradi. Berilmasa tugma faqat mahalliy tekshiradi.
+  */
+  check: { type: Function, default: null }
 })
 
 // kiritilayotgan raqam — ota-komponentdagi takroriylik ogohlantirishi uchun
@@ -67,7 +72,12 @@ function pickKind(kind) {
 }
 
 /* ---------- rekvizit ---------- */
-const requiredLength = computed(() => (draft.kind === 'card' ? 16 : 20))
+/*
+  Uzunliklar serverning tekshiruvidan olingan: «Karta (12-19 raqam) yoki
+  hisob raqamini (22 raqam) kiriting». Ilgari hisob raqam 20 xonali deb
+  olinardi va u hech qachon tekshiruvdan o'tmasdi.
+*/
+const requiredLength = computed(() => (draft.kind === 'card' ? 16 : 22))
 
 const canAdd = computed(() =>
   digitsOnly(draft.number).length === requiredLength.value
@@ -107,13 +117,37 @@ function requisiteProblem() {
   return t('form.invalid')
 }
 
-function checkRequisite() {
+// so'rov ketayotganda tugmada aylanma ko'rsatiladi
+const checking = ref(false)
+
+/*
+  «Tekshirish»: avval maydonlar, so'ng serverdagi tekshiruv. Shu raqamga
+  ilgari ariza biriktirilgan bo'lsa server aytadi — foydalanuvchi buni
+  biriktirishdan OLDIN bilishi kerak.
+
+  Server javob bermasa ish to'xtamaydi: ogohlantirish chiqadi va biriktirish
+  baribir ochiladi — aks holda aloqa uzilganda ariza umuman yaratilmaydi.
+*/
+async function checkRequisite() {
+  if (checking.value) return
   if (!markErrorsRequisite()) {
     toast(requisiteProblem(), 'bad')
     return
   }
-  verified.value = true
-  toast(t('form.requisite.checked', { bank: system.value || t('form.requisite.bank') }))
+
+  checking.value = true
+  try {
+    const res = props.check ? await props.check(draft.number, draft.kind) : null
+    verified.value = true
+
+    const earlier = res?.earlier?.length || res?.count || 0
+    if (res?.blocked) toast(t('form.requisite.blocked'), 'warn')
+    else if (earlier) toast(t('form.requisite.earlier', earlier), 'warn')
+    else if (props.check && !res) toast(t('form.requisite.checkOffline'), 'warn')
+    else toast(t('form.requisite.checked', { bank: system.value || t('form.requisite.bank') }))
+  } finally {
+    checking.value = false
+  }
 }
 
 // bitta rekvizitga bir nechta tranzaksiya biriktiriladi
@@ -314,10 +348,13 @@ const total = computed(() => {
           v-if="!verified"
           type="button"
           class="btn-dark"
+          :class="{ busy: checking }"
+          :disabled="checking"
           @click="checkRequisite"
         >
-          <AppIcon name="scan" :size="16" />
-          {{ $t('form.requisite.check') }}
+          <span v-if="checking" class="spin" />
+          <AppIcon v-else name="scan" :size="16" />
+          {{ checking ? $t('form.requisite.checking') : $t('form.requisite.check') }}
         </button>
         <button v-else type="button" class="btn-dark" @click="addRequisite">
           <AppIcon name="plus" :size="16" />
@@ -455,6 +492,25 @@ const total = computed(() => {
   background: var(--c23568f);
 }
 
+
+.spin {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border: 2px solid rgba(255, 255, 255, .35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.btn-dark.busy {
+  cursor: progress;
+  opacity: .85;
+}
 
 .block-actions {
   display: flex;

@@ -63,6 +63,7 @@ export const ICONS = {
   volume: 'volume_up',
   copy: 'content_copy',
   print: 'print',
+  openInNew: 'open_in_new',
   reply: 'reply',
   history: 'history',
   checkCircle: 'check_circle',

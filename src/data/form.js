@@ -22,7 +22,7 @@ export function maskCard(value) {
 }
 
 export function maskAccount(value) {
-  return String(value).replace(/\D/g, '').slice(0, 20).replace(/(.{4})/g, '$1 ').trim()
+  return String(value).replace(/\D/g, '').slice(0, 22).replace(/(.{4})/g, '$1 ').trim()
 }
 
 export function maskAmount(value) {

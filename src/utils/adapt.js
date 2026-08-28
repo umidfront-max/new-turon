@@ -33,10 +33,19 @@ export function money(value) {
 /** ISO sana -> "04.08.2026 09:12" */
 export function dateTime(iso) {
   if (!iso) return ''
-  const d = new Date(iso)
+
+  /*
+    Serverdan ba'zan faqat sana keladi ("2026-02-01"). `new Date` uni UTC
+    yarim tuni deb o'qiydi, natijada ekranda "05:00" degan uydirma vaqt
+    chiqardi. Vaqt qismi bo'lmasa — faqat sana ko'rsatiladi.
+  */
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(iso).trim())
+  const d = new Date(dateOnly ? `${iso}T00:00:00` : iso)
   if (Number.isNaN(d.getTime())) return String(iso)
+
   const p = (n) => String(n).padStart(2, '0')
-  return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
+  const day = `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`
+  return dateOnly ? day : `${day} ${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
 /*

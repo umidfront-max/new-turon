@@ -148,3 +148,20 @@ export const patch = (url, body, config) => api.patch(url, body, config)
 export const del = (url, config) => api.delete(url, config)
 
 export const API_BASE = BASE
+
+/*
+  Serverdagi fayl manzili (sanksiya qarori PDF va boshqalar).
+
+  `file_url` nisbiy keladi ("/media/sanctions/2026/08/Diplom.pdf"), fayllar esa
+  API'da emas, alohida obyekt saqlagichda (MinIO) turadi — shuning uchun uning
+  manzili alohida sozlanadi. To'liq manzil kelsa shundayligicha qoladi.
+*/
+export const MEDIA_BASE = (import.meta.env?.VITE_MEDIA_URL || 'http://192.168.14.127:9000').replace(/\/+$/, '')
+
+export function fileUrl(path) {
+  if (!path) return ''
+  const raw = String(path)
+  if (/^https?:/i.test(raw)) return raw
+
+  return `${MEDIA_BASE}/${raw.replace(/^\/+/, '')}`
+}

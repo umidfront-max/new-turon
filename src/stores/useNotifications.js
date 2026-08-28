@@ -79,6 +79,10 @@ let pollTimer = 0
 let fails = 0
 let opened = 0
 
+// oqim kerakmi (ilova uni so'raganmi) — ko'rinish o'zgarganda shunga qaraladi
+let wanted = false
+let watching = false
+
 /**
   Hodisa kelganda ro'yxat GET orqali qayta so'raladi.
 
@@ -103,8 +107,7 @@ function stopPolling() {
   pollTimer = 0
 }
 
-/** Oqimni ochadi. Bir marta chaqiriladi (main.js). */
-function connect() {
+function openNow() {
   if (stream || typeof window === 'undefined') return
 
   stream = openStream('/notifications/stream/', {
@@ -126,11 +129,39 @@ function connect() {
   })
 }
 
-/** Oqimni yopadi (chiqishda yoki sinovlarda). */
-function disconnect() {
+function closeNow() {
   stream?.close()
   stream = null
   state.streaming = false
+}
+
+/*
+  Ochiq oqim serverda bitta ulanishni band qilib turadi. Shuning uchun sahifa
+  ko'rinmay qolganda (boshqa tabga o'tilganda yoki oyna yopilganda) oqim
+  yopiladi, qaytib kelganda esa qayta ochiladi — server bo'sh turadi.
+*/
+function watchVisibility() {
+  if (watching || typeof document === 'undefined') return
+  watching = true
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') closeNow()
+    else if (wanted) openNow()
+  })
+  window.addEventListener('pagehide', closeNow)
+}
+
+/** Oqimni ochadi. Bir marta chaqiriladi (main.js). */
+function connect() {
+  wanted = true
+  watchVisibility()
+  openNow()
+}
+
+/** Oqimni yopadi (chiqishda yoki sinovlarda). */
+function disconnect() {
+  wanted = false
+  closeNow()
   clearTimeout(refreshTimer)
   stopPolling()
 }

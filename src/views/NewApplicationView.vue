@@ -762,6 +762,7 @@ function cancelAll() {
         v-model="requisites"
         :bank-label="numberCheck.bankLabel.value"
         :bank-id="numberCheck.identity.value?.bank ?? null"
+        :check="numberCheck.checkNow"
         @card="typedCard = $event"
       />
 
