@@ -31,7 +31,6 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.1.4",
-    "happy-dom": "^20.11.12",
     "vite": "^5.4.8"
   }
 }
