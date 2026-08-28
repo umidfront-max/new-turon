@@ -177,7 +177,9 @@ const idn = cardIdentity({
   processing_display: 'UzCard', bank: 4, bank_name: 'Kapital bank',
   bank_short_name: 'Kapitalbank', is_bank: true, number_type: 'card'
 })
-ok(idn.bankName === 'Kapitalbank', 'qisqa nom afzal: ' + idn.bankName)
+// ekranda qaysi bank ekani ko'rinishi kerak, shuning uchun to'liq nom
+ok(idn.bankName === 'Kapital bank', "to'liq nom afzal: " + idn.bankName)
+ok(idn.bankShort === 'Kapitalbank', 'qisqa nom ham saqlanadi: ' + idn.bankShort)
 ok(idn.system === 'UzCard', 'tizim: ' + idn.system)
 ok(cardIdentity({ matched: false }) === null, "mos kelmasa null bo'lishi kerak")
 

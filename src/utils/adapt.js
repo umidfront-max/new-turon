@@ -249,7 +249,12 @@ export function cardIdentity(res) {
     prefix: res.prefix || '',
     system: res.processing_display || res.processing || '',
     bank: res.bank ?? null,
-    bankName: res.bank_short_name || res.bank_name || '',
+    /*
+      Ekranda to'liq nom ko'rsatiladi ("Kapital Bank"): qisqartma ("KB")
+      qaysi bank ekanini aytmaydi. Qisqasi tor joylar uchun qoladi.
+    */
+    bankName: res.bank_name || res.bank_short_name || '',
+    bankShort: res.bank_short_name || res.bank_name || '',
     isBank: res.is_bank !== false,
     numberType: res.number_type || 'card'
   }
