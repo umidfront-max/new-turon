@@ -12,7 +12,7 @@
 
   Ulanish uzilsa o'zi qayta ulanadi — kutish vaqti har safar ikkilanadi
   (1s dan 30s gacha), server bo'g'ilib qolmasin. Oxirgi hodisa raqami
-  `Last-Event-ID` bilan qaytariladi, shunda uzilish paytidagi hodisalar
+  `?last_event_id=` bilan qaytariladi, shunda uzilish paytidagi hodisalar
   tushib qolmaydi (server buni qo'llasa).
 */
 import { API_BASE, getToken, apiLang } from './api'
@@ -69,11 +69,20 @@ export function openStream(path, { onEvent, onOpen, onError } = {}) {
   async function run() {
     controller = new AbortController()
 
-    const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}lang=${apiLang()}`
-    const headers = { Accept: 'text/event-stream, */*', 'Cache-Control': 'no-cache' }
+    /*
+      Sarlavhalar faqat serverning preflight javobida ruxsat etilganlaridan
+      olinadi: accept, authorization, content-type, user-agent, x-csrftoken,
+      x-requested-with. `Cache-Control` va `Last-Event-ID` ro'yxatda yo'q —
+      ularni yuborsak brauzer so'rovni CORS bo'yicha bloklaydi. Shuning uchun
+      oxirgi hodisa raqami manzil qatorida ketadi.
+    */
+    const query = new URLSearchParams({ lang: apiLang() })
+    if (lastId) query.set('last_event_id', lastId)
+
+    const url = `${API_BASE}${path}${path.includes('?') ? '&' : '?'}${query}`
+    const headers = { Accept: 'text/event-stream, */*' }
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
-    if (lastId) headers['Last-Event-ID'] = lastId
 
     const res = await fetch(url, { headers, signal: controller.signal, credentials: 'omit' })
     if (!res.ok) throw new Error(`stream ${res.status}`)

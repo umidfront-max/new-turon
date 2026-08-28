@@ -59,6 +59,24 @@ ok('event nomi o\u0027qildi', seen[0]?.event === 'created', seen[0]?.event)
 ok('id o\u0027qildi (Last-Event-ID uchun)', seen[0]?.id === '7', seen[0]?.id)
 ok('ko\u0027p satrli data birlashdi', seen[1]?.data === 'birinchi' + String.fromCharCode(10) + 'ikkinchi', JSON.stringify(seen[1]?.data))
 
+/* ---------- CORS: brauzer ruxsat bergan sarlavhalar ---------- */
+// serverning preflight javobi shu ro'yxatni beradi; boshqasini yuborsak bloklanadi
+const ALLOWED = ['accept', 'authorization', 'content-type', 'user-agent', 'x-csrftoken', 'x-requested-with']
+let sentHeaders = null
+let sentUrl = ''
+globalThis.fetch = async (url, init) => {
+  sentUrl = String(url)
+  sentHeaders = init.headers
+  return { ok: true, status: 200, body: { getReader: () => ({ read: () => new Promise(() => {}) }) } }
+}
+const s3 = openStream('/notifications/stream/', {})
+await new Promise((r) => setTimeout(r, 200))
+s3.close()
+const names = Object.keys(sentHeaders || {}).map((k) => k.toLowerCase())
+ok('faqat ruxsat etilgan sarlavhalar', names.every((n) => ALLOWED.includes(n)), names.join(', '))
+ok('token sarlavhada ketdi', names.includes('authorization'))
+ok('lang manzilda', /[?&]lang=/.test(sentUrl), sentUrl)
+
 /* ---------- 2) haqiqiy server ---------- */
 globalThis.fetch = realFetch
 console.log('\nhaqiqiy server: /notifications/stream/ (12 soniya)')

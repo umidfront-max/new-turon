@@ -51,8 +51,6 @@ const form = reactive({
 
 const requisites = ref([])
 
-// tekshirilgan bloklar
-const checked = reactive({ app: false, applicant: false })
 // ko'rsatilgan xatolar: { maydon: true }
 const errors = reactive({})
 
@@ -230,37 +228,33 @@ const FABULA_MIN = 20
 
 const fabulaLength = computed(() => form.fabula.trim().length)
 
+/** Maydon qoidaga to'g'ri keladimi — hech narsani o'zgartirmaydi. */
+function fieldOk(f) {
+  const value = String(form[f] || '').trim()
+  if (!value) return false
+  if (f === 'fabula') return value.length >= FABULA_MIN
+  if (f === 'phone') return digitsOnly(value).length === 12
+  return true
+}
+
+/** Xato maydonlarni qizil qilib belgilaydi va ro'yxatini qaytaradi. */
 function markErrors(fields) {
   const bad = []
   fields.forEach((f) => {
-    const value = String(form[f] || '').trim()
-    const short = f === 'fabula' && value.length < FABULA_MIN
-    const phone = f === 'phone' && digitsOnly(value).length !== 12
-    if (!value || short || phone) {
-      errors[f] = true
-      bad.push(f)
-    } else {
-      delete errors[f]
-    }
+    if (fieldOk(f)) delete errors[f]
+    else { errors[f] = true; bad.push(f) }
   })
   return bad
 }
 
-function checkBlock(block) {
-  const fields = block === 'app' ? REQUIRED_APP : REQUIRED_APPLICANT
-  const bad = markErrors(fields)
-  checked[block] = !bad.length
-  toast(bad.length ? problemOf(bad) : t('form.checked'), bad.length ? 'bad' : 'ok')
-}
-
-function clearBlock(block) {
-  const fields = block === 'app' ? REQUIRED_APP : REQUIRED_APPLICANT
-  fields.concat(block === 'app' ? ['material'] : ['address']).forEach((f) => {
-    form[f] = ''
-    delete errors[f]
-  })
-  checked[block] = false
-}
+/*
+  Blok sarlavhasidagi belgi. Avval "Tekshirish" tugmasi bosilgandan keyin
+  chiqardi; endi blok to'liq to'ldirilishi bilan o'zi paydo bo'ladi.
+*/
+const checked = computed(() => ({
+  app: REQUIRED_APP.every(fieldOk),
+  applicant: REQUIRED_APPLICANT.every(fieldOk)
+}))
 
 /*
   Nima yetishmayotganini aniq aytadi: maydon to'ldirilgan bo'lsa-yu «qizil»
@@ -684,10 +678,6 @@ function cancelAll() {
               </button>
             </div>
 
-            <div class="block-actions">
-              <button type="button" class="btn-dark" @click="checkBlock('app')">{{ $t('form.check') }}</button>
-              <button type="button" class="btn-light" @click="clearBlock('app')">{{ $t('common.cancel') }}</button>
-            </div>
           </div>
         </section>
 
@@ -763,10 +753,6 @@ function cancelAll() {
               />
             </label>
 
-            <div class="block-actions">
-              <button type="button" class="btn-dark" @click="checkBlock('applicant')">{{ $t('form.check') }}</button>
-              <button type="button" class="btn-light" @click="clearBlock('applicant')">{{ $t('common.cancel') }}</button>
-            </div>
           </div>
         </section>
       </div>
