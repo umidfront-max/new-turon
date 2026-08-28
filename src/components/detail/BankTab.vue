@@ -11,7 +11,7 @@ import { useUi } from '@/stores/useUi'
 const props = defineProps({
   // detailFor() natijasi (namuna)
   data: { type: Object, required: true },
-  // serverdan: { exchange, errors, blocked, blockedTotal }
+  // serverdan: { exchange, errors, blocked, blockedCount, blockedSum }
   api: { type: Object, default: null }
 })
 
@@ -35,6 +35,20 @@ const TONE = {
 const blockedOpen = ref(false)
 const blockedTop = computed(() => blockedRows.value.slice(0, 5))
 const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) => s + r.raw, 0)))
+
+/*
+  Bloklangan rekvizitlar serverda alohida bo'lim (`blocked_requisites`) bo'lib
+  keladi, almashinuv lentasining ichida emas. Shuning uchun ular lentadan
+  mustaqil ko'rsatiladi: server `exchange: []` qaytarganda ham ro'yxat
+  ko'rinadi (avval bunday holatda tab bo'm-bo'sh chiqardi).
+*/
+const blockedCount = computed(() => props.api?.blockedCount ?? blockedRows.value.length)
+
+// valyuta qatorlardan olinadi
+const blockedCur = computed(() => blockedRows.value[0]?.cur || 'UZS')
+
+// lenta ham, ro'yxat ham bo'sh bo'lsagina "hech nima yo'q" deyiladi
+const nothing = computed(() => !exchange.value.length && !blockedRows.value.length)
 </script>
 
 <template>
@@ -86,52 +100,6 @@ const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) 
         </div>
       </div>
 
-      <div v-else-if="e.body === 'blocked'" class="event-body column">
-        <div class="blk">
-          <div class="blk-head">
-            <span class="blk-title">{{ $t('blocked.title') }}</span>
-            <div class="spacer" />
-            <button type="button" class="blk-excel" @click="toast($t('blocked.exported'))">
-              <AppIcon name="excel" :size="16" />
-              Excel
-            </button>
-          </div>
-
-          <div class="blk-grid head">
-            <span>#</span>
-            <span>{{ $t('blocked.colCard') }}</span>
-            <span>{{ $t('blocked.colKind') }}</span>
-            <span>{{ $t('filters.groups.bank') }}</span>
-            <span class="right">{{ $t('table.amount') }}</span>
-            <span>{{ $t('blocked.colCur') }}</span>
-          </div>
-
-          <div v-for="b in blockedTop" :key="b.card" class="blk-grid">
-            <span class="mono dim">{{ b.n }}</span>
-            <span class="mono blk-card">{{ b.card }}</span>
-            <span>
-              <span class="blk-kind" :class="{ acc: b.account }">
-                <AppIcon :name="b.account ? 'accountBank' : 'card'" :size="17" />
-                {{ $t(`blocked.kinds.${b.account ? 'account' : 'card'}`) }}
-              </span>
-            </span>
-            <span class="truncate blk-bank">{{ b.bank }}</span>
-            <span class="right mono blk-sum">{{ b.sum }}</span>
-            <span><span class="blk-cur mono">{{ b.cur }}</span></span>
-          </div>
-
-          <div class="blk-foot">
-            <button type="button" class="blk-all" @click="blockedOpen = true">
-              {{ $t('blocked.allCount', blockedRows.length) }}
-              <AppIcon name="chevronRight" :size="17" />
-            </button>
-            <div class="spacer" />
-            <span class="dim">{{ $t('blocked.shown', blockedTop.length) }}</span>
-            <span class="mono blk-total">{{ blockedShown }} UZS</span>
-          </div>
-        </div>
-      </div>
-
       <div v-else-if="e.body === 'returned'" class="event-body column">
         <div class="event-row">
           <div class="event-field">
@@ -157,8 +125,56 @@ const blockedShown = computed(() => formatAmount(blockedTop.value.reduce((s, r) 
       </div>
     </article>
 
+
+    <!--
+      Bloklangan rekvizitlar — serverda alohida bo'lim, lenta ichida emas.
+    -->
+    <div v-if="blockedRows.length" class="blk">
+      <div class="blk-head">
+        <span class="blk-title">{{ $t('blocked.title') }}</span>
+        <div class="spacer" />
+        <button type="button" class="blk-excel" @click="toast($t('blocked.exported'))">
+          <AppIcon name="excel" :size="16" />
+          Excel
+        </button>
+      </div>
+
+      <div class="blk-grid head">
+        <span>#</span>
+        <span>{{ $t('blocked.colCard') }}</span>
+        <span>{{ $t('blocked.colKind') }}</span>
+        <span>{{ $t('filters.groups.bank') }}</span>
+        <span class="right">{{ $t('table.amount') }}</span>
+        <span>{{ $t('blocked.colCur') }}</span>
+      </div>
+
+      <div v-for="b in blockedTop" :key="b.id" class="blk-grid">
+        <span class="mono dim">{{ b.n }}</span>
+        <span class="mono blk-card">{{ b.card }}</span>
+        <span>
+          <span class="blk-kind" :class="{ acc: b.account }">
+            <AppIcon :name="b.account ? 'accountBank' : 'card'" :size="17" />
+            {{ b.kindLabel || $t(`blocked.kinds.${b.account ? 'account' : 'card'}`) }}
+          </span>
+        </span>
+        <span class="truncate blk-bank">{{ b.bank }}</span>
+        <span class="right mono blk-sum">{{ b.sum }}</span>
+        <span><span class="blk-cur mono">{{ b.cur }}</span></span>
+      </div>
+
+      <div class="blk-foot">
+        <button type="button" class="blk-all" @click="blockedOpen = true">
+          {{ $t('blocked.allCount', blockedCount) }}
+          <AppIcon name="chevronRight" :size="17" />
+        </button>
+        <div class="spacer" />
+        <span class="dim">{{ $t('blocked.shown', blockedTop.length) }}</span>
+        <span class="mono blk-total">{{ blockedShown }} {{ blockedCur }}</span>
+      </div>
+    </div>
+
     <EmptyState
-      v-if="!exchange.length"
+      v-if="nothing"
       icon="send"
       :title="$t('detail.bank.emptyTitle')"
       :text="$t('detail.bank.emptyText')"

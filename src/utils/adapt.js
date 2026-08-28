@@ -431,15 +431,30 @@ export function bankOperations(res) {
       at: dateTime(x.at || x.created_at)
     })),
     blocked: (blocked.items || []).map((r, i) => ({
+      id: r.id ?? i + 1,
       n: i + 1,
       card: r.number || r.masked_number || '',
       account: (r.number_type || r.type) === 'account',
-      bank: r.bank_name || '',
+      // serverdagi tayyor yorliq ("Karta"); bo'lmasa turdan olinadi
+      kindLabel: r.type_display || '',
+      bank: r.bank_name || r.org || r.bank_code || '',
       cur: r.currency || 'UZS',
       raw: Number(String(r.frozen_amount ?? r.amount ?? 0).replace(/[^\d.]/g, '')) || 0,
-      sum: money(r.frozen_amount ?? r.amount)
+      sum: money(r.frozen_amount ?? r.amount),
+      // qachon bloklangani
+      at: dateTime(r.created_at)
     })),
-    blockedTotal: money(blocked.total)
+
+    /*
+      `blocked_requisites.total` — yozuvlar SONI, pul yig'indisi emas
+      (7 ta yozuv, har biri 1 200 000). Ilgari u `money()` dan o'tkazilib
+      summa sifatida ko'rsatilardi. Yig'indi shu yerda o'zi hisoblanadi.
+    */
+    blockedCount: blocked.total ?? (blocked.items || []).length,
+    blockedSum: money((blocked.items || []).reduce(
+      (acc, r) => acc + (Number(String(r.frozen_amount ?? r.amount ?? 0).replace(/[^\d.]/g, '')) || 0),
+      0
+    ))
   }
 }
 
