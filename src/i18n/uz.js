@@ -1077,6 +1077,7 @@ export default {
         closed: 'Yuz tanish xizmati aloqani uzdi',
         failed: "Tiriklik tekshiruvi o'tmadi — ko'rsatmalarni bajarib qaytadan urining",
         ticket: "Chipta qabul qilinmadi — kalit bilan qaytadan kiring",
+        expired: "Yuz tekshiruvi chiptasi eskirdi — kalit bilan qaytadan kiring",
         timeout: "Vaqt tugadi — qaytadan urinib ko'ring",
         cancelled: 'Yuz tekshiruvi bekor qilindi',
         noProof: 'Server tasdiq (proof) bermadi',

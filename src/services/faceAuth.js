@@ -54,6 +54,29 @@ const FACE_WS = String(import.meta.env?.VITE_FACE_WS || '').trim()
  * @param {string} raw serverdan kelgan manzil
  * @param {string} [override] xostni almashtirish uchun (sinovlarda beriladi)
  */
+/*
+  Chipta muddati.
+
+  `face_ticket` — darvoza imzolagan qisqa muddatli JWT (taxminan 2 daqiqa).
+  Muddati o'tgan chipta bilan ulanilsa server uni rad etadi va sabab noaniq
+  ko'rinadi. Shuning uchun ulanishdan oldin tokenning o'z `exp` da'vosidan
+  o'qib qo'yamiz — imzo tekshirilmaydi, bu server ishi.
+
+  @returns {number|null} millisekundlarda tugash vaqti; o'qib bo'lmasa null
+*/
+export function ticketExpiry(token) {
+  try {
+    const body = String(token).split('.')[1]
+    if (!body) return null
+
+    const json = atob(body.replace(/-/g, '+').replace(/_/g, '/'))
+    const exp = JSON.parse(json)?.exp
+    return typeof exp === 'number' ? exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
 export function resolveWsUrl(raw, override = FACE_WS) {
   const value = String(raw || '').trim()
   if (!value) throw new FaceError('noUrl')
@@ -205,6 +228,16 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
     else settle.resolve(proof)
   }
 
+  /*
+    Muddati o'tgan chipta bilan ulanishning ma'nosi yo'q: server uni rad
+    etadi. Darhol aniq sabab bilan to'xtaymiz — foydalanuvchi kalit bilan
+    qaytadan kirishi kerak.
+  */
+  function ticketStale() {
+    const at = ticketExpiry(ticket)
+    return typeof at === 'number' && Date.now() >= at
+  }
+
   function say(status, msg = {}) {
     logFace(status, msg, frames)
     try { onState?.(status, msg) } catch { /* chaqiruvchi xatosi bosqichni buzmasin */ }
@@ -295,6 +328,7 @@ export function startFaceCheck({ url, ticket, video, onState, onPrompt, frameMs 
     let wsUrl
     try { wsUrl = resolveWsUrl(url) } catch (e) { finish(e); return }
     if (!ticket) { finish(new FaceError('noTicket')); return }
+    if (ticketStale()) { finish(new FaceError('expired')); return }
 
     totalTimer = setTimeout(() => finish(new FaceError('timeout')), TOTAL_TIMEOUT)
     say('camera')

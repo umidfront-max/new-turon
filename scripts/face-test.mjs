@@ -36,8 +36,10 @@ Object.defineProperty(globalThis, 'navigator', {
 class FakeWs {
   static OPEN = 1
   static last = null
+  static count = 0
 
   constructor(url) {
+    FakeWs.count += 1
     this.url = url
     this.readyState = 0
     this.sent = []
@@ -70,7 +72,7 @@ const newVideo = () => ({
 
 /* ---------- tekshiruvlar ---------- */
 
-const { startFaceCheck, resolveWsUrl, FaceError } = await import('../src/services/faceAuth.js')
+const { startFaceCheck, resolveWsUrl, ticketExpiry, FaceError } = await import('../src/services/faceAuth.js')
 
 const bad = []
 const eq = (got, want, what) => { if (got !== want) bad.push(`${what}: ${got} (kutilgan ${want})`) }
@@ -209,6 +211,20 @@ globalThis.location = { protocol: 'http:', host: 'app.local' }
   eq(err?.key, 'ticket', 'ready dan oldin uzilish -> chipta')
 }
 
+// 6c. chipta muddati o'tgan — ulanmasdan to'xtaydi
+{
+  // {"exp": <o'tgan vaqt>} — imzo tekshirilmaydi, faqat exp o'qiladi
+  const body = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 60 })).toString('base64url')
+  const stale = `x.${body}.y`
+  eq(typeof ticketExpiry(stale), 'number', "exp o'qildi")
+
+  const before = FakeWs.count
+  const session = startFaceCheck({ url: 'http://h/ws', ticket: stale, video: newVideo() })
+  const err = await session.result.then(() => null, (e) => e)
+  eq(err?.key, 'expired', 'eskirgan chipta')
+  eq(FakeWs.count, before, 'eskirgan chiptada ulanish ochilmaydi')
+}
+
 // 7. chipta yo'q
 {
   const session = startFaceCheck({ url: 'http://h/ws', ticket: '', video: newVideo() })
@@ -241,5 +257,5 @@ globalThis.location = { protocol: 'http:', host: 'app.local' }
 
 console.log(bad.length
   ? 'XATO:\n' + bad.join('\n')
-  : "yuz bosqichi: chipta, freym oqimi, match/error, bekor qilish, uzilish, done va ko'rsatma tarjimasi tekshirildi")
+  : "yuz bosqichi: chipta, freym oqimi, match/error, bekor qilish, uzilish, done, chipta muddati va ko'rsatma tarjimasi tekshirildi")
 process.exit(bad.length ? 1 : 0)
