@@ -167,17 +167,19 @@ function close() {
 const acting = ref(false)
 
 /*
-  Statusni serverda o'zgartiradi. Server o'tishni tarixga yozadi, shuning
-  uchun keyin ariza qaytadan o'qiladi: status chipi, qadamlar treki, ish
-  jarayoni va tarix bir vaqtda yangilanadi.
+  Arizani bankka (Platformaga) yuborish.
+
+  Sayt orqali yaratilgan ariza fon rejimida o'zi ketadi — bu tugma qo'lda
+  yuborish uchun. Bank xato qaytargan bo'lsa (status «Qaytarilgan») tuzatilgan
+  ariza /resend/ orqali ketadi.
 */
-async function applyStatus(status, comment) {
+async function runSend(again) {
   if (acting.value) return
   acting.value = true
 
   try {
-    await api.setStatus(status, comment)
-    toast(t('detail.statusChanged'))
+    await api.sendToBank(again)
+    toast(t('detail.sentToBank'))
   } catch (e) {
     toast(e?.detail || t(`api.errors.${e?.key || 'server'}`), 'bad')
   } finally {
@@ -185,20 +187,49 @@ async function applyStatus(status, comment) {
   }
 }
 
-function onAction() {
+/** Serverdagi `missing` ro'yxatini oynada ko'rsatiladigan matnga aylantiradi. */
+function missingText(missing) {
+  const lines = (missing || []).map((m) => m.message).filter(Boolean)
+  // qatorlar ajratkichi — escape yozmasdan, aniq belgi bilan
+  return lines.length ? lines.join(String.fromCharCode(10)) : t('detail.notReadyText')
+}
+
+async function onAction() {
   // namuna ma'lumot bilan ishlayotganda server yo'q — avvalgidek xabar
   if (!api.live.value) {
     toast(data.value.action === 'fix' ? t('detail.fixToast') : t('detail.sent'))
     return
   }
 
+  const again = data.value.action === 'fix'
+
+  /*
+    Avval /readiness/ so'raymiz: server nima yetishmayotganini nomma-nom
+    aytadi, shunda foydalanuvchi quruq 422 o'rniga aniq ro'yxatni ko'radi.
+  */
+  acting.value = true
+  let check = null
+  try {
+    check = await api.readiness()
+  } catch { /* tekshirib bo'lmadi — yuborishning o'zi xatoni aytadi */ } finally {
+    acting.value = false
+  }
+
+  if (check && check.ready === false) {
+    ask({
+      title: t('detail.notReadyTitle'),
+      text: missingText(check.missing),
+      ok: t('common.close'),
+      run: () => {}
+    })
+    return
+  }
+
   ask({
-    title: t('detail.askSendTitle'),
+    title: t(again ? 'detail.askResendTitle' : 'detail.askSendTitle'),
     text: t('detail.askSendText', { id: row.value.id }),
-    prompt: { label: t('detail.comment'), placeholder: t('detail.commentPh') },
     ok: t(`detail.${data.value.action}`),
-    // «yuborish» ham, «tuzatib qayta yuborish» ham bankka jo'natadi
-    run: (comment) => applyStatus('pending', comment)
+    run: () => runSend(again)
   })
 }
 

@@ -9,7 +9,8 @@ import { reactive, computed } from 'vue'
 import { i18nLang } from '@/i18n'
 import {
   fetchComplaint, fetchBankOperations, fetchSanctions,
-  fetchTransactionChain, fetchWorkflow, fetchHistory, changeStatus
+  fetchTransactionChain, fetchWorkflow, fetchHistory, changeStatus,
+  checkReadiness, sendToPlatform, resendToPlatform
 } from '@/services/complaints'
 import {
   complaintDetail, bankOperations, sanctionList,
@@ -172,10 +173,31 @@ async function reload() {
   await Promise.all(open.map((key) => loadTab(key, true)))
 }
 
+/** Yuborishdan oldingi tekshiruv: { ready, missing: [{ field, message }] }. */
+function readiness() {
+  return checkReadiness(state.id)
+}
+
+/**
+ * Arizani bankka (Platformaga) yuboradi va yozuvni yangilaydi.
+ *
+ * Sayt orqali yaratilgan ariza fon rejimida o'zi ketadi; bu — qo'lda
+ * yuborish. Bank xato qaytargan bo'lsa `again` bilan qayta yuboriladi.
+ *
+ * @param {boolean} [again]
+ */
+async function sendToBank(again = false) {
+  if (!state.id) return null
+
+  const res = again ? await resendToPlatform(state.id) : await sendToPlatform(state.id)
+  await reload()
+  return res
+}
+
 const pending = computed(() => !!state.id && !state.detail && !state.error)
 
 const live = computed(() => state.source === 'api' && !!state.detail)
 
 export function useComplaint() {
-  return { state, load, loadTab, clear, reload, setStatus, live, pending }
+  return { state, load, loadTab, clear, reload, setStatus, readiness, sendToBank, live, pending }
 }

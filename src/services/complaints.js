@@ -49,6 +49,23 @@ export const identifyCard = (number) => post('/cards/identify/', { number })
 export const createManual = (body) => post('/complaints/manual/', body)
 export const changeStatus = (id, body) => post(`/complaints/${id}/status/`, body)
 
+/* ---------- Platformaga (bankka) yuborish ---------- */
+
+/*
+  Ariza sayt orqali yaratilsa fon rejimida o'zi ketadi. Quyidagilar — qo'lda
+  yuborish uchun: `send` birinchi marta, `resend` esa bank xato qaytargandan
+  keyin tuzatilganini qayta yuborish uchun.
+*/
+
+/** Yuborishdan oldingi tekshiruv: { ready, missing: [{ field, message }] }. */
+export const checkReadiness = (id) => get(`/platform/complaints/${id}/readiness/`)
+
+/** Method 1 — arizani Platformaga yuboradi. To'liq bo'lmasa 422 qaytadi. */
+export const sendToPlatform = (id) => post(`/platform/complaints/${id}/send/`)
+
+/** Method 3 — tuzatilgan arizani qayta yuboradi (bank xato qaytargan bo'lsa). */
+export const resendToPlatform = (id) => post(`/platform/complaints/${id}/resend/`)
+
 /* ---------- ariza tafsiloti ---------- */
 
 export const fetchBankOperations = (id) => get(`/complaints/${id}/bank-operations/`)
