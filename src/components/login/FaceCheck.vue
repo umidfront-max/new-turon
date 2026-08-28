@@ -204,15 +204,20 @@ onBeforeUnmount(stop)
 .frame.error { border-color: #d9483f; }
 
 /*
-  Ko'zgu (scaleX(-1)) qo'yilmaydi: serverga ketadigan kadr ko'zgulanmaydi,
-  shuning uchun "o'ngga buriling" ko'rsatmasi ekrandagi tomonga to'g'ri kelishi
-  uchun tasvir ham asl holida turishi kerak.
+  Ko'rinish ko'zguga o'xshab aylantiriladi: odam o'ngga qaraganda ekranda ham
+  o'ngga qaragandek ko'rinsin. Aylantirilmasa tasvir boshqa odam ko'rgandek
+  chiqadi va harakat teskari tuyuladi.
+
+  Serverga ketadigan kadrga bu ta'sir qilmaydi: kadr `drawImage(video, ...)`
+  bilan canvasga chiziladi, CSS `transform` esa canvasga o'tmaydi. Ya'ni
+  tiriklik tekshiruvi asl (ko'zgulanmagan) tasvir ustida ishlaydi.
 */
 .cam {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  transform: scaleX(-1);
 }
 
 /* yuz joylashadigan oval */
