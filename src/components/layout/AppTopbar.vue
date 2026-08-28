@@ -121,7 +121,12 @@ function onDutyClick() {
     <div class="spacer" />
 
     <!-- navbatchilik holati (admin rollarida ko'rinmaydi) -->
-    <div v-if="!isAdmin" class="duty" :title="dutyButton ? $t(`duty.tip.${dutyButton.key}`) : undefined">
+    <div
+      v-if="!isAdmin"
+      class="duty"
+      :class="{ 'no-btn': !dutyButton }"
+      :title="dutyButton ? $t(`duty.tip.${dutyButton.key}`) : undefined"
+    >
       <span class="duty-dot" :style="{ background: duty.dot }" />
       <span class="duty-text">
         <span class="duty-state">{{ duty.state }}</span>
@@ -135,7 +140,7 @@ function onDutyClick() {
         @click="onDutyClick"
       >
         <AppIcon :name="dutyButton.icon" :size="15" />
-        <span>{{ $t(`duty.btn.${dutyButton.key}`) }}</span>
+        <span class="duty-btn-label">{{ $t(`duty.btn.${dutyButton.key}`) }}</span>
       </button>
     </div>
 
@@ -262,7 +267,13 @@ function onDutyClick() {
   border-radius: 10px;
   background: rgba(255, 255, 255, .07);
   border: 1px solid rgba(255, 255, 255, .14);
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* tugmasi yo'q holatda o'ng chekka ham matn kabi bo'shliqli tursin */
+.duty.no-btn {
+  padding-right: 13px;
 }
 
 .duty-dot {
@@ -277,6 +288,7 @@ function onDutyClick() {
   display: flex;
   flex-direction: column;
   line-height: 1.25;
+  min-width: 0;
 }
 
 .duty-state {
@@ -284,6 +296,8 @@ function onDutyClick() {
   font-weight: 600;
   color: #fff;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .duty-meta {
@@ -449,8 +463,13 @@ function onDutyClick() {
 }
 
 /* ---------- responsive ---------- */
+/*
+  Faqat yozuv yashiriladi, ikonka qoladi. `.duty-btn span` deb yozib bo'lmaydi:
+  AppIcon ham <span> chiqaradi va u qoida ikonkani ham o'chirib qo'yardi —
+  tugma bo'm-bo'sh quti bo'lib qolardi.
+*/
 @media (max-width: 1180px) {
-  .duty-btn span {
+  .duty-btn-label {
     display: none;
   }
 
@@ -459,12 +478,26 @@ function onDutyClick() {
   }
 }
 
+/*
+  Navbatchilik bloki tor ekranda yo'qolmaydi — bosqichma-bosqich qisqaradi:
+  avval smena vaqti, keyin holat matni olib tashlanadi. Eng torida ham nuqta
+  va tugma qoladi, chunki navbatchi aynan shu yerdan smenani topshiradi.
+*/
 @media (max-width: 1024px) {
   .hamburger {
     display: flex;
   }
 
+  .topbar {
+    gap: 12px;
+  }
+
   .duty {
+    gap: 8px;
+    padding: 0 5px 0 10px;
+  }
+
+  .duty-meta {
     display: none;
   }
 }
@@ -488,6 +521,23 @@ function onDutyClick() {
 
   .clock {
     display: none;
+  }
+}
+
+@media (max-width: 460px) {
+  /* bu yerdan boshlab faqat nuqta va tugma qoladi */
+  .duty-text {
+    display: none;
+  }
+
+  /* tugma ham matn ham yo'q bo'lsa blok bo'm-bo'sh qolmasin */
+  .duty.no-btn .duty-text {
+    display: flex;
+  }
+
+  .duty {
+    gap: 7px;
+    padding: 0 4px 0 8px;
   }
 }
 

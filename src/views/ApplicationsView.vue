@@ -603,10 +603,17 @@ async function exportXlsx() {
 
 /* bo'sh holat */
 
+/*
+  Tor ekranda sarlavha qatori ikkiga bo'linadi: yuqorida nom, sanoq va
+  tugmalar, ostida esa butun kenglikdagi qidiruv. Ilgari uchalasi bitta
+  qatorga tiqilib, qidiruv ham tugmalar ham qisilib qolardi.
+  `order` shu uchun kerak: DOM'da qidiruv tugmalardan oldin turadi.
+*/
 @media (max-width: 720px) {
   .card-head {
     padding: 9px 12px;
     gap: 8px;
+    row-gap: 10px;
   }
 
   .card-title {
@@ -614,6 +621,20 @@ async function exportXlsx() {
     letter-spacing: .04em;
   }
 
+  .search {
+    order: 2;
+    flex: 1 1 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .head-acts {
+    order: 1;
+  }
+}
+
+/* bu yerdan tugmalar faqat ikonka bo'lib qoladi */
+@media (max-width: 560px) {
   .head-btn span:not(.head-badge):not(.head-spin) {
     display: none;
   }
