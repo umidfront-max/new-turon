@@ -86,6 +86,8 @@ eq(resolveWsUrl('ws://192.168.1.5/face/ws', 'wss://tunnel.example'), 'wss://tunn
 eq(resolveWsUrl('ws://192.168.1.5/face/ws?t=1', 'https://tunnel.example'), 'wss://tunnel.example/face/ws?t=1', "yo'l va parametr saqlandi")
 eq(resolveWsUrl('ws://192.168.1.5/face/ws', 'proxy'), 'ws://app.local/face/ws', "to'liq manzil emas -> sahifaning o'zi")
 eq(resolveWsUrl('ws://192.168.1.5/face/ws', ''), 'ws://192.168.1.5/face/ws', 'sozlamasiz tegilmaydi')
+eq(resolveWsUrl('ws://192.168.1.5/face-recog/login', 'wss://t.example/ws/face'), 'wss://t.example/ws/face', "to'liq manzil")
+eq(resolveWsUrl('ws://192.168.1.5/face-recog/login?t=a', 'wss://t.example/ws/face'), 'wss://t.example/ws/face?t=a', "to'liq manzil, parametr saqlandi")
 
 // https sahifada oddiy ws bloklanadi — wss ga ko'tariladi
 globalThis.location = { protocol: 'https:', host: 'app.local' }

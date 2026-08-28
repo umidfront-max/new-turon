@@ -67,18 +67,27 @@ export function resolveWsUrl(raw, override = FACE_WS) {
   else if (/^http:/i.test(url)) url = url.replace(/^http:/i, 'ws:')
 
   /*
-    Sozlamadagi qiymat to'liq manzil bo'lsa (wss://...) protokol va xost
-    o'shanikiga almashadi. To'liq manzil bo'lmasa — sahifaning o'z manzili
-    ishlatiladi: ishlab chiqishda ulanish Vite proxy orqali o'tadi, ngrok
-    ogohlantirish sahifasi esa WebSocket'ni to'sib qo'yadi va unga sarlavha
-    qo'shib bo'lmaydi.
+    Sozlamadagi qiymat uch xil bo'lishi mumkin:
+      wss://host/ws/face  — to'liq manzil, butunlay o'shanga almashadi
+                            (serverdagi so'rov parametrlari saqlanadi);
+      wss://host          — faqat protokol va xost almashadi, yo'l qoladi;
+      boshqa har qanday   — sahifaning o'z manzili ishlatiladi, ya'ni ulanish
+                            Vite proxy orqali o'tadi.
   */
   if (override) {
-    const base = String(override).replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:')
-    const host = base.match(/^(wss?:)\/\/([^/]+)/i)
+    const base = String(override).trim().replace(/^http:/i, 'ws:').replace(/^https:/i, 'wss:')
+    const parts = base.match(/^(wss?:\/\/[^/]+)(\/.*)?$/i)
 
-    if (host) url = url.replace(/^wss?:\/\/[^/]+/i, `${host[1]}//${host[2]}`)
-    else if (typeof location !== 'undefined' && location.host) {
+    if (parts) {
+      const path = (parts[2] || '').replace(/\/+$/, '')
+      if (path) {
+        // yo'l ham berilgan — so'rov parametrlarigina serverdagicha qoladi
+        const query = url.slice(url.indexOf('?') + 1)
+        url = parts[1] + path + (url.includes('?') ? `?${query}` : '')
+      } else {
+        url = url.replace(/^wss?:\/\/[^/]+/i, parts[1])
+      }
+    } else if (typeof location !== 'undefined' && location.host) {
       url = url.replace(/^wss?:\/\/[^/]+/i, `${secure ? 'wss:' : 'ws:'}//${location.host}`)
     }
   }
