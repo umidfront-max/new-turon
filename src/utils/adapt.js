@@ -311,16 +311,25 @@ export function complaintDetail(c, lang = 'uz') {
   const requisites = (c.requisites || []).map((r) => ({
     card: r.number || '',
     bank: r.bank_name || '',
-    // ro'yxatda faqat `number_type` keladi, tayyor yorliq esa tranzaksiya
-    // ichidagi kartada — shuning uchun tur kaliti ham saqlanadi
+    // tayyor yorliq har doim ham kelmaydi — shuning uchun tur kaliti ham
+    // saqlanadi va ekranda undan yorliq olinadi
     system: r.number_type_display || '',
     systemKey: r.number_type || '',
     blocked: !!r.is_blocked,
-    frozen: r.frozen_amount ? money(r.frozen_amount) : null,
+    /*
+      Muzlatilgan summa bo'lmaganda server "0.00" qaytaradi — bu satr rost
+      qiymat, shuning uchun sonini tekshiramiz, aks holda ekranda "0" chiqadi.
+    */
+    frozen: Number(r.frozen_amount) > 0 ? money(r.frozen_amount) : null,
     sum: money(r.total_amount),
+    // server o'zi sanab beradi; bermasa ro'yxat uzunligi olinadi
+    count: r.transaction_count ?? (r.transactions || []).length,
     tx: (r.transactions || []).map((t, i) => ({
       n: i + 1,
       amount: money(t.amount),
+      currency: t.currency || 'UZS',
+      // bankdagi o'tkazma havolasi — bo'lsa ko'rsatiladi
+      reference: t.reference || '',
       time: dateTime(t.withdrawn_at)
     }))
   }))

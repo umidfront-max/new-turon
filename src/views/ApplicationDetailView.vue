@@ -83,8 +83,23 @@ const data = computed(() => (api.live.value
   : detailFor(byId(routeId.value) || routeId.value)))
 const row = computed(() => data.value.row)
 
-/* ---------- rekvizitlar ochilishi ---------- */
+/* ---------- rekvizitlar ---------- */
 const opened = ref(new Set([0]))
+
+/*
+  Rekvizit turi. Server ba'zan tayyor yorliqni (`number_type_display`)
+  qaytarmaydi — o'shanda tur kalitidan yorliq olinadi, hech nimasi bo'lmasa
+  bo'sh nishoncha chizilmaydi.
+*/
+function reqType(r) {
+  if (r.system) return r.system
+  return r.systemKey && te(`detail.requisites.type.${r.systemKey}`)
+    ? t(`detail.requisites.type.${r.systemKey}`)
+    : ''
+}
+
+// UZS uchun "so'm", boshqa valyutada kodning o'zi
+const cur = (code) => (!code || code === 'UZS' ? t('detail.sum') : code)
 
 function toggleReq(i) {
   const next = new Set(opened.value)
@@ -485,17 +500,24 @@ function exportXlsx() {
               <div class="req-main">
                 <div class="req-card mono">{{ r.card }}</div>
                 <div class="req-meta">
-                  <span class="req-bank"><span class="bank-dot" />{{ r.bank }}</span>
-                  <span class="req-sys">{{ r.system }}</span>
-                  <span class="req-count">{{ $t('detail.requisites.tx', r.tx.length) }}</span>
+                  <span v-if="r.bank" class="req-bank"><span class="bank-dot" />{{ r.bank }}</span>
+                  <span v-if="reqType(r)" class="req-sys">{{ reqType(r) }}</span>
+                  <span v-if="r.blocked" class="req-blocked">
+                    <AppIcon name="lock" :size="13" />
+                    {{ $t('detail.requisites.blocked') }}
+                  </span>
+                  <span v-if="r.frozen" class="req-frozen mono">
+                    {{ $t('detail.requisites.frozen') }}: {{ r.frozen }}<span class="dim">{{ cur() }}</span>
+                  </span>
+                  <span class="req-count">{{ $t('detail.requisites.tx', r.count) }}</span>
                   <span class="req-sum mono">
-                    {{ r.sum }}<span class="dim"> {{ $t('detail.sum') }}</span>
+                    {{ r.sum }}<span class="dim">{{ cur(r.tx[0]?.currency) }}</span>
                   </span>
                 </div>
               </div>
               <button type="button" class="req-toggle" @click="toggleReq(i)">
                 {{ $t('detail.requisites.transactions') }}
-                <span class="req-badge mono">{{ r.tx.length }}</span>
+                <span class="req-badge mono">{{ r.count }}</span>
                 <AppIcon
                   name="chevronUp"
                   :size="18"
@@ -508,7 +530,12 @@ function exportXlsx() {
             <div v-if="opened.has(i)" class="req-tx">
               <div v-for="x in r.tx" :key="x.n" class="tx">
                 <span class="tx-n mono">{{ x.n }}</span>
-                <span class="tx-amount mono">{{ x.amount }}<span class="dim"> {{ $t('detail.sum') }}</span></span>
+                <span class="tx-amount mono">{{ x.amount }}<span class="dim">{{ cur(x.currency) }}</span></span>
+                <span
+                  v-if="x.reference"
+                  class="tx-ref mono truncate"
+                  :title="$t('detail.requisites.ref')"
+                >{{ x.reference }}</span>
                 <div class="spacer" />
                 <span class="tx-time mono">{{ x.time }}</span>
               </div>
@@ -522,7 +549,7 @@ function exportXlsx() {
             </span>
             <div class="spacer" />
             <span class="total-value mono">
-              {{ data.total }}<span class="dim"> {{ $t('detail.sum') }}</span>
+              {{ data.total }}<span class="dim">{{ cur() }}</span>
             </span>
           </div>
         </div>
@@ -1185,9 +1212,46 @@ function exportXlsx() {
   border: 1px solid var(--ce2e8f1);
 }
 
+/* bloklangan rekvizit — serverdagi `is_blocked` */
+.req-blocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 20px;
+  background: var(--ce3f2e9);
+  border: 1px solid var(--cbfe0ce);
+  color: var(--c1a6e4b);
+  font-weight: 600;
+}
+
+/* muzlatilgan summa — `frozen_amount` */
+.req-frozen {
+  color: var(--c1a6e4b);
+  font-weight: 600;
+}
+
 .req-sum {
   font-weight: 600;
   color: var(--c16233d);
+}
+
+/*
+  Valyuta yorliqlari matndan keyin turadi. Bo'shliqni shablonga yozib
+  bo'lmaydi — Vue uni yig'ib yuboradi va "1 200 000so'm" bo'lib qoladi.
+*/
+.req-sum .dim,
+.req-frozen .dim,
+.tx-amount .dim,
+.total-value .dim {
+  margin-left: .32em;
+}
+
+/* bankdagi o'tkazma havolasi — bo'lsa ko'rinadi */
+.tx-ref {
+  max-width: 220px;
+  font-size: 13px;
+  color: var(--c8b95a6);
 }
 
 .req-toggle {

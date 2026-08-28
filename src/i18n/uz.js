@@ -858,11 +858,15 @@ export default {
       title: 'Rekvizitlar',
       cards: '{n} ta rekvizit',
       tx: '{n} tranzaksiya',
-      transactions: 'Tranzaksiyalar'
+      transactions: 'Tranzaksiyalar',
+      type: { card: 'Karta', account: 'Hisob raqam' },
+      blocked: 'Bloklangan',
+      frozen: 'Muzlatilgan',
+      ref: 'Bank havolasi',
     },
     soon: {
       sanctions: 'Sanksiyalar bo‘limi keyingi bosqichda yig‘iladi.',
-      transactions: 'Tranzaksiyalar bo‘limi keyingi bosqichda yig‘iladi.'
+      transactions: 'Tranzaksiyalar bo‘limi keyingi bosqichda yig‘iladi.',
     }
   },
 
