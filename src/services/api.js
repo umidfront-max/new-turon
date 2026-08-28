@@ -1,6 +1,10 @@
 /*
   Complaints API klienti.
-  Hujjat: http://192.168.14.186:30801/api/docs/
+  Hujjat: <baza>/api/docs/
+
+  Baza `.env` dagi VITE_API_URL dan olinadi. `.env` git'da yo'q, shuning uchun
+  quyidagi qiymat Docker va CI'da ishlatiladi — hozir sinov tunneli.
+  Ish serveri: http://192.168.14.186:30801/api/v1
 
   Token localStorage'dagi `turon-token` dan olinadi. U bo'lmasa — quyidagi
   sinov tokeni ishlatiladi (backend jamoasi bergan, vaqtinchalik).
@@ -12,13 +16,13 @@
 import axios from 'axios'
 import { i18nLang } from '@/i18n'
 
-const BASE = (import.meta.env?.VITE_API_URL || 'http://192.168.14.186:30801/api/v1').replace(/\/+$/, '')
+const BASE = (import.meta.env?.VITE_API_URL || 'https://pinchable-semitruthfully-delma.ngrok-free.dev/api/v1').replace(/\/+$/, '')
 
 export const TOKEN_KEY = 'turon-token'
 
 // Vaqtinchalik sinov tokeni — localStorage bo'sh bo'lsa shu ishlatiladi.
 // Haqiqiy token ERI kirishidan (user_ser) keladi.
-const FALLBACK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg3OTk4MDE5LCJpYXQiOjE3ODc5MTE2MTksImp0aSI6ImEyNmUyYWY5YmFjNTRiZDFiYWUxZjVhNTllZmE1M2M1IiwidXNlcl9pZCI6MywidXNlcm5hbWUiOiJzaGFraG9iIiwiZnVsbF9uYW1lIjoiU2hha2hvYmlkZGluIEJvem9yb3YiLCJwaG9uZV9udW1iZXIiOiIrOTk4OTA2NzA2NTYxIiwicm9sZSI6InN0YWZmIn0.60MdK1AoG8anJh0zSHoCuDrF_Z6Qso2BeF_aR_7OIo8'
+const FALLBACK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzg4MDAzMzg3LCJpYXQiOjE3ODc5MTY5ODcsImp0aSI6IjYwYzMzYmE0ZTA3MjRjYjhiMWQwNjA3MDgxYTMyN2JlIiwidXNlcl9pZCI6MiwidXNlcm5hbWUiOiJyb2JiZW4xOTcyIiwiZnVsbF9uYW1lIjoiQm96b3JvdiBTaGF4b2JpZGRpbiBRYXhyYW1vbiBvJ2cnbGkiLCJwaG9uZV9udW1iZXIiOiIrOTk4OTA2NzA2NTYxIiwicm9sZSI6InN0YWZmIn0.XnRQ0ppHNM1o0UPybvYyYiDpVIUMJe8RGRv__sL4iYQ'
 
 /* ---------- token ---------- */
 
