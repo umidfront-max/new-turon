@@ -30,6 +30,10 @@ export default defineConfig(({ mode }) => {
     }
   },
   server: {
+    // barcha tarmoq interfeyslarida tinglaydi — ilovani telefondan yoki
+    // hamkasbning kompyuteridan http://<shu mashina IP>:5173 orqali ochish
+    // mumkin bo'ladi. Vite ishga tushganda Network manzilini o'zi yozib beradi.
+    host: true,
     port: 5173,
     open: true,
     proxy: {
